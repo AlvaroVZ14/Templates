@@ -1,0 +1,61 @@
+import { test, expect } from '@playwright/test';
+
+async function openDiary(page,date='2026-10-15') {
+  await page.goto('./'); await page.getByRole('button',{name:'Diario',exact:true}).click();
+  await page.getByLabel('Fecha del diario',{exact:true}).fill(date);
+}
+test('diario, aviso de dos noches, meta y peso semanal se guardan offline',async({page,context})=>{
+  await openDiary(page,'2026-10-14');
+  await page.getByLabel('Peso corporal (kg)',{exact:true}).fill('70');
+  await page.getByLabel('Horas de sueño',{exact:true}).fill('6');
+  await page.getByRole('button',{name:'Guardar diario',exact:true}).click();
+  await expect(page.getByText('Diario guardado.',{exact:true})).toBeVisible();
+  await page.getByLabel('Fecha del diario',{exact:true}).fill('2026-10-15');
+  await page.getByLabel('Peso corporal (kg)',{exact:true}).fill('72');
+  await page.getByLabel('Horas de sueño',{exact:true}).fill('6.5');
+  await page.getByLabel('Calidad de sueño (1–5)',{exact:true}).fill('3');
+  await page.getByLabel('Energía (1–10)',{exact:true}).fill('7');
+  await page.getByLabel('Fatiga (1–10)',{exact:true}).fill('4');
+  await page.getByLabel('Estrés (1–5)',{exact:true}).fill('2');
+  await page.getByLabel('Dolor por zona',{exact:true}).fill('Hombro derecho, leve.');
+  await page.getByRole('button',{name:'Guardar diario',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('Dos noches seguidas');
+  await page.getByLabel('Meta de sueño (horas)',{exact:true}).fill('8.5');
+  await page.getByRole('button',{name:'Guardar meta',exact:true}).click();
+  await expect(page.getByText('Meta de sueño guardada.',{exact:true})).toBeVisible();
+  await expect(page.getByRole('img',{name:'Peso semanal y promedio móvil de 7 días'})).toBeVisible();
+  await expect(page.locator('.health-table tbody tr').filter({hasText:'10-15'})).toContainText('71');
+  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});
+  await context.setOffline(true); await page.reload();
+  await page.getByRole('button',{name:'Diario',exact:true}).click();
+  await page.getByLabel('Fecha del diario',{exact:true}).fill('2026-10-15');
+  await expect(page.getByLabel('Peso corporal (kg)',{exact:true})).toHaveValue('72');
+  await expect(page.getByLabel('Dolor por zona',{exact:true})).toHaveValue('Hombro derecho, leve.');
+  await expect(page.getByLabel('Meta de sueño (horas)',{exact:true})).toHaveValue('8.5');
+});
+test('favoritos usan porciones propias, comidas editables y totales por fecha',async({page})=>{
+  await openDiary(page);
+  await page.getByRole('button',{name:'Pan con huevo',exact:true}).click();
+  await expect(page.getByLabel('Kcal de la comida',{exact:true})).toHaveValue('');
+  await page.getByLabel('Kcal de la comida',{exact:true}).fill('350');
+  await page.getByLabel('Proteína de la comida (g)',{exact:true}).fill('20');
+  await page.getByRole('button',{name:'Guardar como favorito',exact:true}).click();
+  await expect(page.getByText('Favorito guardado con los valores de tu porción.',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Guardar comida',exact:true}).click();
+  await expect(page.locator('.meal-totals')).toContainText('350');
+  await page.getByRole('button',{name:'Pan con huevo',exact:true}).click();
+  await expect(page.getByLabel('Kcal de la comida',{exact:true})).toHaveValue('350');
+  await page.getByRole('button',{name:'Guardar comida',exact:true}).click();
+  await expect(page.locator('.meal-row')).toHaveCount(2);
+  await expect(page.locator('.meal-totals')).toContainText('700');
+  await page.locator('.meal-row').first().getByRole('button',{name:'Editar',exact:true}).click();
+  await page.getByLabel('Kcal de la comida',{exact:true}).fill('300');
+  await page.getByRole('button',{name:'Actualizar comida',exact:true}).click();
+  await expect(page.locator('.meal-totals')).toContainText('650');
+  await page.getByLabel('Fecha del diario',{exact:true}).fill('2026-10-16');
+  await expect(page.locator('.meal-row')).toHaveCount(0);
+  await page.getByLabel('Fecha del diario',{exact:true}).fill('2026-10-15');
+  await page.setViewportSize({width:320,height:850});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:'test-results/diary-mobile.png',fullPage:true});
+});

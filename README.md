@@ -77,7 +77,7 @@ Un push a `templates/inicio` conserva el código en GitHub; la publicación se
 dispara al integrar sus cambios en `main`. Si cambias el nombre del repositorio,
 actualiza `base`, la URL del README y la ruta de las pruebas de navegador.
 
-## Tres pantallas
+## Pantallas
 
 - **Hoy:** selector de fecha y semana, sesión del día, aproximaciones sugeridas,
   registro y eliminación de series, peso de trabajo persistente, carga en kg,
@@ -90,6 +90,35 @@ actualiza `base`, la URL del README y la ruta de las pruebas de navegador.
   se conserva al cambiar de pantalla dentro de la app, pero no al recargar.
 - **Volumen:** meta original, plan actual y efectivas realizadas por músculo,
   para la semana local de lunes a domingo. Permite consultar semanas anteriores.
+- **Diario:** peso corporal, sueño, energía, fatiga, estrés, dolor por zona y comidas
+  para una fecha. Meta de sueño editable, aviso por dos noches cortas y gráfico semanal
+  de peso con promedio móvil de 7 días. Todo se guarda en IndexedDB, también offline.
+
+### Diario y comidas
+
+Los campos del diario son opcionales: dejar vacío significa «sin dato», y 0 horas
+de sueño sigue siendo un dato válido. La calidad del sueño y el estrés usan escala
+1–5; energía y fatiga 1–10. La fecha corresponde al día en que termina la noche.
+La meta de sueño es 8 h inicialmente y se configura dentro de Diario.
+
+El aviso requiere dos fechas consecutivas con menos de 7 h cada una. No interpreta
+una noche ausente como 0 h. Se muestra para el último par registrado hasta la fecha
+seleccionada si termina ese día o el anterior; 7 h exactas no activa el aviso.
+
+El gráfico cubre la semana local de lunes a domingo. Cada promedio utiliza los pesos
+disponibles de los 7 días calendario terminados en esa fecha, incluidos los de la
+semana anterior. Se muestra el número de observaciones (por ejemplo, 3/7); no se
+inventan pesos para completar días vacíos. La tabla permite leer cada valor del gráfico.
+
+Las comidas guardan nombre, kcal y gramos de proteína de tu porción, con totales
+diarios, edición y eliminación. Pan con huevo, Pollo con arroz y Snack vienen como
+favoritos sin valores nutricionales: introduce tus kcal/proteína y pulsa **Guardar
+como favorito**. Después, tocar el favorito carga esos valores sin registrar una
+comida automáticamente. También puedes guardar otros favoritos.
+
+Para probar: registra 6 h de sueño en dos fechas consecutivas y comprueba el aviso;
+registra 70 y 72 kg en esas fechas y comprueba un promedio de 71 kg con 2/7 datos.
+Guarda una comida y un favorito, recarga sin red y verifica que ambos se conservan.
 
 La rutina viene cargada exactamente con los ejercicios, orden, series y
 extensiones solicitados. Se considera `+drop` o `+rp` una extensión de una de las

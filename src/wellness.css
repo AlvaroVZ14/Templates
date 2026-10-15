@@ -1,0 +1,48 @@
+.bottom-nav { width: 500px; }
+.wellness-date { max-width: 260px; margin-bottom: 23px; }
+.wellness-card { background: #1a1b1d; border: 1px solid var(--border); border-radius: 12px; padding: 23px; margin: 20px 0; }
+.wellness-card .section-heading { margin-bottom: 14px; }
+form.wellness-card { display: flex; flex-direction: column; gap: 20px; }
+.wellness-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+form.sleep-goal { flex-direction: row; align-items: flex-end; gap: 15px; }
+.sleep-goal label { flex: 1; }
+.sleep-goal button { min-height: 49px; }
+.wellness-page > .success { margin: 15px 0; }
+.notice { padding: 17px 19px; border: 1px solid #796039; border-radius: 10px; background: #362b1c; margin: 18px 0; }
+.notice strong { font-size: 13px; font-weight: 600; }
+.notice p { font-size: 11px; line-height: 1.8; color: #d8c3a7; margin-top: 8px; }
+.trend-chart { margin: 10px 0 20px; }
+.trend-chart svg { display: block; width: 100%; max-height: 300px; }
+.trend-chart text { fill: #bcb2a6; font-size: 9px; }
+.chart-legend { display: flex; justify-content: center; align-items: center; gap: 18px; flex-wrap: wrap; }
+.chart-legend span { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #b5ada7; }
+.chart-legend i { height: 7px; width: 7px; border-radius: 50%; }
+.chart-empty { padding: 30px 12px; color: var(--muted); font-size: 12px; text-align: center; }
+.table-scroll { overflow-x: auto; margin-top: 15px; }
+.health-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.health-table th, .health-table td { border-bottom: 1px solid #343538; padding: 14px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+.health-table th:first-child { text-align: left; }
+.health-table th { font-weight: 500; }
+.health-table thead { color: #b5aca5; font-size: 10px; }
+.health-table td:last-child { color: #c1d3b7; }
+.meal-totals { display: flex; gap: 30px; margin: 22px 0; }
+.meal-totals strong { font-size: 27px; font-weight: 550; color: #ffb093; }
+.meal-totals small { font-size: 11px; color: #bdb4ad; }
+.favorite-list { display: flex; gap: 9px; flex-wrap: wrap; margin: 15px 0; }
+.meal-form { display: flex; flex-direction: column; gap: 18px; margin: 23px 0; }
+.meal-row { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding: 10px 0; }
+.meal-row > div { flex: 1; min-width: 0; }
+.meal-row strong { display: block; font-size: 12px; overflow-wrap: anywhere; }
+.meal-row span { display: block; font-size: 10px; color: var(--muted); margin-top: 7px; }
+.meal-records { margin-top: 20px; }
+@media (max-width: 600px) {
+  .bottom-nav { width: 100%; padding-left: 8px; padding-right: 8px; }
+  .wellness-card { padding: 19px 14px; }
+  .wellness-grid { gap: 18px 13px; }
+  .wellness-grid label { font-size: 10px; line-height: 1.5; }
+  .sleep-goal button { font-size: 11px; }
+  .health-table { font-size: 11px; }
+  .health-table th, .health-table td { padding: 13px 6px; }
+  .meal-totals { gap: 20px; }
+  .meal-totals strong { font-size: 24px; }
+}
