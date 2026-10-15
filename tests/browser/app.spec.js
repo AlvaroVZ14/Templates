@@ -18,11 +18,10 @@ test('registro, persistencia IndexedDB, volumen, preparación y extensiones', as
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await monday(page);
   await expect(page.getByLabel('Tipo de serie').locator('option')).toHaveCount(5);
-  await page.getByLabel('Carga de referencia de Press banca').fill('100');
-  await page.getByRole('button', { name: 'Usar sugerencia' }).click();
-  await expect(page.getByLabel('Carga de Press banca', { exact: true })).toHaveValue('45');
-  await expect(page.getByLabel('Repeticiones de Press banca')).toHaveValue('11');
-  await page.getByRole('button', { name: 'Guardar serie' }).click();
+  await page.getByLabel('Peso de trabajo de Press banca', { exact: true }).fill('100');
+  await expect(page.getByLabel('Peso de Aproximación 1', { exact: true })).toHaveValue('50');
+  await expect(page.getByLabel('Reps de Aproximación 1', { exact: true })).toHaveValue('10');
+  await page.getByRole('button', { name: 'Guardar Aproximación 1', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Aproximación guardada');
   await log(page);
   await log(page, 'Drop set', '40', '6');

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { APPROACHES, DAYS, EXTENSIONS, KINDS, MUSCLES, TITLES, dayIndex, formatSeconds, initialState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
-import { loadState, saveState, updateState } from './db.js';
+import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, TITLES, dayIndex, formatSeconds, initialState, migrateState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
+import { updateState } from './db.js';
+import ExerciseCard from './ExerciseCard.jsx';
+import Cardio from './Cardio.jsx';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -53,9 +55,7 @@ export default function App() {
   async function boot() {
     setError('');
     try {
-      const existing = await loadState();
-      const state = existing ?? initialState();
-      if (!existing) await saveState(state);
+      const state = await updateState(existing => existing ? migrateState(existing) : initialState());
       setData(state);
     } catch { setError('No se pudo abrir IndexedDB. Permite el almacenamiento del navegador y vuelve a intentar.'); }
   }
@@ -119,64 +119,11 @@ function Today({ data, date, setDate, change, saving, startTimer }) {
     </section>
     <div className="training-note"><Icon name="leaf" size={18} /><span>Natural. Ejecución controlada. Series efectivas al fallo técnico.</span></div>
     <section className="session-list"><div className="section-heading"><h2>{exercises.length ? 'Tu sesión' : 'Recupera para la próxima'}</h2><span>{exercises.length ? `${done} de ${planned} efectivas` : DAYS[day]}</span></div>
-      {exercises.length === 0 ? <div className="rest-card"><Icon name="leaf" size={42} /><h3>Hoy toca descansar.</h3><p>Tu rutina vuelve {day === 2 ? 'el jueves' : 'el lunes'}. Puedes consultar otro día en la semana de arriba.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => setOpen(activeId === exercise.id ? '' : exercise.id)} change={change} saving={saving} startTimer={startTimer} />)}
+      {exercises.length === 0 ? <div className="rest-card"><Icon name="leaf" size={42} /><h3>Hoy toca descansar.</h3><p>Tu rutina vuelve {day === 2 ? 'el jueves' : 'el lunes'}. Puedes consultar otro día en la semana de arriba.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} data={data} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => setOpen(activeId === exercise.id ? '' : exercise.id)} change={change} saving={saving} startTimer={startTimer} />)}
     </section>
+    <Cardio key={date} data={data} date={date} change={change} saving={saving} />
     <p className="local-footnote"><span className="tiny-dot" /> Guardado en este dispositivo · Sin cuenta ni servidor</p>
   </>;
-}
-
-function ExerciseCard({ exercise: ex, index, date, logs, expanded, toggle, change, saving, startTimer }) {
-  const count = logs.filter(log => log.kind === 'effective').length;
-  const [kind, setKind] = useState('effective');
-  const [weight, setWeight] = useState('');
-  const [reps, setReps] = useState('');
-  const [reference, setReference] = useState('');
-  const [failure, setFailure] = useState(true);
-  const [parent, setParent] = useState('');
-  const [message, setMessage] = useState('');
-  const [formError, setFormError] = useState('');
-  const [deleting, setDeleting] = useState(null);
-  const effective = logs.filter(log => log.kind === 'effective');
-  const preparation = logs.filter(log => ['warmup', 'approach'].includes(log.kind));
-  const extensions = logs.filter(log => EXTENSIONS.includes(log.kind));
-  const approachCount = logs.filter(log => log.kind === 'approach').length;
-  const approach = APPROACHES[Math.min(approachCount, 2)];
-  const allowed = Object.entries(KINDS).filter(([value]) => !['forced', 'negative'].includes(value) || ex[value]);
-  useEffect(() => { if (['forced', 'negative'].includes(kind) && !ex[kind]) setKind('effective'); }, [ex.forced, ex.negative, kind]);
-  async function record(event) {
-    event.preventDefault(); setFormError(''); setMessage('');
-    if (weight.trim() === '' || reps.trim() === '') { setFormError('Completa la carga y las repeticiones. Usa 0 kg si no hay carga externa.'); return; }
-    const log = { id: crypto.randomUUID(), exerciseId: ex.id, exerciseName: ex.name, muscle: ex.muscle, date, kind, weight: Number(weight), reps: Number(reps), failure: ['warmup', 'approach'].includes(kind) ? false : failure, parentId: EXTENSIONS.includes(kind) ? parent || effective.at(-1)?.id : null, createdAt: new Date().toISOString() };
-    const invalid = validateLog(log, ex, logs);
-    if (invalid) { setFormError(invalid); return; }
-    const seconds = restFor(ex, kind, approachCount + (kind === 'approach' ? 1 : 0));
-    const success = await change(state => ({ ...state, logs: [...state.logs, log], timer: { end: Date.now() + seconds * 1000, duration: seconds, label: ex.name } }));
-    if (success) { setReps(''); setMessage(`${KINDS[kind]} guardada · ${log.weight} kg × ${log.reps}`); }
-  }
-  function suggest() {
-    if (!reference || Number(reference) <= 0) { setFormError('Indica la carga de tu serie efectiva para calcular la aproximación.'); return; }
-    setKind('approach'); setWeight(String(Math.round(Number(reference) * approach.percent / 100 * 2) / 2)); setReps(String(approach.reps)); setFailure(false); setFormError('');
-  }
-  const rows = (items, title) => items.length > 0 && <div className="log-group"><h4>{title}</h4>{items.map(log => <div className="log-row" key={log.id}><span className={log.kind === 'effective' ? 'log-mark effective-mark' : 'log-mark'}><Icon name={log.kind === 'effective' ? 'check' : 'bar'} size={15} /></span><div><strong>{KINDS[log.kind]}{log.parentId ? ` · de E${effective.findIndex(item => item.id === log.parentId) + 1}` : ''}</strong><small>{log.failure ? 'Al fallo técnico' : ['warmup', 'approach'].includes(log.kind) ? 'Sin fallo · no suma volumen' : 'Sin fallo'}</small></div><b>{log.weight}<small> kg</small> × {log.reps}</b><button className="icon-button" aria-label={`Eliminar ${KINDS[log.kind]} de ${ex.name}`} disabled={saving} onClick={() => setDeleting(log.id)}><Icon name="close" size={16} /></button></div>)}</div>;
-  return <article className={`exercise-card ${expanded ? 'expanded' : ''}`}>
-    <button className="exercise-summary" onClick={toggle} aria-expanded={expanded} aria-controls={`exercise-${ex.id}`}><span className={`exercise-number ${count >= ex.sets ? 'complete' : ''}`}>{count >= ex.sets ? <Icon name="check" size={19} /> : String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{ex.muscle}</span><strong>{ex.name}</strong><small>{ex.sets} {ex.sets === 1 ? 'efectiva' : 'efectivas'}{ex.technique ? ` + ${KINDS[ex.technique]}` : ''}<span className="summary-rest"> · {formatSeconds(ex.rests.effective)} descanso</span></small></span><span className="exercise-count">{count}<small>/{ex.sets}</small></span><span className="chevron"><Icon name="arrow" size={17} /></span></button>
-    {expanded && <div className="exercise-body" id={`exercise-${ex.id}`}>
-      {ex.approaches > 0 && <div className="approach-panel"><div><span className="eyebrow">PREPARACIÓN · {Math.min(approachCount, ex.approaches)}/{ex.approaches}</span><p>{approachCount < ex.approaches ? `${approach.range} · sin fallo` : 'Aproximaciones completadas'}</p></div>{approachCount < ex.approaches && <div className="approach-controls"><label>Carga efectiva (kg)<input aria-label={`Carga de referencia de ${ex.name}`} type="number" inputMode="decimal" min="0.5" max="1500" step="0.5" placeholder="Ej. 60" value={reference} onChange={event => setReference(event.target.value)} /></label><button className="secondary" onClick={suggest}>Usar sugerencia</button></div>}</div>}
-      {rows(preparation, 'Calentamiento y aproximación')}{rows(effective, 'Series efectivas')}{rows(extensions, 'Extensiones · sin sumar otra serie')}
-      {deleting && <div className="delete-confirm" role="alert"><p>¿Eliminar esta serie{effective.some(log => log.id === deleting) ? ' y sus extensiones' : ''}?</p><button className="danger" disabled={saving} onClick={async () => { if (await change(state => ({ ...state, logs: removeLog(state.logs, deleting) }))) { setDeleting(null); setMessage('Serie eliminada.'); } }}>Eliminar</button><button className="quiet" onClick={() => setDeleting(null)}>Cancelar</button></div>}
-      <form onSubmit={record} className="set-form">
-        <div className="section-heading small"><h3>Registrar serie</h3><span>{['warmup', 'approach'].includes(kind) ? 'Preparación' : EXTENSIONS.includes(kind) ? 'Extensión' : 'Trabajo efectivo'}</span></div>
-        <label>Tipo de serie<select value={kind} onChange={event => { setKind(event.target.value); setFailure(!['warmup', 'approach'].includes(event.target.value)); setMessage(''); }}>{allowed.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        {EXTENSIONS.includes(kind) && <label>Vinculada a<select value={parent || effective.at(-1)?.id || ''} onChange={event => setParent(event.target.value)} required><option value="">Selecciona una efectiva</option>{effective.map((log, i) => <option key={log.id} value={log.id}>E{i + 1} · {log.weight} kg × {log.reps}</option>)}</select></label>}
-        <div className="input-pair"><label>Carga (kg)<input aria-label={`Carga de ${ex.name}`} type="number" min="0" max="1500" step="0.5" inputMode="decimal" placeholder="0" value={weight} onChange={event => setWeight(event.target.value)} required /></label><label>Repeticiones<input aria-label={`Repeticiones de ${ex.name}`} type="number" min="1" max="200" inputMode="numeric" placeholder="0" value={reps} onChange={event => setReps(event.target.value)} required /></label></div>
-        {!['warmup', 'approach'].includes(kind) ? <label className="check-label"><input type="checkbox" checked={failure} onChange={event => setFailure(event.target.checked)} /><span>Al fallo técnico<small>Última repetición con ejecución controlada</small></span></label> : <p className="muted small-text">Sin fallo. Esta serie se guarda aparte y no suma volumen.</p>}
-        {formError && <p className="error" role="alert">{formError}</p>}{message && <p className="success" role="status">{message}</p>}
-        <button className="primary full" type="submit" disabled={saving}><Icon name="plus" size={20} />{saving ? 'Guardando…' : 'Guardar serie'}<span>+ descanso</span></button>
-      </form>
-      <div className="rest-shortcuts"><span><Icon name="clock" size={15} /> Descansos</span>{[['warmup', 'Calent.'], ['effective', 'Efectiva'], ...(ex.technique ? [[ex.technique, KINDS[ex.technique]]] : [])].map(([type, label]) => <button key={type} disabled={saving} onClick={() => startTimer(ex.rests[type], `${label} · ${ex.name}`)}>{label} <b>{formatSeconds(ex.rests[type])}</b></button>)}</div>
-      {!ex.forced && !ex.negative && <p className="technique-note">Forzadas y negativas desactivadas. Se habilitan por ejercicio en Rutina.</p>}
-    </div>}
-  </article>;
 }
 
 function Routine({ data, change, saving }) {
@@ -198,7 +145,7 @@ function Routine({ data, change, saving }) {
   }
   function add() {
     const muscle = 'Pecho';
-    const ex = makeExercise('Nuevo ejercicio', muscle, 1, '', 'free', false, draft[day].some(item => item.muscle === muscle) ? 0 : 3);
+    const ex = makeExercise('Nuevo ejercicio', muscle, 1, '', 'barbell', false, draft[day].some(item => item.muscle === muscle) ? 1 : 2);
     setDraft(current => current.map((list, i) => i === day ? [...list, ex] : list)); setOpen(ex.id); setDirty(true);
   }
   return <><div className="page-heading"><div><p className="eyebrow">LA ESTRUCTURA DE TU TRABAJO</p><h1>Tu rutina<span className="accent">.</span></h1></div><span className="outlined-tag">7 DÍAS</span></div><p className="page-intro">Ajusta las series, las técnicas y el descanso a tu entrenamiento.</p>
@@ -210,10 +157,11 @@ function Routine({ data, change, saving }) {
       {draft[day].map((ex, index) => <article className="exercise-card editor-card" key={ex.id}>
         <button className="exercise-summary" type="button" onClick={() => setOpen(open === ex.id ? '' : ex.id)} aria-expanded={open === ex.id}><span className="exercise-number">{String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{ex.muscle}</span><strong>{ex.name || 'Sin nombre'}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''}</small></span><Icon name="edit" size={19} /></button>
         {open === ex.id && <div className="exercise-body editor-fields"><label>Nombre del ejercicio<input required maxLength="90" value={ex.name} onChange={event => update(ex.id, { name: event.target.value })} /></label>
-          <div className="input-pair"><label>Músculo principal<select value={ex.muscle} onChange={event => update(ex.id, { muscle: event.target.value, approaches: draft[day].some(item => item.id !== ex.id && item.muscle === event.target.value) ? 0 : ex.equipment === 'free' ? 3 : 1 })}>{MUSCLES.map(name => <option key={name}>{name}</option>)}</select></label><label>Series efectivas<input type="number" min="1" max="20" required value={ex.sets || ''} onChange={event => update(ex.id, { sets: Number(event.target.value) })} /></label></div>
-          <div className="input-pair"><label>Equipo<select value={ex.equipment} onChange={event => { const equipment = event.target.value; const first = draft[day].find(item => item.muscle === ex.muscle)?.id === ex.id; update(ex.id, { equipment, approaches: first ? equipment === 'free' ? 3 : 1 : 0 }); }}><option value="free">Peso libre</option><option value="machine">Máquina</option><option value="cable">Polea</option></select></label><label>Tipo de ejercicio<select value={ex.compound ? 'compound' : 'isolation'} onChange={event => { const compound = event.target.value === 'compound'; update(ex.id, { compound, rests: { ...ex.rests, effective: compound ? 210 : 150 } }); }}><option value="compound">Compuesto</option><option value="isolation">Aislamiento</option></select></label></div>
-          <div className="input-pair"><label>Extensión planeada<select value={ex.technique} onChange={event => update(ex.id, { technique: event.target.value })}><option value="">Ninguna</option><option value="drop">Drop set</option><option value="rp">Rest-pause</option></select></label><label>Aproximaciones<input type="number" min="0" max="3" required value={ex.approaches} onChange={event => update(ex.id, { approaches: Number(event.target.value) })} /></label></div>
-          <p className="field-note">Primer ejercicio por músculo: 3 aproximaciones en peso libre; 1 en máquina o polea. Puedes ajustarlo de 0 a 3. Las aproximaciones nunca van al fallo.</p>
+          <div className="input-pair"><label>Músculo principal<select value={ex.muscle} onChange={event => update(ex.id, { muscle: event.target.value, approaches: ex.compound || !draft[day].some(item => item.id !== ex.id && item.muscle === event.target.value) ? 2 : 1 })}>{MUSCLES.map(name => <option key={name}>{name}</option>)}</select></label><label>Series efectivas<input type="number" min="1" max="20" required value={ex.sets || ''} onChange={event => update(ex.id, { sets: Number(event.target.value) })} /></label></div>
+          <div className="input-pair"><label>Equipo<select value={ex.equipment} onChange={event => { const equipment = event.target.value; update(ex.id, { equipment, increment: INCREMENTS[equipment] }); }}>{Object.entries(EQUIPMENT).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label><label>Tipo de ejercicio<select value={ex.compound ? 'compound' : 'isolation'} onChange={event => { const compound = event.target.value === 'compound'; update(ex.id, { compound, rests: { ...ex.rests, effective: compound ? 210 : 150 } }); }}><option value="compound">Compuesto</option><option value="isolation">Aislamiento</option></select></label></div>
+          <div className="input-pair"><label>Extensión planeada<select value={ex.technique} onChange={event => update(ex.id, { technique: event.target.value })}><option value="">Ninguna</option><option value="drop">Drop set</option><option value="rp">Rest-pause</option></select></label><label>Series de preparación<input type="number" min="1" max="3" required value={ex.approaches} onChange={event => update(ex.id, { approaches: Number(event.target.value) })} /></label></div>
+          <div className="input-pair"><label>Redondeo de sugerencias (kg)<input type="number" min="0.5" max="100" step="0.5" required value={ex.increment || ''} onChange={event => update(ex.id, { increment: Number(event.target.value) })} /></label><label>Caídas de drop set<input type="number" min="1" max="3" required value={ex.dropCount} onChange={event => update(ex.id, { dropCount: Number(event.target.value) })} /></label><label>Mini-series rest-pause<input type="number" min="1" max="10" required value={ex.rpCount} onChange={event => update(ex.id, { rpCount: Number(event.target.value) })} /></label></div>
+          <p className="field-note">Primer ejercicio por músculo y compuestos pesados: 2 preparaciones; resto: 1. Editable de 1 a 3, siempre sin fallo.</p>
           <h3 className="editor-subtitle">Descansos <span>segundos</span></h3><div className="input-pair">{[['warmup', 'Entre calentamientos / aproximaciones'], ['effective', 'Antes de la efectiva'], ['rp', 'Rest-pause · entre mini-series'], ['drop', 'Drop set · cambio de carga']].map(([key, label]) => <label key={key}>{label}<input type="number" inputMode="numeric" min="1" max="900" required value={ex.rests[key] || ''} onChange={event => update(ex.id, { rests: { ...ex.rests, [key]: Number(event.target.value) } })} /></label>)}</div>
           <h3 className="editor-subtitle">Técnicas opcionales</h3><label className="check-label"><input type="checkbox" checked={ex.forced} onChange={event => update(ex.id, { forced: event.target.checked })} /><span>Permitir forzadas<small>Desactivadas por defecto</small></span></label><label className="check-label"><input type="checkbox" checked={ex.negative} onChange={event => update(ex.id, { negative: event.target.checked })} /><span>Permitir negativas<small>Desactivadas por defecto</small></span></label>
           <div className="editor-bottom"><div><button className="secondary" type="button" disabled={index === 0} onClick={() => move(index, -1)} aria-label={`Subir ${ex.name}`}>↑ Subir</button><button className="secondary" type="button" disabled={index === draft[day].length - 1} onClick={() => move(index, 1)} aria-label={`Bajar ${ex.name}`}>↓ Bajar</button></div><button className="danger" type="button" onClick={() => setDeleteId(ex.id)}>Quitar</button></div>

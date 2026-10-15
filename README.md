@@ -80,11 +80,13 @@ actualiza `base`, la URL del README y la ruta de las pruebas de navegador.
 ## Tres pantallas
 
 - **Hoy:** selector de fecha y semana, sesión del día, aproximaciones sugeridas,
-  registro y eliminación de series, carga en kg, repeticiones, fallo técnico y
-  temporizador. Miércoles y domingo son descanso por defecto.
+  registro y eliminación de series, peso de trabajo persistente, carga en kg,
+  repeticiones, RPE, fallo y temporizador. Dentro de cada ejercicio: notas e
+  historial con gráfico. Al final: cardio y pasos. Miércoles y domingo son descanso.
 - **Rutina:** editor por día; añade, quita y ordena ejercicios. Ajusta músculo
   principal, equipo, tipo compuesto/aislamiento, efectivas, extensión planeada,
-  aproximaciones y descansos. Pulsa **Guardar cambios** para persistir. Un borrador
+  preparaciones (1–3), redondeo de cargas, caídas de drop (1–3), mini-series de
+  rest-pause (1–10) y descansos. Pulsa **Guardar cambios** para persistir. Un borrador
   se conserva al cambiar de pantalla dentro de la app, pero no al recargar.
 - **Volumen:** meta original, plan actual y efectivas realizadas por músculo,
   para la semana local de lunes a domingo. Permite consultar semanas anteriores.
@@ -98,7 +100,7 @@ series efectivas del ejercicio, sin multiplicarla automáticamente por cada seri
 | Tipo | Registro | Volumen semanal |
 | --- | --- | --- |
 | Calentamiento / aproximación | Separados; siempre sin fallo | No suma |
-| Efectiva | Carga, repeticiones y fallo técnico editable | 1 serie para su músculo principal |
+| Efectiva | Carga, repeticiones, RPE 0–10 y casilla «llegué al fallo» | 1 serie para su músculo principal |
 | Drop set / rest-pause | Vinculados a una efectiva del mismo ejercicio y fecha | Extensión; no suma otra efectiva |
 | Forzadas / negativas | Desactivadas por defecto; habilitación individual en el editor | Extensión; no suma otra efectiva |
 
@@ -106,6 +108,9 @@ Cada mini-serie de rest-pause y cada reducción de un drop puede registrarse com
 otra extensión vinculada a la misma efectiva. No se atribuye volumen indirecto a
 otros músculos. El contador registra la efectiva incluso si desmarcas el fallo,
 y el historial conserva ese dato. Eliminar una efectiva elimina sus extensiones.
+Todas las series nuevas guardan RPE; puedes ajustar el valor propuesto antes de
+guardar (6 en preparación y 10 en trabajo a fallo). Los registros antiguos sin
+RPE muestran «sin dato»; no se inventa un esfuerzo retrospectivo.
 
 Las metas solicitadas se conservan como referencia, sin modificar la rutina para
 hacerlas coincidir con el plan:
@@ -128,15 +133,47 @@ cualquier semana; los registros ya realizados conservan nombre y músculo origin
 
 ## Preparación y descanso
 
-Primer ejercicio de cada músculo por día: 3 aproximaciones en peso libre y 1 en
-máquina/polea. Los siguientes empiezan con 0. Todo es editable por ejercicio.
-Al cambiar equipo o músculo se recalcula ese valor inicial; al reordenar, revisa
-las aproximaciones, porque se conserva tu configuración individual.
+Cada ejercicio conserva un peso de trabajo y reps objetivo. Sin referencia ni
+historial aparece **Ingresa tu peso de trabajo** en el propio ejercicio. Al
+escribirlo ya se ven todas las sugerencias, antes de registrar la efectiva.
+**Guardar peso de trabajo** persiste la referencia; guardar una preparación o
+serie también conserva la referencia introducida. Una efectiva actualiza
+automáticamente el peso de trabajo con su carga real; las reps objetivo se
+mantienen según tu elección. En mancuernas todo se expresa **por mano**.
 
-La sugerencia usa la carga efectiva introducida como referencia y redondea a
-0,5 kg: 45% × 11, 75% × 7 y 87,5% × 3, dentro de los rangos solicitados
-(40–50% × 10–12; 70–80% × 6–8; 85–90% × 2–3). La sugerencia se puede editar antes
-de guardar; no crea registros por sí sola.
+Los ejercicios de la rutina original con el mismo nombre y equipo comparten
+referencia, notas e historial entre días. Las series del día y las extensiones
+siguen vinculadas a su ejercicio y fecha, sin duplicar volumen.
+
+Primer ejercicio por músculo y compuestos pesados: 2 preparaciones; resto: 1.
+Puedes elegir de 1 a 3 por ejercicio en Rutina. No se recalculan al reordenar.
+
+| Preparaciones | Sugerencias desde el peso de trabajo |
+| --- | --- |
+| 1 | 60% × 8 reps |
+| 2 | 50% × 10; 75% × 5 |
+| 3 | 40% × 10; 60% × 6; 80% × 3 |
+
+Redondeo al múltiplo más cercano, configurable por ejercicio: barra 2,5 kg,
+mancuernas 1 kg, máquina y polea 5 kg. Se redondean las sugerencias; la carga
+efectivamente registrada no se altera. Cargas muy pequeñas pueden dar 0 kg o el
+mismo peso al redondear: ajusta la sugerencia al material disponible.
+
+Cada preparación muestra el peso en grande, reps y RPE editables. Con un toque en
+**Guardar** se registra y queda marcada, siempre sin fallo y fuera del volumen.
+
+**Drop set:** 1 caída por defecto, hasta 3. Cada una propone 20% menos que la
+anterior, con redondeo. Si ajustas y registras una caída, la siguiente se calcula
+desde ese peso real. Introduce las reps reales y guarda cada caída por separado,
+a fallo, con 10–15 s solo para cambiar carga.
+
+**Rest-pause:** 2 mini-series por defecto (editable de 1 a 10). Mismo peso exacto
+de la efectiva, sin redondearlo otra vez, descanso de 15–20 s y meta 3–5 reps a
+fallo (se propone 4, editable). Cada mini-serie se guarda por separado.
+
+Antes de guardar una efectiva las extensiones son una vista previa del peso de
+trabajo. Después usan su carga real y se habilita el guardado. Si hay varias
+efectivas, puedes elegir a cuál vincular las extensiones.
 
 Descansos iniciales, editables en segundos:
 
@@ -147,15 +184,53 @@ Descansos iniciales, editables en segundos:
 - Drop set: 15 s para cambiar la carga.
 
 Guardar una serie inicia el descanso correspondiente. La última aproximación
-inicia el descanso previo a la efectiva. Los botones de descanso permiten iniciar
+inicia el descanso previo a la efectiva; una efectiva con técnica planeada inicia
+el intervalo corto de drop o rest-pause. Los botones de descanso permiten iniciar
 manualmente los intervalos entre técnicas. El temporizador usa una hora de fin
 persistida, por lo que se recupera al recargar o volver del segundo plano. La
 vibración depende del navegador; no se prometen alarmas con la app cerrada.
 
+### Historial, notas y cardio
+
+La serie anterior del mismo ejercicio permanece visible encima del formulario,
+con fecha, peso, reps, RPE y fallo. **Historial del ejercicio** muestra todas las
+series (20 por página) y un gráfico de la mayor carga efectiva por sesión para
+el equipo actual, con las últimas 20 sesiones. Cada punto conserva fecha y reps.
+Las notas son editables y persisten por ejercicio.
+
+**Cardio y pasos**, dentro de Hoy, guarda sesiones independientes de caminata
+inclinada, bici o trote suave: minutos e intensidad suave/moderada/alta. Puedes
+añadir varias sesiones en una fecha y eliminarlas individualmente. Los pasos son
+un total diario opcional; guardar el campo vacío elimina ese dato, sin ponerlo a 0.
+Ni cardio ni pasos alteran el volumen semanal.
+
+### Cómo probar cada sugerencia
+
+1. Abre el lunes y **Press banca** sin historial. Debe pedir el peso de trabajo.
+   Ingresa **100 kg**: aparecen **50 kg × 10** y **75 kg × 5**. Guarda una
+   preparación con un toque; debe quedar marcada y no sumar volumen.
+2. En **Press declinado**, ingresa **100 kg**: antes de la efectiva se ve una
+   caída a **80 kg**. Guarda la efectiva con **90 kg**: la referencia pasa a 90
+   y la caída a **72,5 kg**. Escribe las reps de la caída y guárdala aparte.
+3. En **Curl mancuernas sentado**, ingresa **20 kg por mano**: aparecen dos
+   mini-series de **20 kg × 4**. Guarda la efectiva y luego ambas mini-series;
+   el temporizador debe iniciar 20 s y el volumen sumar solo la efectiva.
+4. En Rutina, cambia preparación a **1** para ver **60% × 8** o a **3** para
+   ver **40% × 10; 60% × 6; 80% × 3**. Con máquina/polea y **100 kg**, tres
+   caídas dan **80, 65 y 50 kg** usando redondeo a 5 kg.
+5. Recarga: referencia, series, RPE y notas deben seguir ahí. Registra otra
+   fecha para ver un segundo punto en el gráfico. Añade cardio y pasos, activa
+   Offline en DevTools y vuelve a recargar: todo debe permanecer disponible.
+
 ## Datos locales
 
 IndexedDB (`heavy-duty-personal`, versión 1) guarda rutina, metas, registros y
-temporizador. Las modificaciones se confirman después de completar la transacción;
+temporizador, además de referencias, notas, cardio y pasos. El estado interno
+se migra a esquema 2 en una transacción, sin borrar series ni cambiar IDs,
+volumen o descansos personalizados. La preparación adopta los nuevos valores
+por defecto (2 en primeros/compuestos, 1 en el resto); la referencia se recupera
+de la última efectiva registrada cuando existe.
+Las modificaciones se confirman después de completar la transacción;
 si el navegador rechaza el almacenamiento se muestra un error, sin fingir un guardado.
 Las actualizaciones usan transacciones de lectura/escritura para conservar registros
 añadidos desde otra pestaña. Para refrescar su vista, recarga la pestaña.

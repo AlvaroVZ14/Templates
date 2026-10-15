@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DAYS, TARGETS, dayIndex, initialState, localDate, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from '../src/domain.js';
+import { DAYS, TARGETS, INCREMENTS, dayIndex, initialState, localDate, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume, preparationSuggestions, extensionSuggestions, migrateState, recordSet, exerciseHistory } from '../src/domain.js';
 
 test('la rutina conserva orden, series y extensiones del encargo', () => {
   const state = initialState();
@@ -21,16 +21,57 @@ test('aproximaciones y descansos respetan equipo y primer músculo', () => {
   for (const day of state.routine) {
     const seen = new Set();
     for (const ex of day) {
-      assert.equal(ex.approaches, seen.has(ex.muscle) ? 0 : ex.equipment === 'free' ? 3 : 1);
+      assert.equal(ex.approaches, !seen.has(ex.muscle) || ex.compound ? 2 : 1);
+      assert.equal(ex.increment, INCREMENTS[ex.equipment]);
       assert.equal(ex.rests.effective, ex.compound ? 210 : 150);
       assert.equal(ex.rests.warmup, 90); assert.equal(ex.rests.rp, 20); assert.equal(ex.rests.drop, 15);
       seen.add(ex.muscle);
     }
   }
   const ex = state.routine[0][0];
-  assert.equal(restFor(ex, 'approach', 2), 90);
-  assert.equal(restFor(ex, 'approach', 3), 210);
+  assert.equal(restFor(ex, 'approach', 1), 90);
+  assert.equal(restFor(ex, 'approach', 2), 210);
   assert.equal(restFor(ex, 'rp'), 20);
+});
+
+test('preparación de 1, 2 y 3 series usa los porcentajes y reps pedidos', () => {
+  const ex = initialState().routine[0][0];
+  const expected = { 1: [[60,8]], 2: [[50,10],[75,5]], 3: [[40,10],[60,6],[80,3]] };
+  for (const approaches of [1,2,3]) assert.deepEqual(preparationSuggestions({ ...ex, approaches },100).map(row => [row.weight,row.reps]),expected[approaches]);
+  assert.deepEqual(preparationSuggestions(ex,null),[]);
+  assert.deepEqual(preparationSuggestions(ex,0).map(row => row.weight),[0,0]);
+});
+
+test('redondea por equipo, drop encadena caídas y RP conserva el peso exacto', () => {
+  const ex = initialState().routine[0][0];
+  assert.equal(preparationSuggestions({ ...ex, approaches: 1 },62.5)[0].weight,37.5);
+  assert.equal(preparationSuggestions({ ...ex, approaches: 1, increment: 1 },23)[0].weight,14);
+  assert.equal(preparationSuggestions({ ...ex, approaches: 1, increment: 5 },62.5)[0].weight,40);
+  assert.deepEqual(extensionSuggestions({ ...ex, dropCount:3 },100,'drop').map(row => row.weight),[80,65,52.5]);
+  assert.deepEqual(extensionSuggestions({ ...ex, dropCount:3 },100,'drop',[{kind:'drop',step:1,weight:70}]).map(row => row.weight),[80,55,45]);
+  assert.deepEqual(extensionSuggestions(ex,23,'rp').map(row => [row.weight,row.reps]),[[23,4],[23,4]]);
+});
+
+test('migración conserva historial y recupera peso sin inventar RPE antiguos', () => {
+  const original = initialState();
+  original.schemaVersion = 1; delete original.profiles; delete original.cardio; delete original.dailySteps;
+  const ex = original.routine[0][0]; ex.equipment='free';
+  original.logs=[{id:'old',exerciseId:ex.id,date:'2026-10-12',kind:'effective',weight:82.5,reps:7,failure:true,createdAt:'2026-10-12T12:00:00Z'}];
+  const migrated=migrateState(original);
+  assert.equal(original.schemaVersion,1); assert.equal(migrated.schemaVersion,2);
+  assert.equal(migrated.logs[0].weight,82.5); assert.equal(migrated.logs[0].rpe,null);
+  assert.equal(migrated.profiles[migrated.routine[0][0].profileId].workWeight,82.5);
+  assert.equal(migrateState(migrated),migrated);
+});
+
+test('efectiva actualiza peso compartido e inicia descanso para la técnica', () => {
+  const state=initialState(), ex=state.routine[0][7];
+  const log={id:'work',exerciseId:ex.id,profileId:ex.profileId,date:'2026-10-12',kind:'effective',weight:21,reps:8,rpe:10,failure:true,createdAt:new Date().toISOString()};
+  const next=recordSet(state,ex,log);
+  assert.equal(next.profiles[ex.profileId].workWeight,21); assert.equal(next.timer.duration,20);
+  assert.equal(state.logs.length,0); assert.equal(exerciseHistory(next,ex).length,1);
+  assert.ok(validateLog({...log,rpe:11},ex,[]));
+  assert.equal(state.routine[0][2].profileId,state.routine[5][0].profileId);
 });
 test('semana local lunes a domingo, incluso en cambio de año', () => {
   assert.equal(dayIndex('2026-10-18'), 6);
