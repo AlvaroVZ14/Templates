@@ -1,4 +1,5 @@
 import { migrateDiary } from './wellness.js';
+import { migrateMeasurements } from './measurements.js';
 
 export const MUSCLES = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Aductor', 'Gemelo'];
 export const TARGETS = { Pecho: 8, Espalda: 9, Hombro: 8, Bíceps: 8, Tríceps: 6, Cuádriceps: 6, Femoral: 4, Aductor: 1, Gemelo: 1 };
@@ -38,7 +39,7 @@ export function exerciseHistory(state, exercise) {
   return state.logs.filter(log => (log.profileId ?? log.exerciseId) === exercise.profileId).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 }
 export function migrateState(original) {
-  if (original.schemaVersion >= 2) return migrateDiary(original);
+  if (original.schemaVersion >= 2) return migrateMeasurements(migrateDiary(original));
   const state = structuredClone(original);
   state.profiles ??= {}; state.cardio ??= []; state.dailySteps ??= {};
   for (const day of state.routine) {
@@ -59,7 +60,7 @@ export function migrateState(original) {
     if (last && profile.workWeight === null) profile.workWeight = last.weight;
   }
   state.schemaVersion = 2;
-  return migrateDiary(state);
+  return migrateMeasurements(migrateDiary(state));
 }
 
 export function localDate(date = new Date()) {

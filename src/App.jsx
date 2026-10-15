@@ -4,7 +4,8 @@ import { updateState } from './db.js';
 import ExerciseCard from './ExerciseCard.jsx';
 import Cardio from './Cardio.jsx';
 import Diary from './Diary.jsx';
-import './wellness.css';
+import Measurements, { WaistNotice } from './Measurements.jsx';
+import { measurementReminder } from './measurements.js';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -20,6 +21,7 @@ function Icon({ name, size = 22 }) {
     download: <><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4" /></>,
     leaf: <><path d="M20 4c0 12-3 16-9 16a7 7 0 0 1 0-14zM4 20 15 9" /></>,
     diary: <><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-3-2H4zM13 7a3 3 0 0 1 3-3h5v15h-5a4 4 0 0 0-3 2" /></>,
+    ruler: <><path d="m3 16 13-13 5 5L8 21zM7 12l2 2m2-6 2 2m2-6 2 2" /></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.bar}</svg>;
 }
@@ -75,6 +77,7 @@ export default function App() {
   }
   async function startTimer(seconds, label) { return change(state => ({ ...state, timer: { end: Date.now() + seconds * 1000, duration: seconds, label } })); }
   const [installHelp, setInstallHelp] = useState(false);
+  const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
   return <div className="app-shell">
     <header className="masthead">
       <a className="brand" href="#today" onClick={event => { event.preventDefault(); setPage('today'); }} aria-label="Heavy Duty, ir a Hoy">
@@ -87,15 +90,17 @@ export default function App() {
     {(error || pwa.error) && <div className="error global-error" role="alert">{error || pwa.error}{!data && <button className="quiet" onClick={boot}>Reintentar</button>}</div>}
     {!data ? <main className="loading" aria-live="polite">{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</main> : <>
       <main id="main-content">
+        {page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { setDate(localDate()); setPage('measurements'); }}>Ir a Medidas</button></aside>}
         {page === 'today' && <Today data={data} date={date} setDate={setDate} change={change} saving={saving} startTimer={startTimer} />}
         <div hidden={page !== 'routine'}><Routine data={data} change={change} saving={saving} /></div>
         {page === 'volume' && <Volume data={data} date={date} setDate={setDate} />}
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
+        {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
       </main>
       {data.timer && <Timer timer={data.timer} onClose={() => change(state => ({ ...state, timer: null }))} />}
     </>}
     <nav className="bottom-nav" aria-label="Navegación principal">
-      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
+      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario'], ['measurements', 'ruler', 'Medidas']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
     </nav>
   </div>;
 }
@@ -188,6 +193,7 @@ function Volume({ data, date, setDate }) {
   function shift(delta) { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate() + delta); setDate(localDate(d)); }
   return <><div className="page-heading"><div><p className="eyebrow">CADA SERIE TIENE UN PROPÓSITO</p><h1>Tu volumen<span className="accent">.</span></h1></div><span className="outlined-tag">SEMANAL</span></div>
     <div className="week-selector"><button className="icon-button" aria-label="Semana anterior" onClick={() => shift(-7)}>←</button><span>{label(dates[0])} — {label(dates[6])} <small>{dates[0].slice(0, 4)}</small></span><button className="icon-button" aria-label="Semana siguiente" onClick={() => shift(7)}>→</button></div>
+    <WaistNotice records={data.measurements} date={date} />
     <div className="volume-summary"><div><span className="eyebrow">SERIES EFECTIVAS</span><strong>{total}<small> / {planned}</small></strong><p>realizadas / planeadas</p></div><div className="summary-divider" /><div><span className="eyebrow">PREPARACIÓN</span><strong>{preparations}</strong><p>guardadas aparte</p></div><div className="summary-divider" /><div><span className="eyebrow">EXTENSIONES</span><strong>{extensions}</strong><p>drop, RP y opcionales</p></div></div>
     <div className="section-heading"><h2>Series por músculo</h2><span className="legend"><i /> Realizado <i /> Planeado</span></div>
     <div className="volume-table"><div className="volume-table-head"><span>Músculo</span><span>Meta</span><span>Plan</span><span>Hecho</span></div>{rows.map(row => <div className="volume-row" key={row.muscle}><div className="volume-row-top"><strong>{row.muscle}</strong><span>{row.target}</span><span>{row.planned}</span><b>{row.done}</b></div><div className="volume-track" role="img" aria-label={`${row.muscle}: ${row.done} realizadas, ${row.planned} planeadas, meta ${row.target}`}><div className="planned-track" style={{ width: `${row.planned / Math.max(row.target, row.planned, row.done, 1) * 100}%` }} /><div className="done-track" style={{ width: `${row.done / Math.max(row.target, row.planned, row.done, 1) * 100}%` }} /><i style={{ left: `${Math.min(99.5, row.target / Math.max(row.target, row.planned, row.done, 1) * 100)}%` }} /></div></div>)}</div>

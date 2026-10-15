@@ -33,7 +33,7 @@ npm run preview -- --port 4173
 1. Abre `http://localhost:4173/Templates/` con conexión y espera **Offline listo**.
 2. Instala desde el botón de descarga de la cabecera o el menú del navegador.
    En iPhone: Safari → Compartir → Añadir a pantalla de inicio.
-3. En DevTools → Network, activa **Offline** y recarga. Navega por las tres
+3. En DevTools → Network, activa **Offline** y recarga. Navega por las
    pantallas y guarda una serie; seguirá disponible después de otra recarga.
 4. Para instalar desde un teléfono, sirve `dist/` en un alojamiento estático con
    **HTTPS**. `localhost` es la excepción permitida para pruebas en el computador;
@@ -93,6 +93,48 @@ actualiza `base`, la URL del README y la ruta de las pruebas de navegador.
 - **Diario:** peso corporal, sueño, energía, fatiga, estrés, dolor por zona y comidas
   para una fecha. Meta de sueño editable, aviso por dos noches cortas y gráfico semanal
   de peso con promedio móvil de 7 días. Todo se guarda en IndexedDB, también offline.
+- **Medidas:** seis medidas corporales en cm con fecha, cambios contra la anterior
+  y la inicial, gráficos y relaciones. Recordatorio quincenal al abrir la app; el
+  seguimiento de cintura también aparece en Volumen.
+
+### Medidas corporales
+
+Se cargan una sola vez los valores iniciales del **15/10/2026**: bíceps en pose
+35 cm, antebrazo 31,5 cm, cintura 70 cm, pecho 100 cm, muslo 59 cm y pantorrilla
+35,2 cm. Cada fecha tiene una medición editable; guardar otra vez la misma fecha
+actualiza el registro, sin duplicarlo. Puedes guardar medidas parciales; vacío
+significa «sin dato», nunca 0 cm. La medición inicial también es editable si necesitas
+corregirla; los cambios contra la inicial usarán sus valores corregidos.
+
+El cuadro muestra el último dato disponible hasta la fecha elegida para cada medida,
+con su fecha y diferencias contra la medición anterior disponible y la inicial.
+Las relaciones **pecho/cintura** y **bíceps/pantorrilla** usan valores de la misma
+fecha, sin mezclar días. Cada medida tiene gráfico de los últimos 20 registros y
+tabla de todos los datos guardados.
+
+El calendario parte del jueves 15/10/2026 y repite cada **14 días**: 29/10, 12/11,
+26/11, etc. Un control completo con las seis medidas cierra el recordatorio del
+período, aunque se registre tarde, sin mover el próximo jueves. Una anotación
+parcial no lo cierra. La app recuerda medir en ayunas y en las mismas condiciones,
+con el cuerpo relajado y el bíceps en pose. La casilla permite registrar si se
+cumplieron esas condiciones; no se presupone que los datos iniciales las confirmen.
+
+Cuando hay un control pendiente, aparece un aviso al abrir la app con acceso a
+Medidas. Es un recordatorio dentro de la PWA; no depende de notificaciones push ni
+de un servicio que se ejecute con la app cerrada.
+
+En **Volumen** aparece un aviso si la última cintura registrada subió **más de
+1 cm** frente al primer dato disponible dentro del mes calendario anterior a esa
+medición. Exactamente 1 cm no lo activa. Los límites de mes se ajustan al último
+día válido (por ejemplo, de 31 de marzo a 28 de febrero). Se muestran ambas fechas
+y el cambio real, sin extrapolar si falta una comparación dentro del mes. Un
+registro de cintura de hace más de un mes respecto de la fecha seleccionada no
+genera un aviso actual.
+
+Para probar: abre Medidas el 15/10 y verifica los valores precargados. Registra las
+seis medidas el 29/10 y el 12/11 para ver los cambios y el gráfico. Una cintura de
+71,2 cm el 12/11 frente a 70 cm del 15/10 debe activar el aviso en Volumen. Recarga
+sin conexión y comprueba que las mediciones y el diario permanecen guardados.
 
 ### Diario y comidas
 
@@ -254,8 +296,8 @@ Ni cardio ni pasos alteran el volumen semanal.
 ## Datos locales
 
 IndexedDB (`heavy-duty-personal`, versión 1) guarda rutina, metas, registros y
-temporizador, además de referencias, notas, cardio y pasos. El estado interno
-se migra a esquema 2 en una transacción, sin borrar series ni cambiar IDs,
+temporizador, además de referencias, notas, cardio, pasos, diario, comidas y medidas.
+El estado interno se migra a esquema 4 en una transacción, sin borrar series ni cambiar IDs,
 volumen o descansos personalizados. La preparación adopta los nuevos valores
 por defecto (2 en primeros/compuestos, 1 en el resto); la referencia se recupera
 de la última efectiva registrada cuando existe.
