@@ -34,10 +34,10 @@ test('aproximaciones y descansos respetan equipo y primer músculo', () => {
   assert.equal(restFor(ex, 'rp'), 20);
 });
 
-test('preparación de 1, 2 y 3 series usa los porcentajes y reps pedidos', () => {
+test('preparación de 0 a 3 series usa los porcentajes y reps pedidos', () => {
   const ex = initialState().routine[0][0];
-  const expected = { 1: [[60,8]], 2: [[50,10],[75,5]], 3: [[40,10],[60,6],[80,3]] };
-  for (const approaches of [1,2,3]) assert.deepEqual(preparationSuggestions({ ...ex, approaches },100).map(row => [row.weight,row.reps]),expected[approaches]);
+  const expected = { 0: [], 1: [[60,8]], 2: [[50,10],[75,8]], 3: [[40,10],[60,6],[80,3]] };
+  for (const approaches of [0,1,2,3]) assert.deepEqual(preparationSuggestions({ ...ex, approaches },100).map(row => [row.weight,row.reps]),expected[approaches]);
   assert.deepEqual(preparationSuggestions(ex,null),[]);
   assert.deepEqual(preparationSuggestions(ex,0).map(row => row.weight),[0,0]);
 });
@@ -58,7 +58,7 @@ test('migración conserva historial y recupera peso sin inventar RPE antiguos', 
   const ex = original.routine[0][0]; ex.equipment='free';
   original.logs=[{id:'old',exerciseId:ex.id,date:'2026-10-12',kind:'effective',weight:82.5,reps:7,failure:true,createdAt:'2026-10-12T12:00:00Z'}];
   const migrated=migrateState(original);
-  assert.equal(original.schemaVersion,1); assert.equal(migrated.schemaVersion,6);
+  assert.equal(original.schemaVersion,1); assert.equal(migrated.schemaVersion,7);
   assert.equal(migrated.logs[0].weight,82.5); assert.equal(migrated.logs[0].rpe,null);
   assert.equal(migrated.profiles[migrated.routine[0][0].profileId].workWeight,82.5);
   assert.equal(migrateState(migrated),migrated);

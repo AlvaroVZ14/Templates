@@ -1,5 +1,7 @@
 import { shiftDate } from './wellness.js';
 import { chileDate } from './program/state.js';
+import { contextualPreparation } from './preparation.js';
+import { dayContext } from './program/nutrition.js';
 
 const extensions=['drop','rp','forced','negative'];
 const days=(a,b)=>Math.round((Date.parse(`${b}T12:00:00Z`)-Date.parse(`${a}T12:00:00Z`))/86400000);
@@ -12,7 +14,9 @@ export function sessionExercise(state,exercise,date){
   const base=state.routine.flat().find(item=>item.id===exercise.id)??exercise;
   const trial=(state.techniqueTrials??[]).find(item=>item.date===date&&item.exerciseId===base.id);
   const deload=activeDeload(state,date);
-  return {...base,normalSets:base.sets,sets:deload?Math.ceil(base.sets/2):base.sets,technique:deload?'':trial?.kind??base.technique,forced:!deload&&base.forced,negative:!deload&&base.negative,deload:!!deload};
+  const session=dayContext(state,date).exercises;
+  const list=session.some(item=>item.id===base.id)?session:state.routine.find(list=>list.some(item=>item.id===base.id))??[base];
+  return {...base,...contextualPreparation(base,list,state.preparationSettings?.minimum??0),normalSets:base.sets,sets:deload?Math.ceil(base.sets/2):base.sets,technique:deload?'':trial?.kind??base.technique,forced:!deload&&base.forced,negative:!deload&&base.negative,deload:!!deload};
 }
 export function sessions(state,ex,date){
   const grouped=new Map();
@@ -53,6 +57,12 @@ export function introduceTechnique(state,ex,date,kind){
 }
 export function trainingLogError(state,ex,log){
   const current=sessionExercise(state,ex,log.date),same=state.logs.filter(item=>item.date===log.date&&item.exerciseId===ex.id);
+  if(['warmup','approach'].includes(log.kind)){
+    const reference=state.profiles[ex.profileId]?.workWeight;
+    if(!Number.isFinite(reference))return 'Ingresa tu peso de trabajo para registrar las previas.';
+    if(log.failure)return 'Las series previas nunca llegan al fallo.';
+    if(log.weight>reference*.8+1e-8)return `Las previas no pueden superar el 80% del peso de trabajo (${Number((reference*.8).toFixed(3))} kg).`;
+  }
   if(current.deload){
     if(extensions.includes(log.kind))return 'Descarga: sin técnicas de intensidad.';
     if(log.kind==='effective'&&(log.failure||log.rpe>6))return 'Descarga: lejos del fallo, sin fallo y RPE máximo 6.';

@@ -2,6 +2,7 @@ import { migrateDiary } from './wellness.js';
 import { migrateMeasurements } from './measurements.js';
 import { chileDate, migrateProgram } from './program/state.js';
 import { migrateTraining, sessionExercise, trainingLogError } from './training.js';
+import { migratePreparation, PREPARATION_STEPS } from './preparation.js';
 
 export const MUSCLES = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Aductor', 'Gemelo'];
 export const TARGETS = { Pecho: 8, Espalda: 9, Hombro: 8, Bíceps: 8, Tríceps: 6, Cuádriceps: 6, Femoral: 4, Aductor: 1, Gemelo: 1 };
@@ -9,11 +10,7 @@ export const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sáb
 export const TITLES = ['Pecho, hombro y bíceps', 'Espalda y tríceps', 'Día de descanso', 'Hombro y brazo', 'Pierna', 'Torso', 'Día de descanso'];
 export const KINDS = { warmup: 'Calentamiento', approach: 'Aproximación', effective: 'Efectiva', drop: 'Drop set', rp: 'Rest-pause', forced: 'Forzadas', negative: 'Negativas' };
 export const EXTENSIONS = ['drop', 'rp', 'forced', 'negative'];
-export const PREPARATION = {
-  1: [{ percent: 60, reps: 8 }],
-  2: [{ percent: 50, reps: 10 }, { percent: 75, reps: 5 }],
-  3: [{ percent: 40, reps: 10 }, { percent: 60, reps: 6 }, { percent: 80, reps: 3 }],
-};
+export const PREPARATION = PREPARATION_STEPS;
 export const EQUIPMENT = { barbell: 'Barra', dumbbell: 'Mancuernas (por mano)', machine: 'Máquina', cable: 'Polea' };
 export const INCREMENTS = { barbell: 2.5, dumbbell: 1, machine: 5, cable: 5 };
 export function inferEquipment(ex) {
@@ -25,7 +22,8 @@ function profileKey(ex) { return `${ex.name.trim().toLocaleLowerCase('es')}:${in
 export function roundWeight(weight, increment) { return Number((Math.max(0, Math.round(weight / increment)) * increment).toFixed(3)); }
 export function preparationSuggestions(ex, weight) {
   if (weight === null || !Number.isFinite(weight)) return [];
-  return PREPARATION[ex.approaches].map((step, index) => ({ kind: 'approach', step: index + 1, weight: roundWeight(weight * step.percent / 100, ex.increment), reps: step.reps, percent: step.percent }));
+  const cap=Number((Math.floor((weight*.8+1e-8)/ex.increment)*ex.increment).toFixed(3));
+  return (ex.preparationSteps??PREPARATION[ex.approaches]??[]).map((step, index) => ({ kind:'approach',step:index+1,weight:Math.min(roundWeight(weight*step.percent/100,ex.increment),cap),reps:step.reps,percent:step.percent,repRange:step.repRange }));
 }
 export function extensionSuggestions(ex, weight, kind = ex.technique, logs = []) {
   if (weight === null || !Number.isFinite(weight) || !['drop', 'rp'].includes(kind)) return [];
@@ -41,7 +39,7 @@ export function exerciseHistory(state, exercise) {
   return state.logs.filter(log => (log.profileId ?? log.exerciseId) === exercise.profileId).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 }
 export function migrateState(original) {
-  if (original.schemaVersion >= 2) return migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(original))));
+  if (original.schemaVersion >= 2) return migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(original)))));
   const state = structuredClone(original);
   state.profiles ??= {}; state.cardio ??= []; state.dailySteps ??= {};
   for (const day of state.routine) {
@@ -62,7 +60,7 @@ export function migrateState(original) {
     if (last && profile.workWeight === null) profile.workWeight = last.weight;
   }
   state.schemaVersion = 2;
-  return migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(state))));
+  return migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(state)))));
 }
 
 export function localDate(date = new Date()) {
@@ -76,7 +74,7 @@ export function weekDates(date) {
 }
 export function makeExercise(name = 'Nuevo ejercicio', muscle = 'Pecho', sets = 1, technique = '', equipment = 'barbell', compound = false, approaches = 1) {
   const id = crypto.randomUUID();
-  return { id, profileId: id, name, muscle, sets, technique, equipment, compound, approaches, increment: INCREMENTS[equipment] ?? 2.5, dropCount: 1, rpCount: 2, forced: false, negative: false, rests: { warmup: 90, effective: compound ? 210 : 150, rp: 20, drop: 15 } };
+  return { id, profileId: id, name, muscle, sets, technique, equipment, compound, approaches, preparationOverride:null, preparationJoint:'', increment: INCREMENTS[equipment] ?? 2.5, dropCount: 1, rpCount: 2, forced: false, negative: false, rests: { warmup: 90, effective: compound ? 210 : 150, rp: 20, drop: 15 } };
 }
 export function initialState() {
   const ex = (name, muscle, sets = 1, technique = '', equipment = 'free', compound = false, approaches = 1) => makeExercise(name, muscle, sets, technique, equipment, compound, approaches);
@@ -117,7 +115,7 @@ export function validateRoutine(routine) {
   for (const ex of routine.flat()) {
     if (!ex.name.trim()) return 'Escribe un nombre para cada ejercicio.';
     if (!Number.isInteger(ex.sets) || ex.sets < 1 || ex.sets > 20) return 'Cada ejercicio debe tener entre 1 y 20 series efectivas.';
-    if (!Number.isInteger(ex.approaches) || ex.approaches < 1 || ex.approaches > 3) return 'Elige entre 1 y 3 series de preparación por ejercicio.';
+    if (!Number.isInteger(ex.approaches) || ex.approaches < 0 || ex.approaches > 3 || ex.preparationOverride!=null&&(!Number.isInteger(ex.preparationOverride)||ex.preparationOverride<0||ex.preparationOverride>3)) return 'Elige entre 0 y 3 series previas por ejercicio.';
     if (!Number.isFinite(ex.increment) || ex.increment <= 0 || ex.increment > 100) return 'El redondeo debe ser mayor que 0 y hasta 100 kg.';
     if (!Number.isInteger(ex.dropCount) || ex.dropCount < 1 || ex.dropCount > 3) return 'Elige entre 1 y 3 caídas de drop set.';
     if (!Number.isInteger(ex.rpCount) || ex.rpCount < 1 || ex.rpCount > 10) return 'Elige entre 1 y 10 mini-series de rest-pause.';
@@ -136,7 +134,7 @@ export function recordSet(state, exercise, log) {
   if (invalid) throw new Error(invalid);
   const trainingError = trainingLogError(state,exercise,log);
   if (trainingError) throw new Error(trainingError);
-  log = {...log,deload:exercise.deload,techniqueIntroduced:['drop','rp'].includes(log.kind)&&exercise.technique!==log.kind,performedAt:log.date===chileDate()?new Date().toISOString():null};
+  log = {...log,...(['warmup','approach'].includes(log.kind)?{referenceWeight:state.profiles[exercise.profileId]?.workWeight}:{}),deload:exercise.deload,techniqueIntroduced:['drop','rp'].includes(log.kind)&&exercise.technique!==log.kind,performedAt:log.date===chileDate()?new Date().toISOString():null};
   const next = { ...state, logs: [...state.logs, log] };
   if (log.kind === 'effective' && !exercise.deload) next.profiles = { ...state.profiles, [exercise.profileId]: { workWeight: null, targetReps: 8, notes: '', ...state.profiles[exercise.profileId], workWeight: log.weight } };
   const prepared = next.logs.filter(item => item.exerciseId === exercise.id && item.date === log.date && item.kind === 'approach').length;

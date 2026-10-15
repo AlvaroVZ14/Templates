@@ -85,7 +85,7 @@ actualiza `base`, la URL del README y la ruta de las pruebas de navegador.
   historial con gráfico. Al final: cardio y pasos. Miércoles y domingo son descanso.
 - **Rutina:** editor por día; añade, quita y ordena ejercicios. Ajusta músculo
   principal, equipo, tipo compuesto/aislamiento, efectivas, extensión planeada,
-  preparaciones (1–3), redondeo de cargas, caídas de drop (1–3), mini-series de
+  previas automáticas o personales (0–3), zona de preparación, redondeo de cargas, caídas de drop (1–3), mini-series de
   rest-pause (1–10) y descansos. Pulsa **Guardar cambios** para persistir. Un borrador
   se conserva al cambiar de pantalla dentro de la app, pero no al recargar.
 - **Volumen:** meta original, plan actual y efectivas realizadas por músculo,
@@ -313,22 +313,53 @@ Los ejercicios de la rutina original con el mismo nombre y equipo comparten
 referencia, notas e historial entre días. Las series del día y las extensiones
 siguen vinculadas a su ejercicio y fecha, sin duplicar volumen.
 
-Primer ejercicio por músculo y compuestos pesados: 2 preparaciones; resto: 1.
-Puedes elegir de 1 a 3 por ejercicio en Rutina. No se recalculan al reordenar.
+Las previas dependen del orden de la rutina elegida para la fecha, sin exigir
+historial previo. **Auto** recalcula al reordenar, editar músculo/equipo/tipo o
+corregir el calendario. Cada ejercicio muestra **Series previas: N** y su motivo.
 
-| Preparaciones | Sugerencias desde el peso de trabajo |
+| Contexto automático | Sugerencias desde el peso de trabajo |
 | --- | --- |
-| 1 | 60% × 8 reps |
-| 2 | 50% × 10; 75% × 5 |
-| 3 | 40% × 10; 60% × 6; 80% × 3 |
+| Primero del músculo o zona | 2: 50% × 10–12 (se propone 10), 75% × 8 |
+| Compuesto posterior del músculo ya trabajado | 1 ligera: 60% × 8 |
+| Primer aislamiento o máquina tras trabajar el músculo | 1 muy ligera: 45% × 10 |
+| Aislamiento o máquina posterior | 0 |
+
+La clasificación de máquina tiene prioridad sobre compuesto; el tipo y equipo se
+pueden corregir en Rutina. Cada músculo tiene preparación independiente: hombro
+tras pecho cuenta como primero. **Zona o articulación de preparación**, opcional
+en Rutina, permite distinguir otra articulación dentro del mismo músculo; la
+primera aparición de esa combinación músculo/zona vuelve a tener dos previas.
+
+En Hoy, pulsa **0, 1, 2 o 3** bajo el ejercicio para guardar una elección con un
+toque; **Auto** vuelve a las reglas. La elección pertenece a esa entrada de la
+rutina y se recuerda entre fechas, sin copiarse a otros días. También se edita en
+Rutina. Si eliges dos se usan 50% × 10 y 75% × 8; tres usa 40% × 10, 60% × 6 y
+80% × 3. Una usa 45% × 10 si el contexto es aislamiento/máquina ya trabajado, o
+60% × 8 en el resto. Cambiar la cantidad no borra previas realizadas.
+
+En **Preparación: ajustes globales y opcionales**, el **mínimo de previas** es
+0 inicialmente y admite 0 o 1. Actúa como límite inferior también sobre las
+elecciones personales; elegir 0 con mínimo 1 conserva tu preferencia, pero muestra
+y propone una hasta que bajes el mínimo. Los botones y motivos aclaran ese ajuste.
 
 Redondeo al múltiplo más cercano, configurable por ejercicio: barra 2,5 kg,
-mancuernas 1 kg, máquina y polea 5 kg. Se redondean las sugerencias; la carga
-efectivamente registrada no se altera. Cargas muy pequeñas pueden dar 0 kg o el
-mismo peso al redondear: ajusta la sugerencia al material disponible.
+mancuernas 1 kg, máquina y polea 5 kg. Si subir al múltiplo más cercano superaría
+el **80% de la referencia**, se baja al mayor incremento permitido. Cargas muy
+pequeñas pueden dar 0 kg. Las previas manuales o sugeridas se rechazan si superan
+ese 80% o indican fallo; no se altera silenciosamente una carga real registrada.
 
 Cada preparación muestra el peso en grande, reps y RPE editables. Con un toque en
 **Guardar** se registra y queda marcada, siempre sin fallo y fuera del volumen.
+Conserva su referencia original, aunque después cambie el peso de trabajo.
+
+Los opcionales están **apagados inicialmente**: calentamiento general de 5–10 min
+(duración editable, inicialmente 5) y dos series de rotadores de 12 repeticiones
+sin fallo antes de un día de press. Se considera día de press si hay un ejercicio
+con «press» en el nombre o un compuesto principal de pecho/hombro. Cada actividad
+tiene casilla persistente por fecha; los rotadores solo aparecen en esos días.
+No suman volumen ni sustituyen las previas individuales. En descanso no se
+proponen estas actividades de pesas. Funcionan también durante descarga sin
+reactivar técnicas de intensidad.
 
 **Drop set:** 1 caída por defecto, hasta 3. Cada una propone 20% menos que la
 anterior, con redondeo. Si ajustas y registras una caída, la siguiente se calcula
@@ -375,7 +406,7 @@ Ni cardio ni pasos alteran el volumen semanal.
 ### Cómo probar cada sugerencia
 
 1. Abre el lunes y **Press banca** sin historial. Debe pedir el peso de trabajo.
-   Ingresa **100 kg**: aparecen **50 kg × 10** y **75 kg × 5**. Guarda una
+   Ingresa **100 kg**: aparecen **50 kg × 10** y **75 kg × 8**. Guarda una
    preparación con un toque; debe quedar marcada y no sumar volumen.
 2. En **Press declinado**, ingresa **100 kg**: antes de la efectiva se ve una
    caída a **80 kg**. Guarda la efectiva con **90 kg**: la referencia pasa a 90
@@ -383,9 +414,13 @@ Ni cardio ni pasos alteran el volumen semanal.
 3. En **Curl mancuernas sentado**, ingresa **20 kg por mano**: aparecen dos
    mini-series de **20 kg × 4**. Guarda la efectiva y luego ambas mini-series;
    el temporizador debe iniciar 20 s y el volumen sumar solo la efectiva.
-4. En Rutina, cambia preparación a **1** para ver **60% × 8** o a **3** para
+4. Bajo Press banca, cambia previas a **1** para ver **60% × 8** o a **3** para
    ver **40% × 10; 60% × 6; 80% × 3**. Con máquina/polea y **100 kg**, tres
    caídas dan **80, 65 y 50 kg** usando redondeo a 5 kg.
+   En Auto, Press declinado muestra 60% × 8, Aperturas mancuernas 45% × 10 y
+   Aperturas máquina ninguna. Elevaciones laterales vuelve a tener dos por ser el
+   primer ejercicio de hombro. Cambia el mínimo global a 1 y comprueba que ya no
+   se propone cero; recarga offline para verificar tus ajustes y casillas.
 5. Recarga: referencia, series, RPE y notas deben seguir ahí. Registra otra
    fecha para ver un segundo punto en el gráfico. Añade cardio y pasos, activa
    Offline en DevTools y vuelve a recargar: todo debe permanecer disponible.
@@ -462,10 +497,12 @@ y consulta el octavo día para verificar el regreso de la rutina normal.
 
 IndexedDB (`heavy-duty-personal`, versión 1) guarda rutina, metas, registros y
 temporizador, además de referencias, notas, cardio, pasos, diario, comidas y medidas.
-El estado interno se migra a esquema 6 en una transacción, sin borrar series ni cambiar IDs,
-volumen o descansos personalizados. La preparación adopta los nuevos valores
-por defecto (2 en primeros/compuestos, 1 en el resto); la referencia se recupera
-de la última efectiva registrada cuando existe.
+El estado interno se migra a esquema 7 en una transacción, sin borrar series ni cambiar IDs,
+volumen o descansos personalizados. Las cantidades predeterminadas antiguas pasan
+a Auto; las personalizadas que se pueden identificar por diferir del valor
+predeterminado anterior se conservan como elección personal. Los datos antiguos
+no distinguían una elección igual al valor predeterminado. La referencia se
+recupera de la última efectiva registrada cuando existe.
 Las modificaciones se confirman después de completar la transacción;
 si el navegador rechaza el almacenamiento se muestra un error, sin fingir un guardado.
 Las actualizaciones usan transacciones de lectura/escritura para conservar registros

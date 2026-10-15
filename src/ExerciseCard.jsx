@@ -3,6 +3,7 @@ import { EQUIPMENT, EXTENSIONS, KINDS, exerciseHistory, extensionSuggestions, fo
 import ExerciseHistory from './ExerciseHistory.jsx';
 import { trainingLogError } from './training.js';
 import { ProgressionPanel } from './TrainingPanels.jsx';
+import { PreparationCount } from './PreparationControls.jsx';
 
 export default function ExerciseCard({ exercise: ex, index, date, data, logs, expanded, toggle, change, saving, startTimer }) {
   const profile = data.profiles[ex.profileId] ?? { workWeight: null, targetReps: 8, notes: '' };
@@ -52,7 +53,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
     setKind(value); setMessage(''); setError('');
     const prep = ['warmup', 'approach'].includes(value);
     const nextStep = linkedLogs.filter(log => log.kind === value).length;
-    const suggestion = prep ? preparations.find(step => !logs.some(log => log.kind === 'approach' && log.step === step.step)) ?? preparations[0] : extensionSuggestions(ex, selectedParent?.weight ?? currentWeight, value, linkedLogs)[nextStep];
+    const suggestion = prep ? preparations.find(step => !logs.some(log => log.kind === 'approach' && log.step === step.step)) ?? preparations[0] ?? preparationSuggestions({...ex,approaches:1,preparationSteps:undefined},currentWeight)[0] : extensionSuggestions(ex, selectedParent?.weight ?? currentWeight, value, linkedLogs)[nextStep];
     setWeight(suggestion ? String(suggestion.weight) : currentWeight === null ? '' : String(currentWeight));
     setReps(String(suggestion?.reps ?? (value === 'rp' ? 4 : profile.targetReps)));
     setFailure(!prep&&!ex.deload); setRpe(prep||ex.deload ? '6' : '10');
@@ -62,7 +63,8 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
     const log = { id: crypto.randomUUID(), exerciseId: ex.id, profileId: ex.profileId, equipment: ex.equipment, exerciseName: ex.name, muscle: ex.muscle, date, kind: values.kind, weight: Number(values.weight), reps: Number(values.reps), rpe: Number(values.rpe), failure: ['warmup', 'approach'].includes(values.kind) ? false : values.failure, step: values.step ?? null, parentId: EXTENSIONS.includes(values.kind) ? selectedParent?.id ?? null : null, createdAt: new Date().toISOString() };
     if ([values.weight, values.reps, values.rpe].some(value => String(value).trim() === '')) { setError('Completa el peso, las repeticiones y el RPE.'); return false; }
     const invalid = validateLog(log, ex, data.logs); if (invalid) { setError(invalid); return false; }
-    const trainingError = trainingLogError(data,ex,log); if (trainingError) { setError(trainingError); return false; }
+    const validationState=referenceError()||ex.deload?data:{...data,profiles:{...data.profiles,[ex.profileId]:{...profile,workWeight:currentWeight}}};
+    const trainingError = trainingLogError(validationState,ex,log); if (trainingError) { setError(trainingError); return false; }
     const success = await change(state => {
       const next = referenceError()||ex.deload ? state : { ...state, profiles: { ...state.profiles, [ex.profileId]: { ...profile, ...state.profiles[ex.profileId], workWeight: currentWeight, targetReps: Number(target) } } };
       return recordSet(next, ex, log);
@@ -73,7 +75,8 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   const rows = (items, title) => items.length > 0 && <div className="log-group"><h4>{title}</h4>{items.map(log => <div className="log-row" key={log.id}><span className="log-mark">{log.kind === 'effective' ? '✓' : '·'}</span><div><strong>{KINDS[log.kind]}{log.step ? ` ${log.step}` : ''}{log.parentId ? ` · de E${effective.findIndex(item => item.id === log.parentId) + 1}` : ''}</strong><small>{log.failure ? 'Llegué al fallo' : 'Sin fallo'} · RPE {log.rpe ?? 'sin dato'}</small></div><b>{log.weight}<small> {unit}</small> × {log.reps}</b><button className="icon-button" aria-label={`Eliminar ${KINDS[log.kind]} de ${ex.name}`} disabled={saving} onClick={() => setDeleting(log.id)}>×</button></div>)}</div>;
 
   return <article className={`exercise-card ${expanded ? 'expanded' : ''}`}>
-    <button className="exercise-summary" onClick={toggle} aria-expanded={expanded} aria-controls={`exercise-${ex.id}`}><span className={`exercise-number ${effective.length >= ex.sets ? 'complete' : ''}`}>{effective.length >= ex.sets ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{ex.muscle}</span><strong>{ex.name}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''} · {ex.approaches} preparación</small></span><span className="exercise-count">{effective.length}<small>/{ex.sets}</small></span><span className="chevron">›</span></button>
+    <button className="exercise-summary" onClick={toggle} aria-expanded={expanded} aria-controls={`exercise-${ex.id}`}><span className={`exercise-number ${effective.length >= ex.sets ? 'complete' : ''}`}>{effective.length >= ex.sets ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{ex.muscle}</span><strong>{ex.name}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''} · series previas: {ex.approaches}</small></span><span className="exercise-count">{effective.length}<small>/{ex.sets}</small></span><span className="chevron">›</span></button>
+    <PreparationCount exercise={ex} change={change} saving={saving} />
     {expanded && <div className="exercise-body" id={`exercise-${ex.id}`}>
       <ProgressionPanel key={`${ex.profileId}-${date}`} data={data} exercise={ex} date={date} change={change} saving={saving} />
       <form className="work-reference" onSubmit={saveReference}>
@@ -83,7 +86,8 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
         <button type="submit" className="secondary" disabled={saving}>Guardar peso de trabajo</button>
       </form>
       {currentWeight === null ? <p className="suggestion-empty">Ingresa tu peso de trabajo arriba para ver los pesos sugeridos de preparación{ex.technique ? ` y ${KINDS[ex.technique]}` : ''}.</p> : <section className="suggestions" aria-label={`Sugerencias de ${ex.name}`}>
-        <div className="section-heading"><h3>Antes de la efectiva</h3><span>Sin fallo · no suma volumen</span></div>
+        <div className="section-heading"><h3>Antes de la efectiva</h3><span>Sin fallo · máximo 80% · no suma volumen</span></div>
+        {preparations.length===0&&<p className="field-note">Sin previas sugeridas para este ejercicio según tu contexto y ajustes.</p>}
         {preparations.map(step => <SuggestedSet key={`prep-${step.step}`} suggestion={step} unit={unit} saved={logs.find(log => log.kind === 'approach' && log.step === step.step)} saving={saving} onSave={saveSet} />)}
         <div className="work-preview"><span>Serie efectiva · meta</span><strong>{currentWeight} <small>{unit}</small></strong><b>× {target || '—'} reps</b></div>
         {ex.technique && <><div className="section-heading"><h3>{KINDS[ex.technique]} · después de la efectiva</h3></div><p className="field-note">{ex.technique === 'drop' ? `−20% por caída, redondeado · ${ex.rests.drop} s solo para cambiar la carga · a fallo.` : `Mismo peso · ${ex.rests.rp} s entre mini-series · a fallo, meta 3–5 reps.`} {selectedParent ? `Desde E${effective.indexOf(selectedParent) + 1}: ${selectedParent.weight} ${unit}.` : 'Vista previa. Primero registra una efectiva para guardar sus extensiones.'}</p>
@@ -117,9 +121,10 @@ function SuggestedSet({ suggestion: step, unit, saved, saving, blocked, onSave }
   const [rpe, setRpe] = useState(prep ? '6' : '10');
   const [failure, setFailure] = useState(!prep);
   useEffect(() => { setWeight(String(step.weight)); }, [step.weight]);
+  useEffect(() => { setReps(step.reps===null?'':String(step.reps)); }, [step.reps]);
   const title = prep ? `Aproximación ${step.step}` : step.kind === 'drop' ? `Caída ${step.step}` : `Mini-serie ${step.step}`;
   return <form className={`suggested-set ${saved ? 'saved' : ''}`} aria-label={title} onSubmit={event => { event.preventDefault(); onSave({ ...step, weight, reps, rpe, failure }); }}>
-    <div className="suggested-heading"><strong>{title}</strong><span>{prep ? `${step.percent}% · sin fallo` : step.kind === 'drop' ? '−20% · a fallo' : 'Mismo peso · a fallo'}</span></div>
+    <div className="suggested-heading"><strong>{title}</strong><span>{prep ? `${step.percent}%${step.repRange?` × ${step.repRange}`:''} · sin fallo` : step.kind === 'drop' ? '−20% · a fallo' : 'Mismo peso · a fallo'}</span></div>
     <div className="suggested-inputs"><label>Peso sugerido ({unit})<input aria-label={`Peso de ${title}`} type="number" min="0" max="1500" step="0.5" inputMode="decimal" value={saved ? saved.weight : weight} onChange={event => setWeight(event.target.value)} disabled={!!saved} required /></label><label>Reps<input aria-label={`Reps de ${title}`} type="number" min="1" max="200" placeholder={prep ? '' : step.kind === 'rp' ? '3–5' : 'Reales'} value={saved ? saved.reps : reps} onChange={event => setReps(event.target.value)} disabled={!!saved} required /></label><label>RPE<input aria-label={`RPE de ${title}`} type="number" min="0" max="10" step="0.5" inputMode="decimal" value={saved ? saved.rpe ?? '' : rpe} onChange={event => setRpe(event.target.value)} disabled={!!saved} required /></label></div>
     <div className="suggested-footer"><label className="check-label"><input type="checkbox" checked={saved ? saved.failure : failure} disabled={prep || !!saved} onChange={event => setFailure(event.target.checked)} /><span>{prep ? 'Sin fallo' : 'Llegué al fallo'}</span></label><button className={saved ? 'secondary' : 'primary'} type="submit" disabled={saving || blocked || !!saved} aria-label={`Guardar ${title}`}>{saved ? '✓ Guardada' : blocked ? 'Falta efectiva' : '✓ Guardar'}</button></div>
   </form>;
