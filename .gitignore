@@ -7,3 +7,8 @@ dist/
 .env.*
 *.pem
 *.key
+
+# Resultados de pruebas y archivos locales
+test-results/
+playwright-report/
+*.local
