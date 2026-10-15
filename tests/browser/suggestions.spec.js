@@ -12,7 +12,7 @@ test('sin historial pide referencia y muestra preparaciones calculadas antes de 
   await expect(page.getByLabel('Peso de Aproximación 1', { exact: true })).toHaveValue('50');
   await expect(page.getByLabel('Peso de Aproximación 2', { exact: true })).toHaveValue('75');
   await expect(page.getByLabel('Reps de Aproximación 1', { exact: true })).toHaveValue('10');
-  await expect(page.getByLabel('Reps de Aproximación 2', { exact: true })).toHaveValue('5');
+  await expect(page.getByLabel('Reps de Aproximación 2', { exact: true })).toHaveValue('8');
   await page.getByRole('button', { name: 'Guardar peso de trabajo', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Peso de trabajo guardado');
   await page.getByRole('button', { name: 'Guardar Aproximación 1', exact: true }).click();
