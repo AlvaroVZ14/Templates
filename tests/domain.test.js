@@ -58,7 +58,7 @@ test('migración conserva historial y recupera peso sin inventar RPE antiguos', 
   const ex = original.routine[0][0]; ex.equipment='free';
   original.logs=[{id:'old',exerciseId:ex.id,date:'2026-10-12',kind:'effective',weight:82.5,reps:7,failure:true,createdAt:'2026-10-12T12:00:00Z'}];
   const migrated=migrateState(original);
-  assert.equal(original.schemaVersion,1); assert.equal(migrated.schemaVersion,5);
+  assert.equal(original.schemaVersion,1); assert.equal(migrated.schemaVersion,6);
   assert.equal(migrated.logs[0].weight,82.5); assert.equal(migrated.logs[0].rpe,null);
   assert.equal(migrated.profiles[migrated.routine[0][0].profileId].workWeight,82.5);
   assert.equal(migrateState(migrated),migrated);

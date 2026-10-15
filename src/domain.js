@@ -1,6 +1,7 @@
 import { migrateDiary } from './wellness.js';
 import { migrateMeasurements } from './measurements.js';
 import { chileDate, migrateProgram } from './program/state.js';
+import { migrateTraining, sessionExercise, trainingLogError } from './training.js';
 
 export const MUSCLES = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Aductor', 'Gemelo'];
 export const TARGETS = { Pecho: 8, Espalda: 9, Hombro: 8, Bíceps: 8, Tríceps: 6, Cuádriceps: 6, Femoral: 4, Aductor: 1, Gemelo: 1 };
@@ -40,7 +41,7 @@ export function exerciseHistory(state, exercise) {
   return state.logs.filter(log => (log.profileId ?? log.exerciseId) === exercise.profileId).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 }
 export function migrateState(original) {
-  if (original.schemaVersion >= 2) return migrateProgram(migrateMeasurements(migrateDiary(original)));
+  if (original.schemaVersion >= 2) return migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(original))));
   const state = structuredClone(original);
   state.profiles ??= {}; state.cardio ??= []; state.dailySteps ??= {};
   for (const day of state.routine) {
@@ -61,7 +62,7 @@ export function migrateState(original) {
     if (last && profile.workWeight === null) profile.workWeight = last.weight;
   }
   state.schemaVersion = 2;
-  return migrateProgram(migrateMeasurements(migrateDiary(state)));
+  return migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(state))));
 }
 
 export function localDate(date = new Date()) {
@@ -98,7 +99,7 @@ export function weeklyVolume(state, date) {
   const dates = weekDates(date);
   return MUSCLES.map(muscle => ({
     muscle, target: state.targets[muscle],
-    planned: state.routine.flat().filter(ex => ex.muscle === muscle).reduce((sum, ex) => sum + ex.sets, 0),
+    planned: dates.flatMap((day,index)=>state.routine[index].map(ex=>sessionExercise(state,ex,day))).filter(ex => ex.muscle === muscle).reduce((sum, ex) => sum + ex.sets, 0),
     done: state.logs.filter(log => log.muscle === muscle && log.kind === 'effective' && dates.includes(log.date)).length,
   }));
 }
@@ -130,10 +131,14 @@ export function restFor(ex, kind, approachCount = 0) {
   return ex.rests.effective;
 }
 export function recordSet(state, exercise, log) {
+  exercise = sessionExercise(state,exercise,log.date);
   const invalid = validateLog(log, exercise, state.logs);
   if (invalid) throw new Error(invalid);
+  const trainingError = trainingLogError(state,exercise,log);
+  if (trainingError) throw new Error(trainingError);
+  log = {...log,deload:exercise.deload,techniqueIntroduced:['drop','rp'].includes(log.kind)&&exercise.technique!==log.kind,performedAt:log.date===chileDate()?new Date().toISOString():null};
   const next = { ...state, logs: [...state.logs, log] };
-  if (log.kind === 'effective') next.profiles = { ...state.profiles, [exercise.profileId]: { workWeight: null, targetReps: 8, notes: '', ...state.profiles[exercise.profileId], workWeight: log.weight } };
+  if (log.kind === 'effective' && !exercise.deload) next.profiles = { ...state.profiles, [exercise.profileId]: { workWeight: null, targetReps: 8, notes: '', ...state.profiles[exercise.profileId], workWeight: log.weight } };
   const prepared = next.logs.filter(item => item.exerciseId === exercise.id && item.date === log.date && item.kind === 'approach').length;
   const seconds = log.kind === 'effective' && exercise.technique ? exercise.rests[exercise.technique] : restFor(exercise, log.kind, prepared);
   next.timer = { end: Date.now() + seconds * 1000, duration: seconds, label: exercise.name };

@@ -12,6 +12,8 @@ import PhasePanel from './program/PhasePanel.jsx';
 import TodayPlan from './program/TodayPlan.jsx';
 import FoodPage from './program/FoodPage.jsx';
 import Recovery from './program/Recovery.jsx';
+import { sessionExercise } from './training.js';
+import { TrainingRecovery } from './TrainingPanels.jsx';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -119,7 +121,7 @@ function WeekStrip({ date, setDate, data }) {
 
 function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiary, onMeasures }) {
   const context = dayContext(data,date), day = context.routineDay;
-  const exercises = context.exercises;
+  const exercises = context.exercises.map(ex=>sessionExercise(data,ex,date));
   const [open, setOpen] = useState(null);
   const logs = data.logs.filter(log => log.date === date);
   const planned = exercises.reduce((sum, ex) => sum + ex.sets, 0);
@@ -135,7 +137,8 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
       <div className="progress-ring" style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
       <span className="hero-watermark" aria-hidden="true">HD</span>
     </section>
-    <div className="training-note"><Icon name="leaf" size={18} /><span>Natural. Ejecución controlada. Series efectivas al fallo técnico.</span></div>
+    <div className="training-note"><Icon name="leaf" size={18} /><span>{exercises.some(ex=>ex.deload)?'Descarga: ejecución controlada, sin fallo y sin técnicas.':'Natural. Ejecución controlada. Series efectivas al fallo técnico.'}</span></div>
+    <TrainingRecovery key={`recovery-${date}`} data={data} date={date} exercises={exercises} change={change} saving={saving} />
     <section className="session-list"><div className="section-heading"><h2>{exercises.length ? 'Tu sesión' : 'Recupera para la próxima'}</h2><span>{exercises.length ? `${done} de ${planned} efectivas` : DAYS[day]}</span></div>
       {exercises.length === 0 ? <div className="rest-card"><Icon name="leaf" size={42} /><h3>Hoy toca descansar.</h3><p>Tu rutina vuelve {day === 2 ? 'el jueves' : 'el lunes'}. Puedes consultar otro día en la semana de arriba.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} data={data} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => setOpen(activeId === exercise.id ? '' : exercise.id)} change={change} saving={saving} startTimer={startTimer} />)}
     </section>
