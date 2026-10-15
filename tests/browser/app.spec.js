@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 async function monday(page) {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
   await expect(page.getByRole('heading', { name: 'Pecho, hombro y bíceps' })).toBeVisible();
 }
@@ -70,6 +70,19 @@ test('PWA precachea los assets, permite recargar y guardar sin red', async ({ pa
   await expect(page.getByText('Offline listo')).toBeVisible();
   const manifest = await page.evaluate(async () => (await fetch('./manifest.webmanifest')).json());
   expect(manifest.display).toBe('standalone'); expect(manifest.icons).toHaveLength(2);
+  expect(new URL(manifest.start_url, page.url()).pathname).toBe('/Templates/');
+  expect(new URL(manifest.scope, page.url()).pathname).toBe('/Templates/');
+  expect(new URL(manifest.id, page.url()).pathname).toBe('/Templates/');
+  const paths = await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready;
+    const cacheNames = (await caches.keys()).filter(name => name.startsWith('heavy-duty-'));
+    const urls = (await Promise.all(cacheNames.map(async name => (await (await caches.open(name)).keys()).map(request => new URL(request.url).pathname)))).flat();
+    return { scope: new URL(registration.scope).pathname, worker: new URL(registration.active.scriptURL).pathname, urls };
+  });
+  expect(paths.scope).toBe('/Templates/');
+  expect(paths.worker).toBe('/Templates/sw.js');
+  expect(paths.urls.length).toBeGreaterThanOrEqual(7);
+  expect(paths.urls.every(path => path.startsWith('/Templates/'))).toBe(true);
   await context.setOffline(true);
   await page.reload();
   await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');

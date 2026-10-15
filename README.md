@@ -16,7 +16,7 @@ npm ci
 npm run dev
 ```
 
-Abre la URL que imprime Vite, normalmente `http://localhost:5173`.
+Abre la URL que imprime Vite, normalmente `http://localhost:5173/Templates/`.
 Si ya tienes este repositorio, ejecuta los comandos npm desde la carpeta que
 contiene `package.json` (en la copia original: `Templates-main/Templates-main`).
 
@@ -30,7 +30,7 @@ npm run build
 npm run preview -- --port 4173
 ```
 
-1. Abre `http://localhost:4173` con conexión y espera **Offline listo**.
+1. Abre `http://localhost:4173/Templates/` con conexión y espera **Offline listo**.
 2. Instala desde el botón de descarga de la cabecera o el menú del navegador.
    En iPhone: Safari → Compartir → Añadir a pantalla de inicio.
 3. En DevTools → Network, activa **Offline** y recarga. Navega por las tres
@@ -40,8 +40,42 @@ npm run preview -- --port 4173
    abrir la IP local por HTTP en el teléfono no habilita el service worker.
 
 El servidor de preview sirve archivos estáticos; la aplicación no necesita un
-backend. La configuración `base: './'` permite publicar `dist/` en un subdirectorio,
-por ejemplo `/Templates/`. Este cambio no configura ni publica GitHub Pages.
+backend. `base: '/Templates/'` corresponde al nombre real del repositorio.
+El manifest mantiene `id`, `start_url`, `scope` e iconos relativos a esa ruta;
+el service worker se registra en `/Templates/sw.js` con alcance `/Templates/`.
+
+### Publicar automáticamente en GitHub Pages
+
+El workflow `.github/workflows/pages.yml` prueba y compila con Node 24 y `npm ci`.
+Los Pull Requests a `main` ejecutan las pruebas sin desplegar; cada push a `main`
+publica `dist/` si pasan las pruebas de lógica y navegador. También admite ejecución
+manual sobre `main` desde Actions. Utiliza el token automático de GitHub, sin
+secretos ni tokens personales. Las acciones oficiales se fijan por revisión.
+
+Para activar por primera vez:
+
+1. En [Settings → Pages](https://github.com/AlvaroVZ14/Templates/settings/pages),
+   en **Build and deployment → Source**, elige **GitHub Actions**.
+2. Si Actions está deshabilitado, actívalo en **Settings → Actions → General** y
+   permite las acciones oficiales de GitHub. No necesitas dar permisos de escritura
+   globales: el job de publicación declara `pages: write` e `id-token: write`.
+3. Integra el Pull Request que contiene la app y este workflow en `main`.
+   Si ya estaba integrado antes de activar Pages, abre **Actions → Publicar PWA
+   en GitHub Pages → Run workflow**, selecciona `main` y ejecútalo.
+4. Espera que **Probar y compilar** y **Publicar en Pages** aparezcan en verde.
+
+URL de instalación una vez completado el primer despliegue:
+**https://alvarovz14.github.io/Templates/**
+
+Abre esa URL en Chrome para Android y selecciona **Instalar aplicación**; en
+iPhone, Safari → Compartir → Añadir a pantalla de inicio. Espera **Offline listo**
+antes de desconectarte. El historial local del computador no se transfiere al
+teléfono ni al nuevo origen HTTPS.
+
+El primer despliegue requiere habilitar Pages e integrar este workflow en `main`.
+Un push a `templates/inicio` conserva el código en GitHub; la publicación se
+dispara al integrar sus cambios en `main`. Si cambias el nombre del repositorio,
+actualiza `base`, la URL del README y la ruta de las pruebas de navegador.
 
 ## Tres pantallas
 
