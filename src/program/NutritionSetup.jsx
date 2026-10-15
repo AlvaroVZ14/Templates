@@ -1,0 +1,31 @@
+import { useState } from 'react';
+import { shiftDate } from '../wellness.js';
+import { adherence, confirmTargets, goalForDate, suggestedTargets, validateTargets } from './nutrition.js';
+import { phaseForDate, trendAdvice } from './phases.js';
+
+export default function NutritionSetup({data,date,change,saving,onDiary}){
+  const phase=phaseForDate(data,date),suggested=suggestedTargets(data,date),current=goalForDate(data,date);
+  const [base,setBase]=useState(data.baseIntake??''),[ratio,setRatio]=useState(data.programSettings.proteinRatio),[kcal,setKcal]=useState(current?.kcal??suggested?.kcal??''),[protein,setProtein]=useState(current?.protein??suggested?.protein??''),[fat,setFat]=useState(current?.fat??suggested?.fat??''),[reduction,setReduction]=useState(data.programSettings.restReduction*100),[snack,setSnack]=useState(data.programSettings.maintenanceSnack*100),[from,setFrom]=useState(data.nutritionDays[date]?.target?shiftDate(date,1):date);
+  const [message,setMessage]=useState(''),[error,setError]=useState(''),[expanded,setExpanded]=useState(!current);
+  const advice=trendAdvice(data,date,adherence(data,date));
+  function propose(){const next=suggestedTargets(data,date,Number(base),Number(ratio));if(!next){setError('Registra tu peso en Diario e ingresa tu consumo promedio actual.');return;}setKcal(Math.round(next.kcal));setProtein(Number(next.protein.toFixed(1)));setFat(Number(next.fat.toFixed(1)));setMessage('Propuesta calculada. Aún no cambia tus metas.');setError('');}
+  async function save(event){event.preventDefault();setMessage('');setError('');const proposed=suggestedTargets(data,date,Number(base),Number(ratio));if(!proposed){setError('Necesitas peso registrado, fase y consumo promedio actual.');return;}
+    const target={...proposed,baseIntake:Number(base),kcal:Number(kcal),protein:Number(protein),fat:Number(fat),proteinRatio:Number(ratio),restReduction:Number(reduction)/100,snackBudget:Number(snack)/100};
+    if(!from||Number(base)<=0||!Number.isFinite(Number(base))||Number(reduction)<0||Number(reduction)>10||Number(snack)<0||Number(snack)>20){setError('Revisa consumo, fecha, descanso (0–10%) y presupuesto de snacks (0–20%).');return;}
+    const invalid=validateTargets(target);if(invalid){setError(invalid);return;}
+    if(phaseForDate(data,from)?.id!==phase?.id){setError('La fecha elegida pertenece a otra fase; abre esa fecha antes de confirmar.');return;}
+    if(await change(state=>confirmTargets(state,target,from)))setMessage(`Metas confirmadas desde ${from}. Los días con metas guardadas conservan su versión.`);
+  }
+  const remaining=Number(kcal)-Number(protein)*4-Number(fat)*9;
+  return <details className="program-details" open={expanded} onToggle={event=>setExpanded(event.currentTarget.open)}><summary>Metas nutricionales y consumo base</summary><p className="field-note">Volumen: consumo +200–300 kcal. Mini cut: −300–500 kcal. Mantención: consumo como estimación inicial, revisable con la tendencia. Nada se aplica sin confirmar.</p>
+    {current&&phase&&current.phaseId!==phase.id&&<p className="notice">Este día conserva metas de una fase anterior. Confirma las metas de la nueva fase desde una fecha sin metas guardadas; los registros anteriores mantienen su versión.</p>}
+    <form className="program-form" onSubmit={save}><label>Ingresa tu consumo promedio actual (kcal/día)<input aria-label="Consumo promedio actual" type="number" min="1" max="10000" value={base} onChange={event=>setBase(event.target.value)} required /></label><div className="input-pair"><label>Proteína (g/kg)<input aria-label="Proteína g por kg" type="number" min="1.6" max="2.2" step="0.1" value={ratio} onChange={event=>setRatio(event.target.value)} required /></label><label>Reducción en descanso (%)<input aria-label="Reducción en descanso" type="number" min="0" max="10" value={reduction} onChange={event=>setReduction(event.target.value)} required /></label></div><button className="secondary" type="button" onClick={propose}>Calcular propuesta</button>
+      {!suggestedTargets(data,date,Number(base)||1,Number(ratio))&&<button className="quiet" type="button" onClick={onDiary}>Registrar peso en Diario</button>}
+      <div className="wellness-grid"><label>Calorías objetivo<input aria-label="Calorías objetivo" type="number" min="500" max="10000" value={kcal} onChange={event=>setKcal(event.target.value)} required /></label><label>Proteína objetivo (g)<input aria-label="Proteína objetivo" type="number" min="1" step="0.1" value={protein} onChange={event=>setProtein(event.target.value)} required /></label><label>Grasa mínima objetivo (g)<input aria-label="Grasa mínima objetivo" type="number" min="1" step="0.1" value={fat} onChange={event=>setFat(event.target.value)} required /></label><label>Snacks en mantención (%)<input aria-label="Snacks en mantención" type="number" min="0" max="20" value={snack} onChange={event=>setSnack(event.target.value)} required /></label></div>
+      <p className="field-note">Carbohidratos por calorías restantes: {Math.max(0,remaining/4).toFixed(1)} g. Grasa mínima: 0,6 g/kg. Proteína dividida entre 4 comidas: {(Number(protein)/4).toFixed(1)} g; referencia 30–40 g por comida. Si las metas no son compatibles, se informa sin cambiarlas.</p>
+      {advice.ready&&advice.delta!==0&&<div className="notice"><p>{advice.text}</p><button type="button" className="secondary" onClick={()=>{setKcal(Number(kcal)+advice.delta);setMessage('Ajuste preparado en el formulario. Falta Confirmar metas.');}}>Preparar ajuste de {advice.delta>0?'+':''}{advice.delta} kcal</button></div>}
+      <label>Aplicar desde<input aria-label="Aplicar metas desde" type="date" value={from} onChange={event=>setFrom(event.target.value)} required /></label><button className="primary full" disabled={saving}>Confirmar metas nutricionales</button>
+    </form>{message&&<p className="success" role="status">{message}</p>}{error&&<p className="error" role="alert">{error}</p>}
+    <details className="program-details"><summary>Calorías y metas confirmadas ({data.goalRevisions.length})</summary>{data.goalRevisions.map(goal=><p className="field-note" key={goal.id}>{goal.effectiveDate} · {goal.phaseKind} · {goal.kcal} kcal · {goal.protein} g proteína · confirmadas {goal.confirmedAt.slice(0,10)}</p>)}</details>
+  </details>;
+}

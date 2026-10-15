@@ -96,6 +96,103 @@ actualiza `base`, la URL del README y la ruta de las pruebas de navegador.
 - **Medidas:** seis medidas corporales en cm con fecha, cambios contra la anterior
   y la inicial, gráficos y relaciones. Recordatorio quincenal al abrir la app; el
   seguimiento de cintura también aparece en Volumen.
+- **Comida:** fases, metas confirmadas, base editable de siete alimentos, registro
+  rápido de consumo y gráficos diarios de kcal/proteína contra sus metas.
+
+### Fases, alimentación y recuperación
+
+**Primer uso:** registra tu peso real en Diario. En Comida, introduce tu consumo
+promedio actual en kcal/día, pulsa **Calcular propuesta**, revisa las metas y
+**Confirmar metas nutricionales**. La app no presupone tu consumo ni tu peso.
+La propuesta inicial usa consumo +250 kcal en volumen, −400 en mini cut y el
+consumo como estimación inicial de mantenimiento; son valores editables. Proteína
+inicial: 1,8 g/kg (configurable entre 1,6 y 2,2); grasa mínima: 0,6 g/kg;
+carbohidratos: las calorías restantes. Se informa si las metas son incompatibles.
+
+Hoy muestra la fase y el progreso. En Comida puedes editar o cambiar fase, consultar
+su trayectoria y el historial de pesos, cintura, cumplimiento y calorías confirmadas.
+Volumen apunta inicialmente a 74 kg el 31/12/2026; mini cut está programado desde
+el 01/01/2027 hasta 71 kg entre el 15 y el 31/03/2027. Puedes modificar las fechas
+y objetivos. Las fases futuras se activan al abrir o guardar desde su fecha y
+conservan la fase previa. Cambiar de fase no confirma nuevas calorías.
+
+El ritmo observado compara dos semanas con al menos cuatro pesos por semana;
+el peso de referencia diario es el promedio móvil de siete días disponibles.
+No se rellenan fechas sin datos. Se informa el ritmo necesario aunque sea
+incompatible con el rango previsto. Para sugerir ajustes de 100–200 kcal se
+requieren al menos dos semanas de fase, diez días completos de alimentación en
+los últimos catorce y 80% de cumplimiento (kcal ±10% y proteína ≥90%). Una subida
+de cintura superior a 1 cm impide sugerir aumentar calorías. Preparar un ajuste
+solo rellena el formulario: siempre debes confirmarlo.
+
+En Hoy, **Generar 4 comidas** calcula cantidades usando exclusivamente pan, huevo,
+arroz cocido, pollo, sopaipillas, empanadas de queso y galletas. Usa pollo y huevo
+para proteína, arroz y pan para carbohidratos y busca respetar la grasa mínima.
+Las cantidades discretas pueden dejar diferencias: se muestran, sin inventar
+alimentos. Los snacks se incorporan si hacen falta o los seleccionas, con un
+máximo del 20% de kcal en volumen, 10% en mini cut y hasta 20% configurable en
+mantención. El reparto de proteína muestra la referencia de 30–40 g por comida.
+
+Las comidas alrededor de pesas reciben más carbohidratos; pierna concentra una
+proporción mayor. La hora de entrenamiento es editable: comida previa 90 minutos
+antes y posterior una hora después. En descanso se mantienen las cuatro comidas
+y la proteína; puedes reducir 0–10% las kcal desde carbohidratos. El calendario
+permite cambiar tipo de día, rutina y hora; regenera explícitamente el plan para
+aplicar la distribución. El presupuesto semanal distingue metas de consumo real.
+
+**Comida realizada** registra una sola entrada por comida. Puedes ajustar las
+cantidades reales, añadir alimentos, desmarcar y volver a marcar sin duplicar.
+Plan y consumo se guardan por separado. Comida permite también registrar alimentos
+sueltos, editar o eliminar consumos y consultar otras fechas. Marca **Registros
+del día completos** solo cuando corresponda: la alerta de proteína necesita tres
+fechas consecutivas completas bajo meta; las fechas vacías no cuentan como fallo.
+Descartar una alerta evita repetirla durante la misma racha.
+
+Los siete alimentos tienen porción y macros editables permanentemente; el pollo
+indica crudo o cocido. **Valores aproximados. Edítalos según la etiqueta nutricional
+de tu producto.** Las referencias iniciales de alimentos comunes se basan en la
+[tabla de composición de USDA](https://www.ars.usda.gov/ARSUserFiles/oc/np/NutritiveValueofFoods/NutritiveValueofFoods.pdf);
+las kcal orientativas de sopaipilla y empanada de queso en la
+[referencia de Universidad Autónoma de Chile](https://www.uautonoma.cl/noticias/cuantas-calorias-consumiremos-en-estas-fiestas-patrias/).
+Las porciones, recetas y macros varían; no sustituyen una etiqueta específica.
+Editar la base recalcula los registros nuevos, mientras que los planes y consumos
+guardados conservan la composición original. Las comidas antiguas de Diario se
+incluyen una sola vez en kcal y proteína; no se inventan sus carbohidratos ni grasa.
+
+Las metas de un día se congelan al planificar o registrar consumo. Las revisiones
+confirmadas no sobrescriben esas metas históricas. Un cambio de calendario conserva
+la versión anterior y recalcula únicamente la distribución del día seleccionado;
+los consumos anteriores mantienen su propia referencia. Los planes regenerados
+tienen historial. Todas las fechas usan el calendario de **America/Santiago**.
+
+Cardio aparece después de las pesas: volumen 10–15 min, 3–4 días/semana;
+mini cut 20–30 min zona 2, 4–5 días; mantención 15–20 min, 3 días. Pierna propone
+solo caminata suave opcional. Fatiga ≥8 o dos noches consecutivas con menos de 7 h
+recomiendan reducir o saltar. Un estancamiento de dos semanas durante mini cut
+permite confirmar 5–10 minutos adicionales; nunca se aplica solo. Registrar una
+sesión marca realizado; también puedes marcar omitido. La frecuencia cuenta días
+distintos, conserva minutos e historial y no compensa omisiones.
+
+En descanso aparece **Recuperación de hoy** con casillas persistentes por fecha
+para sueño, pasos según tolerancia, movilidad, hidratación, peso y sensaciones.
+El domingo añade revisión semanal y medidas si corresponde. **Descanso cumplido**
+se puede marcar independientemente de las tareas opcionales.
+
+Para probar el flujo nuevo:
+
+1. Registra 70 kg y consumo base de 2200 kcal: la propuesta de volumen debe ser
+   2450 kcal; no cambia ninguna meta hasta confirmar.
+2. Genera cuatro comidas en Hoy. Marca una, recarga, desmárcala y vuelve a marcar:
+   debe existir un único consumo. Edita un alimento en Comida: los registros
+   anteriores conservan sus valores; los nuevos usan la edición.
+3. Cambia el calendario entre pesas, pierna y descanso; regenera para comprobar
+   horarios, carbohidratos y presupuesto. En domingo marca Descanso cumplido sin
+   completar las otras casillas y recarga.
+4. Confirma una fase diferente y revisa el historial. No deben cambiar las calorías
+   sin una confirmación aparte. Registra fatiga 9 para ver la recomendación de
+   reducir cardio. Cierra tres días completos bajos en proteína para ver la alerta.
+5. Espera Offline listo, desconecta y recarga: planes, consumos, fases y casillas
+   siguen disponibles. Prueba también con un ancho de pantalla de 390 px.
 
 ### Medidas corporales
 
@@ -297,7 +394,7 @@ Ni cardio ni pasos alteran el volumen semanal.
 
 IndexedDB (`heavy-duty-personal`, versión 1) guarda rutina, metas, registros y
 temporizador, además de referencias, notas, cardio, pasos, diario, comidas y medidas.
-El estado interno se migra a esquema 4 en una transacción, sin borrar series ni cambiar IDs,
+El estado interno se migra a esquema 5 en una transacción, sin borrar series ni cambiar IDs,
 volumen o descansos personalizados. La preparación adopta los nuevos valores
 por defecto (2 en primeros/compuestos, 1 en el resto); la referencia se recupera
 de la última efectiva registrada cuando existe.
@@ -328,6 +425,11 @@ Las pruebas de lógica verifican la rutina, descansos, fechas locales, volumen y
 extensiones. Las de navegador comprueban IndexedDB tras recargar, edición de
 rutina, técnicas opcionales, recarga y escritura offline, días de descanso y
 ausencia de desbordamiento horizontal entre 320 y 1440 px.
+También verifican fases y cierres programados, promedios, elegibilidad de ajustes,
+metas congeladas, base alimentaria e historial, planes de cuatro comidas, límites
+de snacks, calendario, consumo sin duplicados, alertas, cardio y recuperación.
+Los cálculos y componentes nuevos se organizan en `src/program/`; la persistencia
+reutiliza las transacciones existentes de `src/db.js`.
 
 Los iconos PNG se incluyen en `public/`; para regenerarlos a partir de la marca
 geométrica propia: `node scripts/generate-icons.mjs`.

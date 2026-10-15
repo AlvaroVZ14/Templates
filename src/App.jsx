@@ -6,6 +6,12 @@ import Cardio from './Cardio.jsx';
 import Diary from './Diary.jsx';
 import Measurements, { WaistNotice } from './Measurements.jsx';
 import { measurementReminder } from './measurements.js';
+import { advancePhases, captureAnchors } from './program/phases.js';
+import { dayContext } from './program/nutrition.js';
+import PhasePanel from './program/PhasePanel.jsx';
+import TodayPlan from './program/TodayPlan.jsx';
+import FoodPage from './program/FoodPage.jsx';
+import Recovery from './program/Recovery.jsx';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -22,6 +28,7 @@ function Icon({ name, size = 22 }) {
     leaf: <><path d="M20 4c0 12-3 16-9 16a7 7 0 0 1 0-14zM4 20 15 9" /></>,
     diary: <><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-3-2H4zM13 7a3 3 0 0 1 3-3h5v15h-5a4 4 0 0 0-3 2" /></>,
     ruler: <><path d="m3 16 13-13 5 5L8 21zM7 12l2 2m2-6 2 2m2-6 2 2" /></>,
+    food: <><path d="M5 3v7m3-7v7m3-7v7M5 7h6m-3 3v11M19 3c-4 3-4 9 0 9V3zm0 9v9" /></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.bar}</svg>;
 }
@@ -60,7 +67,7 @@ export default function App() {
   async function boot() {
     setError('');
     try {
-      const state = await updateState(existing => existing ? migrateState(existing) : initialState());
+      const state = await updateState(existing => captureAnchors(advancePhases(existing ? migrateState(existing) : initialState(),localDate())));
       setData(state);
     } catch { setError('No se pudo abrir IndexedDB. Permite el almacenamiento del navegador y vuelve a intentar.'); }
   }
@@ -69,7 +76,7 @@ export default function App() {
     if (locked.current) return false;
     locked.current = true; setSaving(true); setError('');
     try {
-      const next = await updateState(updater);
+      const next = await updateState(state => captureAnchors(advancePhases(updater(state),localDate())));
       setData(next);
       return true;
     } catch { setError('No se pudo guardar. Tu cambio sigue en pantalla: libera espacio o permite el almacenamiento y vuelve a intentar.'); return false; }
@@ -91,27 +98,28 @@ export default function App() {
     {!data ? <main className="loading" aria-live="polite">{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</main> : <>
       <main id="main-content">
         {page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { setDate(localDate()); setPage('measurements'); }}>Ir a Medidas</button></aside>}
-        {page === 'today' && <Today data={data} date={date} setDate={setDate} change={change} saving={saving} startTimer={startTimer} />}
+        {page === 'today' && <Today data={data} date={date} setDate={setDate} change={change} saving={saving} startTimer={startTimer} onFood={()=>setPage('food')} onDiary={()=>setPage('diary')} onMeasures={()=>setPage('measurements')} />}
         <div hidden={page !== 'routine'}><Routine data={data} change={change} saving={saving} /></div>
         {page === 'volume' && <Volume data={data} date={date} setDate={setDate} />}
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
+        {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>setPage('diary')} />}
       </main>
       {data.timer && <Timer timer={data.timer} onClose={() => change(state => ({ ...state, timer: null }))} />}
     </>}
     <nav className="bottom-nav" aria-label="Navegación principal">
-      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario'], ['measurements', 'ruler', 'Medidas']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
+      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario'], ['measurements', 'ruler', 'Medidas'], ['food', 'food', 'Comida']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
     </nav>
   </div>;
 }
 
-function WeekStrip({ date, setDate }) {
-  return <div className="week-strip" aria-label="Días de la semana">{weekDates(date).map((value, index) => <button key={value} onClick={() => setDate(value)} className={`${value === date ? 'selected' : ''} ${value === localDate() ? 'is-today' : ''}`} aria-pressed={value === date} aria-label={`${DAYS[index]} ${value}`}><span>{DAYS[index].slice(0, 3)}</span><strong>{Number(value.slice(-2))}</strong><i className={[2, 6].includes(index) ? 'rest-dot' : ''} /></button>)}</div>;
+function WeekStrip({ date, setDate, data }) {
+  return <div className="week-strip" aria-label="Días de la semana">{weekDates(date).map((value, index) => <button key={value} onClick={() => setDate(value)} className={`${value === date ? 'selected' : ''} ${value === localDate() ? 'is-today' : ''}`} aria-pressed={value === date} aria-label={`${DAYS[index]} ${value}`}><span>{DAYS[index].slice(0, 3)}</span><strong>{Number(value.slice(-2))}</strong><i className={dayContext(data,value).type==='rest' ? 'rest-dot' : ''} /></button>)}</div>;
 }
 
-function Today({ data, date, setDate, change, saving, startTimer }) {
-  const day = dayIndex(date);
-  const exercises = data.routine[day];
+function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiary, onMeasures }) {
+  const context = dayContext(data,date), day = context.routineDay;
+  const exercises = context.exercises;
   const [open, setOpen] = useState(null);
   const logs = data.logs.filter(log => log.date === date);
   const planned = exercises.reduce((sum, ex) => sum + ex.sets, 0);
@@ -120,7 +128,8 @@ function Today({ data, date, setDate, change, saving, startTimer }) {
   const activeId = open === null ? exercises[0]?.id : open;
   return <>
     <div className="page-heading"><div><p className="eyebrow">TU ÚNICA COMPETENCIA ERES TÚ</p><h1>A entrenar<span className="accent">.</span></h1></div><label className="date-picker"><span>{date === localDate() ? 'Hoy' : 'Fecha'}<Icon name="today" size={17} /></span><input aria-label="Fecha de entrenamiento" type="date" value={date} onChange={event => event.target.value && setDate(event.target.value)} /></label></div>
-    <WeekStrip date={date} setDate={value => { setOpen(null); setDate(value); }} />
+    <WeekStrip data={data} date={date} setDate={value => { setOpen(null); setDate(value); }} />
+    <PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact />
     <section className="session-hero">
       <div className="hero-copy"><span className="pill">{exercises.length ? 'HEAVY DUTY / BLOOD & GUTS' : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? [2, 6].includes(day) ? 'Sesión personalizada' : TITLES[day] : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
       <div className="progress-ring" style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
@@ -130,7 +139,9 @@ function Today({ data, date, setDate, change, saving, startTimer }) {
     <section className="session-list"><div className="section-heading"><h2>{exercises.length ? 'Tu sesión' : 'Recupera para la próxima'}</h2><span>{exercises.length ? `${done} de ${planned} efectivas` : DAYS[day]}</span></div>
       {exercises.length === 0 ? <div className="rest-card"><Icon name="leaf" size={42} /><h3>Hoy toca descansar.</h3><p>Tu rutina vuelve {day === 2 ? 'el jueves' : 'el lunes'}. Puedes consultar otro día en la semana de arriba.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} data={data} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => setOpen(activeId === exercise.id ? '' : exercise.id)} change={change} saving={saving} startTimer={startTimer} />)}
     </section>
+    <TodayPlan key={`plan-${date}`} data={data} date={date} change={change} saving={saving} onFood={onFood} />
     <Cardio key={date} data={data} date={date} change={change} saving={saving} />
+    <Recovery data={data} date={date} change={change} saving={saving} onDiary={onDiary} onMeasures={onMeasures} />
     <p className="local-footnote"><span className="tiny-dot" /> Guardado en este dispositivo · Sin cuenta ni servidor</p>
   </>;
 }
