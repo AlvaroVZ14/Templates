@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { EQUIPMENT, EXTENSIONS, KINDS, exerciseHistory, extensionSuggestions, formatSeconds, preparationSuggestions, recordSet, removeLog, validateLog } from './domain.js';
 import ExerciseHistory from './ExerciseHistory.jsx';
+import { trainingLogError } from './training.js';
+import { ProgressionPanel } from './TrainingPanels.jsx';
 
 export default function ExerciseCard({ exercise: ex, index, date, data, logs, expanded, toggle, change, saving, startTimer }) {
   const profile = data.profiles[ex.profileId] ?? { workWeight: null, targetReps: 8, notes: '' };
@@ -24,7 +26,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   const preparations = preparationSuggestions(ex, currentWeight);
   const extensions = extensionSuggestions(ex, selectedParent?.weight ?? currentWeight, ex.technique, linkedLogs);
   const unit = ex.equipment === 'dumbbell' ? 'kg por mano' : 'kg';
-  const allowed = Object.entries(KINDS).filter(([value]) => !['forced', 'negative'].includes(value) || ex[value]);
+  const allowed = Object.entries(KINDS).filter(([value]) => (!ex.deload||!EXTENSIONS.includes(value))&&(!['forced', 'negative'].includes(value) || ex[value]));
 
   useEffect(() => {
     setReference(profile.workWeight === null ? '' : String(profile.workWeight));
@@ -32,6 +34,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
     if (kind === 'effective') { setWeight(profile.workWeight === null ? '' : String(profile.workWeight)); setReps(String(profile.targetReps)); }
   }, [profile.workWeight, profile.targetReps]);
   useEffect(() => { if (['forced', 'negative'].includes(kind) && !ex[kind]) chooseKind('effective'); }, [ex.forced, ex.negative]);
+  useEffect(() => { setKind('effective'); setFailure(!ex.deload); setRpe(ex.deload?'6':'10'); }, [ex.deload]);
 
   function referenceError() {
     if (currentWeight === null || currentWeight > 1500) return 'Ingresa tu peso de trabajo entre 0 y 1500 kg.';
@@ -52,15 +55,16 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
     const suggestion = prep ? preparations.find(step => !logs.some(log => log.kind === 'approach' && log.step === step.step)) ?? preparations[0] : extensionSuggestions(ex, selectedParent?.weight ?? currentWeight, value, linkedLogs)[nextStep];
     setWeight(suggestion ? String(suggestion.weight) : currentWeight === null ? '' : String(currentWeight));
     setReps(String(suggestion?.reps ?? (value === 'rp' ? 4 : profile.targetReps)));
-    setFailure(!prep); setRpe(prep ? '6' : '10');
+    setFailure(!prep&&!ex.deload); setRpe(prep||ex.deload ? '6' : '10');
   }
   async function saveSet(values) {
     setError(''); setMessage('');
     const log = { id: crypto.randomUUID(), exerciseId: ex.id, profileId: ex.profileId, equipment: ex.equipment, exerciseName: ex.name, muscle: ex.muscle, date, kind: values.kind, weight: Number(values.weight), reps: Number(values.reps), rpe: Number(values.rpe), failure: ['warmup', 'approach'].includes(values.kind) ? false : values.failure, step: values.step ?? null, parentId: EXTENSIONS.includes(values.kind) ? selectedParent?.id ?? null : null, createdAt: new Date().toISOString() };
     if ([values.weight, values.reps, values.rpe].some(value => String(value).trim() === '')) { setError('Completa el peso, las repeticiones y el RPE.'); return false; }
     const invalid = validateLog(log, ex, data.logs); if (invalid) { setError(invalid); return false; }
+    const trainingError = trainingLogError(data,ex,log); if (trainingError) { setError(trainingError); return false; }
     const success = await change(state => {
-      const next = referenceError() ? state : { ...state, profiles: { ...state.profiles, [ex.profileId]: { ...profile, ...state.profiles[ex.profileId], workWeight: currentWeight, targetReps: Number(target) } } };
+      const next = referenceError()||ex.deload ? state : { ...state, profiles: { ...state.profiles, [ex.profileId]: { ...profile, ...state.profiles[ex.profileId], workWeight: currentWeight, targetReps: Number(target) } } };
       return recordSet(next, ex, log);
     });
     if (success) setMessage(`${KINDS[log.kind]} guardada · ${log.weight} ${unit} × ${log.reps} · RPE ${log.rpe}`);
@@ -71,6 +75,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   return <article className={`exercise-card ${expanded ? 'expanded' : ''}`}>
     <button className="exercise-summary" onClick={toggle} aria-expanded={expanded} aria-controls={`exercise-${ex.id}`}><span className={`exercise-number ${effective.length >= ex.sets ? 'complete' : ''}`}>{effective.length >= ex.sets ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{ex.muscle}</span><strong>{ex.name}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''} · {ex.approaches} preparación</small></span><span className="exercise-count">{effective.length}<small>/{ex.sets}</small></span><span className="chevron">›</span></button>
     {expanded && <div className="exercise-body" id={`exercise-${ex.id}`}>
+      <ProgressionPanel key={`${ex.profileId}-${date}`} data={data} exercise={ex} date={date} change={change} saving={saving} />
       <form className="work-reference" onSubmit={saveReference}>
         <h3>{profile.workWeight === null ? 'Ingresa tu peso de trabajo' : 'Tu peso de trabajo'}</h3>
         <p>{EQUIPMENT[ex.equipment]} · {ex.equipment === 'dumbbell' ? 'Registra el peso de una mancuerna, por mano.' : 'Carga total de trabajo.'} Redondeo: {ex.increment} kg.</p>

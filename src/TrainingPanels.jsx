@@ -1,0 +1,29 @@
+import { useState } from 'react';
+import { MUSCLES } from './domain.js';
+import { activeDeload, applyProgression, deloadAdvice, finishDeload, introduceTechnique, muscleRecovery, progression, startDeload } from './training.js';
+
+export function ProgressionPanel({data,exercise,date,change,saving}){
+  const advice=progression(data,exercise,date),profile=data.profiles[exercise.profileId]??{};
+  const [min,setMin]=useState(profile.repMin??8),[max,setMax]=useState(profile.repMax??12),[message,setMessage]=useState(''),[error,setError]=useState('');
+  async function act(updater,text){setError('');setMessage('');let reason='';const success=await change(state=>{try{return updater(state);}catch(error){reason=error.message;throw error;}});if(success)setMessage(text);else if(reason)setError(reason);}
+  return <section className="training-recommendation" aria-label={`Progresión de ${exercise.name}`}><h3>Progresión · regla y motivo</h3><p>{advice.reason}</p>
+    {advice.type==='increase'&&<button type="button" className="secondary" disabled={saving} onClick={()=>act(state=>applyProgression(state,exercise,date),`Referencia actualizada a ${advice.weight} kg. Preparación y futuras extensiones usan esa referencia.`)}>Aplicar referencia de {advice.weight} kg</button>}
+    {advice.type==='technique'&&!exercise.technique&&<div className="program-actions">{[['drop','drop set'],['rp','rest-pause']].map(([kind,label])=><button key={kind} className="secondary" disabled={saving} onClick={()=>act(state=>introduceTechnique(state,exercise,date,kind),'Técnica introducida solo para esta sesión. No se añade otra técnica hoy.')}>Probar {label} hoy</button>)}</div>}
+    {advice.type==='technique'&&exercise.technique&&<p>Este ejercicio ya tiene técnica: evalúa su respuesta antes de añadir o cambiar otra.</p>}
+    <details className="program-details"><summary>Rango de doble progresión: {profile.repMin??8}–{profile.repMax??12} reps</summary><form className="program-form" onSubmit={event=>{event.preventDefault();setError('');const low=Number(min),high=Number(max);if(!Number.isInteger(low)||!Number.isInteger(high)||low<1||high>200||low>high){setError('Rango: enteros de 1 a 200; mínimo no mayor que máximo.');return;}act(state=>({...state,profiles:{...state.profiles,[exercise.profileId]:{...state.profiles[exercise.profileId],repMin:low,repMax:high}}}),'Rango guardado. No cambia series ni cargas registradas.');}}><div className="input-pair"><label>Mínimo de reps<input aria-label={`Mínimo de reps de ${exercise.name}`} type="number" min="1" max="200" value={min} onChange={event=>setMin(event.target.value)} required/></label><label>Máximo de reps<input aria-label={`Máximo de reps de ${exercise.name}`} type="number" min="1" max="200" value={max} onChange={event=>setMax(event.target.value)} required/></label></div><button className="secondary" disabled={saving}>Guardar rango de reps</button></form></details>
+    <p className="field-note">Una técnica por ejercicio y sesión; como máximo una introducción nueva por sesión. Primero drop set o rest-pause. Forzadas/negativas requieren activación manual y se limitan a 2 ejercicios en total por fecha.</p>
+    {message&&<p className="success" role="status">{message}</p>}{error&&<p className="error" role="alert">{error}</p>}
+  </section>;
+}
+export function TrainingRecovery({data,date,exercises,change,saving}){
+  const deload=activeDeload(data,date),advice=deloadAdvice(data,date),muscles=new Set(exercises.map(ex=>ex.muscle));
+  const [message,setMessage]=useState('');
+  return <section className="wellness-card training-recovery"><div className="section-heading"><h2>Estímulo y recuperación</h2><span>{deload?'Descarga activa':'Reglas visibles'}</span></div>
+    <p className="field-note">Días desde el último estímulo efectivo por músculo. Se cuenta el músculo principal registrado; preparaciones y extensiones no crean otro estímulo.</p>
+    <div className="stimulus-list">{MUSCLES.map(muscle=>{const item=muscleRecovery(data,muscle,date);return <div key={muscle}><strong>{muscle}{muscles.has(muscle)?' · hoy':''}</strong><span>{item.label}</span>{muscles.has(muscle)&&item.warning&&<p className="recovery-warning">Menos de 48 h de recuperación desde la sesión anterior ({item.last}). Revisa si conviene posponer este músculo.</p>}{muscles.has(muscle)&&item.uncertain&&<p>Han pasado dos fechas, pero falta la hora: no se pueden confirmar 48 h completas.</p>}</div>;})}</div>
+    <h3 className="program-subtitle">Descarga</h3><p className={advice.due&&!deload?'notice':'field-note'}>{advice.reason}</p>
+    <p className="field-note">7 días, misma carga de referencia, 50% de series por ejercicio redondeando hacia arriba (1 → 1), sin técnicas, sin fallo y RPE ≤6. Las aproximaciones y sus pesos se mantienen. Se aplica solo al confirmar; no cambia la rutina base.</p>
+    {deload?<><p className="notice">Descarga activa: {deload.startDate} — {deload.actualEnd??deload.endDate}. Drop set y rest-pause ocultos. La progresión está pausada.</p><button className="secondary" disabled={saving||deload.actualEnd===date} onClick={async()=>{if(await change(state=>finishDeload(state,date)))setMessage('Descarga finaliza al cierre de hoy. Mañana vuelve el plan normal.');}}>Finalizar descarga al cierre de hoy</button></>:<button className="secondary" disabled={saving} onClick={async()=>{if(await change(state=>startDeload(state,date)))setMessage('Descarga de 7 días confirmada. Preparaciones conservadas y técnicas desactivadas.');}}>Confirmar descarga de 7 días</button>}
+    <details className="program-details"><summary>Historial de descargas ({data.deloads.length})</summary>{data.deloads.map(item=><p className="field-note" key={item.id}>{item.startDate} — {item.actualEnd??item.endDate}{item.startDate>date?' · programada':(item.actualEnd??item.endDate)>=date?' · en curso':' · finalizada'}</p>)}</details>{message&&<p className="success" role="status">{message}</p>}
+  </section>;
+}

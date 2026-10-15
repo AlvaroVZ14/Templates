@@ -390,11 +390,79 @@ Ni cardio ni pasos alteran el volumen semanal.
    fecha para ver un segundo punto en el gráfico. Añade cardio y pasos, activa
    Offline en DevTools y vuelve a recargar: todo debe permanecer disponible.
 
+## Progresión, técnicas y descarga
+
+En cada ejercicio de Hoy, **Progresión · regla y motivo** explica la recomendación.
+El rango de doble progresión es editable en ese panel (inicialmente 8–12 reps;
+si tu objetivo previo era mayor, se conserva). Se compara la primera efectiva de
+cada fecha, del mismo ejercicio y equipo, sin mezclar preparaciones, extensiones
+o series marcadas como descarga. Varias series de una fecha no cuentan como
+varias sesiones.
+
+- Llegar al tope del rango al fallo propone el menor aumento disponible entre
+  **2,5 y 5%**, respetando el incremento del equipo. Si ningún incremento cabe en
+  ese intervalo, lo informa y conserva la referencia. La propuesta usa una sesión
+  de los últimos 14 días y se puede aplicar una sola vez por efectiva.
+- **Aplicar referencia** actualiza el peso de trabajo compartido, reinicia la meta
+  de reps al mínimo del rango y conserva un evento con motivo y valor anterior.
+  Las preparaciones se recalculan inmediatamente; las futuras sugerencias de drop
+  y rest-pause usan la nueva referencia. Las extensiones de una efectiva ya
+  registrada siguen usando su carga real, sin alterar esa serie retrospectivamente.
+- Si carga o reps bajan en **dos sesiones consecutivas**, prioriza mantener y
+  revisar ejecución y recuperación; no propone subir simultáneamente.
+- Estancamiento: al menos tres sesiones de los últimos 28 días abarcan 21 días,
+  ninguna supera la carga o las reps a igual carga de la primera, y la última
+  ocurrió hace no más de siete días. Los días sin entrenamiento no bastan para
+  detectar estancamiento. Ofrece probar **drop set o rest-pause** en esa sesión.
+
+Se introduce como máximo una técnica nueva por fecha, tanto desde la recomendación
+como al registrar una extensión no planeada. No se mezclan técnicas en un mismo
+ejercicio y sesión. Se conservan las técnicas que ya trae tu rutina. Forzadas y
+negativas siguen desactivadas por defecto: requieren activación manual en Rutina y
+se pueden registrar en **dos ejercicios como máximo por sesión entre ambas**.
+El límite se comprueba también al guardar, no solo en los controles de pantalla.
+
+**Estímulo y recuperación**, en Hoy, muestra los días desde el estímulo efectivo
+anterior por músculo principal. Si ya lo trabajaste hoy, lo identifica como esta
+sesión, sin confundir la siguiente serie con otra sesión. Advierte antes de
+entrenar si pasaron menos de **48 horas** desde la sesión anterior. Las series
+guardadas en la fecha actual conservan su hora real; las antiguas o fechadas otro
+día no reciben una hora inventada. Sin hora, un día de separación activa el aviso;
+dos fechas de separación muestran que no se pueden confirmar 48 horas completas.
+Para otras fechas se usa la hora de entrenamiento configurada en Chile.
+
+La descarga se sugiere desde **42 días (6 semanas)** sin una registrada, destacando
+cuando se alcanzan 56 días (8 semanas). El inicio del seguimiento o la primera
+efectiva disponible sirven de referencia si no hay descargas. También se sugiere
+antes cuando coinciden dos semanas con al menos cuatro días por semana de
+**fatiga ≥8 y sueño <7 h**, y dos sesiones consecutivas a la baja en un ejercicio
+dentro de esos catorce días. No se inventan noches ni fatiga ausentes.
+
+**Confirmar descarga de 7 días** aplica un período por fecha, sin sobrescribir la
+rutina base: misma carga de referencia, **50% de series por ejercicio redondeando
+hacia arriba** (una serie permanece una), sin técnicas, sin fallo y **RPE máximo 6**.
+Las aproximaciones y sus pesos siguen visibles; drop set y rest-pause se ocultan,
+y todas las extensiones se bloquean. También se limita el número de efectivas al
+guardar. Las cargas reales registradas durante descarga no cambian automáticamente
+la referencia normal ni alimentan las recomendaciones de progresión.
+
+Al terminar los siete días vuelve el plan normal automáticamente. Puedes finalizar
+al cierre de una fecha anterior; el plan normal vuelve al día siguiente. El historial
+de períodos se conserva, incluso al cerrar o recargar sin conexión. Activar una
+descarga no cambia los valores de las series que ya habías guardado.
+
+Para probar: registra Press banca con 100 kg, 12 reps y fallo. Aplica la propuesta
+de **102,5 kg**: las aproximaciones serán **52,5 y 77,5 kg**. En una sesión futura,
+un drop planeado sugerirá **82,5 kg**, y rest-pause **102,5 kg**. Confirma una
+descarga: Press banca pasa de dos a una efectiva; permanecen las aproximaciones,
+desaparecen las extensiones y el registro propone RPE 6 sin fallo. Recarga offline
+y consulta el octavo día para verificar el regreso de la rutina normal.
+
 ## Datos locales
 
 IndexedDB (`heavy-duty-personal`, versión 1) guarda rutina, metas, registros y
 temporizador, además de referencias, notas, cardio, pasos, diario, comidas y medidas.
-El estado interno se migra a esquema 5 en una transacción, sin borrar series ni cambiar IDs,
+El estado interno se migra a esquema 6 en una transacción, sin borrar series ni cambiar IDs,
 volumen o descansos personalizados. La preparación adopta los nuevos valores
 por defecto (2 en primeros/compuestos, 1 en el resto); la referencia se recupera
 de la última efectiva registrada cuando existe.
