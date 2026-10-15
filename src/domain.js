@@ -1,5 +1,6 @@
 import { migrateDiary } from './wellness.js';
 import { migrateMeasurements } from './measurements.js';
+import { chileDate, migrateProgram } from './program/state.js';
 
 export const MUSCLES = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Aductor', 'Gemelo'];
 export const TARGETS = { Pecho: 8, Espalda: 9, Hombro: 8, Bíceps: 8, Tríceps: 6, Cuádriceps: 6, Femoral: 4, Aductor: 1, Gemelo: 1 };
@@ -39,7 +40,7 @@ export function exerciseHistory(state, exercise) {
   return state.logs.filter(log => (log.profileId ?? log.exerciseId) === exercise.profileId).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 }
 export function migrateState(original) {
-  if (original.schemaVersion >= 2) return migrateMeasurements(migrateDiary(original));
+  if (original.schemaVersion >= 2) return migrateProgram(migrateMeasurements(migrateDiary(original)));
   const state = structuredClone(original);
   state.profiles ??= {}; state.cardio ??= []; state.dailySteps ??= {};
   for (const day of state.routine) {
@@ -60,17 +61,17 @@ export function migrateState(original) {
     if (last && profile.workWeight === null) profile.workWeight = last.weight;
   }
   state.schemaVersion = 2;
-  return migrateMeasurements(migrateDiary(state));
+  return migrateProgram(migrateMeasurements(migrateDiary(state)));
 }
 
 export function localDate(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return chileDate(date);
 }
 export function dayIndex(date) { return (new Date(`${date}T12:00:00`).getDay() + 6) % 7; }
 export function weekDates(date) {
-  const start = new Date(`${date}T12:00:00`);
-  start.setDate(start.getDate() - dayIndex(date));
-  return DAYS.map((_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return localDate(d); });
+  const start = new Date(`${date}T12:00:00Z`);
+  start.setUTCDate(start.getUTCDate() - dayIndex(date));
+  return DAYS.map((_, i) => { const d = new Date(start); d.setUTCDate(d.getUTCDate() + i); return d.toISOString().slice(0,10); });
 }
 export function makeExercise(name = 'Nuevo ejercicio', muscle = 'Pecho', sets = 1, technique = '', equipment = 'barbell', compound = false, approaches = 1) {
   const id = crypto.randomUUID();
