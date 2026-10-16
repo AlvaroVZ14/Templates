@@ -7,15 +7,16 @@ import {saveCalendar} from '../src/program/nutrition.js';
 
 test('lunes aplica primero, compuesto posterior, primer aislamiento y siguientes sin previas',()=>{
  const state=initialState(),list=state.routine[0],plans=list.map(ex=>sessionExercise(state,ex,'2026-10-12'));
- assert.deepEqual(plans.map(ex=>ex.approaches),[2,1,1,1,0,2,2,0]);
+ assert.deepEqual(plans.map(ex=>ex.approaches),[2,2,2,1,0,2,2,0]);
  assert.deepEqual(preparationSuggestions(plans[0],100).map(row=>[row.weight,row.reps]),[[50,10],[75,8]]);
- assert.deepEqual(preparationSuggestions(plans[1],100).map(row=>[row.weight,row.reps]),[[60,8]]);
+ state.logs.push({exerciseId:list[0].id,date:'2026-10-12',kind:'effective'});
+ assert.deepEqual(preparationSuggestions(sessionExercise(state,list[1],'2026-10-12'),100).map(row=>[row.weight,row.reps]),[[60,6]]);
  assert.deepEqual(preparationSuggestions(plans[3],100).map(row=>[row.weight,row.reps]),[[45,10]]);
  assert.deepEqual(preparationSuggestions(plans[4],100),[]);assert.match(plans[3].preparationReason,/primer aislamiento/);
 });
 test('reordenar, cambiar la zona o corregir el calendario recalcula sin depender de historial',()=>{
  let state=initialState();const list=state.routine[0],machine=list[4];state.routine[0]=[machine,...list.filter(ex=>ex.id!==machine.id)];
- assert.equal(sessionExercise(state,machine,'2026-10-12').approaches,2);assert.equal(sessionExercise(state,list[0],'2026-10-12').approaches,1);
+ assert.equal(sessionExercise(state,machine,'2026-10-12').approaches,2);assert.equal(sessionExercise(state,list[0],'2026-10-12').approaches,2);
  const joint={...list[3],preparationJoint:'Otra articulación'};assert.equal(contextualPreparation(joint,[list[0],joint]).approaches,2);
  state=saveCalendar(state,'2026-10-18',{type:'weights',routineDay:0,trainingTime:'18:00'});assert.equal(sessionExercise(state,machine,'2026-10-18').approaches,2);
  assert.equal(isPressDay(list),true);assert.equal(isPressDay(state.routine[4]),false);
@@ -27,7 +28,7 @@ test('máquinas con músculo trabajado usan una muy ligera solo si es la primera
 });
 test('guarda 0–3 por ejercicio, respeta mínimo global y permite regresar a automático',()=>{
  let state=initialState();const ex=state.routine[0][0];state=setPreparationCount(state,ex.id,0);assert.equal(sessionExercise(state,ex,'2026-10-12').approaches,0);
- state.preparationSettings.minimum=1;assert.equal(sessionExercise(state,ex,'2026-10-12').approaches,1);assert.match(sessionExercise(state,ex,'2026-10-12').preparationReason,/Mínimo global/);
+ state.preparationSettings.minimum=1;assert.equal(sessionExercise(state,ex,'2026-10-12').approaches,0);assert.equal(sessionExercise(state,ex,'2026-10-12').preparationWarning,'Compuesto pesado sin calentar');
  state=setPreparationCount(state,ex.id,3);assert.equal(sessionExercise(state,ex,'2026-10-12').approaches,3);state=setPreparationCount(state,ex.id,null);assert.equal(sessionExercise(state,ex,'2026-10-12').approaches,2);assert.throws(()=>setPreparationCount(state,ex.id,4));
 });
 test('redondeo nunca supera 80%, incluso con poco peso e incrementos grandes',()=>{

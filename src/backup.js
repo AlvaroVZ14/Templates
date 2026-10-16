@@ -22,7 +22,7 @@ function validateState(state){
  for(const [day,value] of Object.entries(next.dailySteps))require(date(day)&&Number.isInteger(value)&&value>=0,'Pasos no válidos.');
  for(const row of next.measurements)require(object(row)&&date(row.date)&&object(row.values)&&Object.values(row.values).every(value=>value===null||Number.isFinite(value)&&value>0&&value<=500),'Medidas no válidas.');
  for(const row of next.phases)require(object(row)&&typeof row.id==='string'&&['bulk','cut','maintain'].includes(row.kind)&&date(row.startDate),'Fase no válida.');
- const macros=value=>object(value)&&MACROS.every(key=>Number.isFinite(value[key])&&value[key]>=0);
+ const macros=value=>object(value)&&MACROS.every(key=>Number.isFinite(value[key])&&value[key]>=0)&&(value.fiber==null||Number.isFinite(value.fiber)&&value.fiber>=0);
  for(const food of next.foods)require(object(food)&&typeof food.id==='string'&&typeof food.name==='string'&&!validateFood(food),'Alimento no válido.');
  for(const meal of next.meals)require(object(meal)&&date(meal.date)&&Number.isFinite(meal.kcal)&&meal.kcal>=0&&Number.isFinite(meal.protein)&&meal.protein>=0,'Comida no válida.');
  for(const log of next.foodLogs)require(object(log)&&typeof log.id==='string'&&date(log.date)&&macros(log.macros)&&Array.isArray(log.items)&&log.items.every(item=>object(item)&&object(item.food)&&typeof item.food.name==='string'&&Number.isFinite(item.quantity)&&macros(item.macros)),'Consumo alimentario no válido.');

@@ -1,3 +1,4 @@
+import {classifyExercise} from './classification.js';
 export const PREPARATION_STEPS = {
   0: [],
   1: [{percent:60,reps:8}],
@@ -18,8 +19,8 @@ export function migratePreparation(state){
   return {...state,schemaVersion:7,routine,preparationSettings:{minimum:0,general:false,generalMinutes:5,rotators:false},preparationActivities:{}};
 }
 const zone=ex=>ex.preparationJoint?.trim()||ex.muscle;
-const isolation=ex=>!ex.compound||ex.equipment==='machine';
-export function contextualPreparation(ex,list,minimum=0){
+const isolation=ex=>classifyExercise(ex).loadType==='isolation';
+export function contextualPreparation(ex,list,minimum=0,completedIds=null){
   const index=list.findIndex(item=>item.id===ex.id),prior=index<0?[]:list.slice(0,index);
   const same=prior.filter(item=>item.muscle===ex.muscle&&zone(item)===zone(ex));
   let count,reason,light=false;
@@ -28,13 +29,19 @@ export function contextualPreparation(ex,list,minimum=0){
     light=true;
     const previousIsolation=same.some(isolation);
     count=previousIsolation?0:1;
-    reason=previousIsolation?'Músculo ya caliente y aislamiento/máquina ya preparado: 0 previas.':'Músculo ya caliente: primer aislamiento/máquina, 1 muy ligera (45% × 10).';
+    reason=previousIsolation?'Músculo ya caliente y aislamiento ya preparado: 0 previas.':'Músculo ya caliente: primer aislamiento, 1 muy ligera (45% × 10).';
   }else{count=1;reason='Músculo ya caliente: compuesto posterior, 1 ligera (60% × 8).';}
-  const automatic=count,override=ex.preparationOverride;
+  const {loadType,movementPattern}=classifyExercise(ex);
+  const performed=completedIds===null?same:list.filter(item=>item.id!==ex.id&&item.muscle===ex.muscle&&zone(item)===zone(ex)&&completedIds.has(item.id));
+  const alreadyHeavy=loadType==='heavy'&&movementPattern!=='other'&&performed.some(item=>classifyExercise(item).loadType==='heavy'&&classifyExercise(item).movementPattern===movementPattern);
+  if(alreadyHeavy){count=1;light=false;reason='Compuesto pesado del mismo patrón ya realizado: 1 previa (60% × 6).';}
+  else if(loadType==='heavy'){count=Math.max(count,2);light=false;reason=`Compuesto pesado: mínimo 2 previas. ${same.length?'El músculo ya trabajó; falta un pesado del mismo patrón registrado.':`Primer ejercicio de ${ex.muscle}.`}`;}
+  else if(loadType==='compound'){count=Math.max(count,1);reason=`Compuesto liviano: mínimo 1 previa. ${reason}`;}
+  const automatic=Math.max(count,minimum),override=ex.preparationOverride;
   if(Number.isInteger(override)&&override>=0&&override<=3){count=override;reason=`Tu ajuste guardado: ${count} previas. Regla automática: ${automatic}. ${reason}`;}
-  if(count<minimum){count=minimum;reason+=` Mínimo global: ${minimum}.`;}
-  const steps=count===1&&light?[{percent:45,reps:10}]:PREPARATION_STEPS[count];
-  return {approaches:count,preparationSteps:steps,preparationReason:reason,automaticApproaches:automatic};
+  if(count<minimum&&!(loadType==='heavy'&&override===0)){count=minimum;reason+=` Mínimo global: ${minimum}.`;}
+  const steps=count===1&&alreadyHeavy?[{percent:60,reps:6}]:count===1&&light?[{percent:45,reps:10}]:count===2&&loadType==='heavy'?[{percent:50,reps:10,repRange:'10–12'},{percent:75,reps:8,repRange:'6–8'}]:PREPARATION_STEPS[count];
+  return {approaches:count,preparationSteps:steps,preparationReason:reason,automaticApproaches:automatic,preparationWarning:loadType==='heavy'&&count===0?'Compuesto pesado sin calentar':''};
 }
 export function setPreparationCount(state,id,count){
   if(count!==null&&(!Number.isInteger(count)||count<0||count>3))throw new Error('Elige de 0 a 3 previas, o Automático.');

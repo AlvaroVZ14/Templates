@@ -4,7 +4,8 @@ export function particleBudget(width,height,dpr=1,coarse=false){
   return {count:mobile?40:80,minimum:mobile?30:60,ratio:Math.min(Math.max(1,dpr),mobile?1.5:2,Math.sqrt(2500000/Math.max(1,width*height)))};
 }
 export function createParticles(count,width,height,random=Math.random){
-  return Array.from({length:count},(_,index)=>({x:random()*width,y:random()*height,vx:0,vy:0,radius:.5+random()*1.7,speed:.12+random()*.38,phase:random()*Math.PI*2,alpha:.25+random()*.5,kind:index%5<2?2:index%2,trail:0}));
+  const edge=width<=640?18:width>1320?Math.min(260,(width-1240)/2-16):0;
+  return Array.from({length:count},(_,index)=>{const minX=edge&&index%2?width-edge:0,maxX=edge?(index%2?width:edge):width;return {minX,maxX,x:minX+random()*(maxX-minX),y:random()*height,vx:0,vy:0,radius:.5+random()*1.7,speed:.12+random()*.38,phase:random()*Math.PI*2,alpha:.25+random()*.5,kind:index%5<2?2:index%2,trail:0};});
 }
 export function advanceParticles(particles,waves,pointer,width,height,elapsed,time){
   const dt=clamp(elapsed/16.667,0,2.2);
@@ -22,9 +23,10 @@ export function advanceParticles(particles,waves,pointer,width,height,elapsed,ti
     particle.x+=(Math.sin(time*.00022+particle.phase)*.08+particle.vx)*dt;
     particle.y+=(-particle.speed+particle.vy)*dt;
     particle.trail=Math.max(0,particle.trail-dt);
-    if(particle.y< -12){particle.y=height+8;particle.x=(particle.x+width*.37)%width;particle.trail=0;}
+    const minX=particle.minX??0,maxX=particle.maxX??width,span=maxX-minX;
+    if(particle.y< -12){particle.y=height+8;particle.x=minX+((particle.x-minX+span*.37)%span+span)%span;particle.trail=0;}
     if(particle.y>height+16){particle.y=-8;particle.trail=0;}
-    if(particle.x< -12){particle.x=width+8;particle.trail=0;}else if(particle.x>width+12){particle.x=-8;particle.trail=0;}
+    if(particle.x<minX-4){particle.x=maxX;particle.trail=0;}else if(particle.x>maxX+4){particle.x=minX;particle.trail=0;}
   }
   for(let index=waves.length-1;index>=0;index--)if(waves[index].life<=0)waves.splice(index,1);
 }

@@ -12,5 +12,6 @@ import './theme.css';
 import './motivation.css';
 import './stage.css';
 import './effects.css';
+import './sides.css';
 
 createRoot(document.getElementById('root')).render(<App />);

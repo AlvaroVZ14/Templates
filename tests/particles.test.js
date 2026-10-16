@@ -10,7 +10,7 @@ test('presupuesto móvil y escritorio limita partículas y píxeles retina',()=>
   }
 });
 test('cursor y onda empujan hacia fuera, con estela; no alteran partículas lejanas',()=>{
-  const base=createParticles(1,600,800,()=>.5)[0];
+  const base={...createParticles(1,600,800,()=>.5)[0],minX:0,maxX:600};
   const near={...base,x:110,y:100},far={...base,x:500,y:700},control={...far};
   advanceParticles([near,far],[],{active:true,x:100,y:100},600,800,16.667,0);
   advanceParticles([control],[],null,600,800,16.667,0);
