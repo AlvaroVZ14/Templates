@@ -1,11 +1,14 @@
+import {useFormDraft,useDraftState} from './drafts.jsx';
 import { useEffect, useState } from 'react';
 import { KINDS } from './domain.js';
 
-export default function ExerciseHistory({ exercise, history, profile, change, saving }) {
-  const [notes, setNotes] = useState(profile.notes);
+export default function ExerciseHistory({ exercise, history, profile, change, saving,date }) {
+  const draft=useFormDraft(`notes:${date}:${exercise.id}`,date);
+  const [notes, setNotes] = useDraftState(draft,'notes',profile.notes);
+  useEffect(()=>draft.remember({notes}),[notes]);
   const [message, setMessage] = useState('');
   const [limit, setLimit] = useState(20);
-  useEffect(() => { setNotes(profile.notes); }, [profile.notes]);
+  useEffect(() => { if(!draft.dirty.current)setNotes(profile.notes); }, [profile.notes]);
   const byDate = new Map();
   for (const log of history.filter(item => item.kind === 'effective' && item.equipment === exercise.equipment)) {
     const best = byDate.get(log.date);
@@ -17,9 +20,9 @@ export default function ExerciseHistory({ exercise, history, profile, change, sa
   const y = weight => 125 - weight / max * 95;
   const dateLabel = date => new Date(`${date}T12:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
   return <div className="exercise-extras">
-    <form className="exercise-notes" onSubmit={async event => {
+    <form onChangeCapture={draft.touch} className="exercise-notes" onSubmit={async event => {
       event.preventDefault(); setMessage('');
-      if (await change(state => ({ ...state, profiles: { ...state.profiles, [exercise.profileId]: { ...profile, ...state.profiles[exercise.profileId], notes } } }))) setMessage('Notas guardadas.');
+      if (await change(state => ({ ...state, profiles: { ...state.profiles, [exercise.profileId]: { ...profile, ...state.profiles[exercise.profileId], notes } } }))) {draft.clear();setMessage('Notas guardadas.');}
     }}>
       <label>Notas del ejercicio<textarea aria-label={`Notas de ${exercise.name}`} maxLength="3000" rows="3" placeholder="Ejecución, ajuste del asiento, sensaciones…" value={notes} onChange={event => setNotes(event.target.value)} /></label>
       <button className="secondary" disabled={saving}>Guardar notas</button>{message && <p className="success" role="status">{message}</p>}

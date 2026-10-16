@@ -619,6 +619,66 @@ Cambiar de puerto, navegador o dispositivo crea otro almacenamiento. No hay
 sincronización ni copia de seguridad remota; borrar los datos del sitio elimina el
 historial. El modo privado o la limpieza automática pueden descartar datos locales.
 
+## Menú lateral y navegación entre sesiones (PROMPT 9)
+
+El botón **Menú** abre un cajón desde la derecha. En **Menú → Ajustes → Lado
+del menú** puedes elegir izquierda; la preferencia se guarda en IndexedDB.
+También se abre deslizando hacia dentro desde los 16 px del borde elegido.
+Se cierra con ×, Escape, tocando fuera o deslizando su encabezado hacia el borde.
+El diálogo mantiene el foco dentro y lo devuelve al botón al cerrar.
+
+El cajón muestra los siete días de la semana seleccionada, los descansos, la fecha
+actual marcada **Hoy** y la sesión seleccionada. Incluye Historial, Medidas,
+Diario, Progreso (volumen semanal), Rutina, Comida, Método y Ajustes. Los accesos
+inferiores existentes siguen disponibles.
+
+En **Hoy**, las flechas y la franja **Una sesión a la vez** cambian entre las
+sesiones de la semana seleccionada; saltan descansos y se desactivan en los
+extremos. El calendario y el cajón permiten consultar también los descansos.
+**Ver la misma sesión de la semana pasada** abre una comparación del día exacto
+de siete días atrás: carga de referencia actual frente a todas las efectivas
+registradas, con opción de abrir aquella sesión. Si falta un registro, se indica
+sin inventar pesos. Las mancuernas siguen expresadas por mano.
+
+Antes de abandonar Hoy con registros pendientes, una sesión iniciada sin finalizar
+o series parcialmente completadas, se guardan los borradores y se pide confirmar.
+Cancelar mantiene la pantalla; aceptar permite cambiar y recuperar los campos al
+volver. Se conservan carga, reps, tipo, RPE, fallo, descanso real, ajustes de
+aproximaciones/extensiones, notas de ejercicio y sesión, duración, cardio y pasos.
+Los borradores se guardan aparte en `app/state.trainingDrafts` de IndexedDB 2;
+no se convierten en series ni suman volumen hasta pulsar Guardar. Hay una copia
+local de recuperación para recargas anteriores a la transacción. No se borran
+automáticamente y la copia JSON de la base también incluye los ya confirmados
+en IndexedDB. No se cambian ni eliminan las colecciones históricas.
+
+Si falla el guardado del borrador, la navegación permanece en la pantalla con un
+error y permite reintentar. Los gestos solo actúan en el borde reservado y en la
+franja de navegación, nunca sobre gráficos, tablas ni campos de entrada. El
+desplazamiento vertical permanece disponible.
+
+El aviso de almacenamiento ahora es una tarjeta oscura compacta; despliega
+**Protección y copias de seguridad** para solicitar permiso, consultar el resultado
+o descargar el respaldo. La decisión del navegador no ha cambiado.
+
+Para comprobarlo:
+
+1. Recarga en el mismo navegador, origen y puerto que usabas, sin borrar datos.
+   Abre el aviso desplegable: el permiso y la descarga siguen funcionando.
+2. Abre Menú, comprueba Hoy y los descansos. Cambia el lado en Ajustes, recarga
+   y prueba deslizar desde ese borde. Comprueba también Escape y ×.
+3. Selecciona un lunes: siguiente va a martes y después a jueves. Desliza la
+   franja en ambos sentidos; la primera/última sesión limita el recorrido.
+4. Escribe una carga y reps sin guardar, cambia de sesión y cancela el aviso.
+   Repite y acepta. Regresa: deben mantenerse; recarga y vuelve a esa fecha.
+   Repite con una aproximación, caída o mini-serie y con notas/cardio.
+5. Compara una sesión que tenga registros exactamente siete días antes. Comprueba
+   las cargas anteriores y mueve el dedo sobre un campo o gráfico: no debe navegar.
+
+La suite de navegación comprueba confirmación y cancelación explícitas. Los tests
+de funciones previas aceptan esa confirmación mediante un fixture compartido
+porque sus escenarios dejan entrenamientos parciales al ir a otra pantalla.
+Implementación y pruebas asistidas por Codex; las capturas usan datos ficticios.
+
 ## Verificación
 
 ```sh

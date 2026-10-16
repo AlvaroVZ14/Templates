@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 async function openDiary(page,date='2026-10-15') {
   await page.goto('./'); await page.getByRole('button',{name:'Diario',exact:true}).click();

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 
 async function boot(page,date='2026-11-02'){
  await page.clock.install({time:new Date(`${date}T18:00:00Z`)});await page.goto('./');await page.getByLabel('Fecha de entrenamiento',{exact:true}).fill('2026-11-02');await expect(page.getByLabel('Peso de trabajo de Press banca',{exact:true})).toBeVisible();
