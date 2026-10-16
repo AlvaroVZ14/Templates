@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 
 test('identidad editable, fuentes locales offline y pantallas sin desbordamientos',async({page,context})=>{
   const external=[];page.on('request',request=>{if(!request.url().startsWith('http://localhost:4175/'))external.push(request.url());});
-  await page.goto('./');await expect(page.getByRole('heading',{name:'Hoy'})).toBeVisible();
+  await page.goto('./');await expect(page.getByRole('heading',{name:'Hoy',exact:true})).toBeVisible();
   await page.evaluate(()=>document.fonts.ready);
   expect(await page.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgb(10, 10, 10)');
   expect(await page.locator('h1:visible').evaluate(el=>getComputedStyle(el).fontFamily)).toContain('Anton');

@@ -5,6 +5,9 @@ import ParticleBackground from './VisualEffects.jsx';
 import ShadowStage from './ShadowStage.jsx';
 import SideDecor from './SideDecor.jsx';
 import WeightSetup from './WeightSetup.jsx';
+import CardioToday from './CardioToday.jsx';
+import CardioSettings from './CardioSettings.jsx';
+import PainPage,{PainOverview} from './Pain.jsx';
 import GymPanel,{GymSummary} from './GymPanel.jsx';
 import {finishGymSession,openGymSession,startGymSession} from './gym.js';
 import useWakeLock from './useWakeLock.js';
@@ -161,7 +164,7 @@ export default function App() {
   }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
-  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer||gymActive?'timer-visible':''} ${gymActive?'gym-active':''} ${impact?'screen-impact':''}`} data-page={page} data-effects={appearance.effects} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09',weights:'10'})[page]}"`}} onChangeCapture={failureImpact}>
+  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer||gymActive?'timer-visible':''} ${gymActive?'gym-active':''} ${impact?'screen-impact':''}`} data-page={page} data-effects={appearance.effects} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09',weights:'10',pain:'11'})[page]}"`}} onChangeCapture={failureImpact}>
     <ShadowBackground appearance={appearance} ambient/>
     <ParticleBackground appearance={appearance} page={page}/>
     <SideDecor appearance={appearance}/>
@@ -178,14 +181,15 @@ export default function App() {
       <main id="main-content">
         {gymOpen&&!gymActive&&<aside className="notice gym-recovery"><p>Sesión abierta del {gymOpen.date}. Tus series están guardadas.</p><button className="secondary" onClick={()=>navigate('today',gymOpen.date)}>Volver a la sesión abierta</button></aside>}
         {page !== 'today' && page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
-        {page === 'today' && <Today data={data} date={date} setDate={value=>navigate('today',value)} change={change} saving={saving} startTimer={startTimer} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} appearance={appearance} gymActive={gymActive} gymOpen={gymOpen} beginGym={beginGym} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} summaryOpen={summaryOpen} closeSummary={()=>setSummaryOpen(false)} />}
+        {page === 'today' && <Today data={data} date={date} setDate={value=>navigate('today',value)} change={change} saving={saving} startTimer={startTimer} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} appearance={appearance} gymActive={gymActive} gymOpen={gymOpen} beginGym={beginGym} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} summaryOpen={summaryOpen} closeSummary={()=>setSummaryOpen(false)} />}
         {page==='weights'&&<WeightSetup data={data} change={change} saving={saving} onDone={()=>{setPage('today');setMenuOpen(false);}}/>}
+        {page==='pain'&&<PainPage data={data} date={localDate()} onDiary={value=>navigate('diary',value)}/>}
         <div hidden={page !== 'routine'}><Routine data={data} change={change} saving={saving} /></div>
         {page === 'volume' && <Progress data={data}><Volume data={data} date={date} setDate={setDate}/></Progress>}
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} />}
-        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
+        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><CardioSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
         {page==='method'&&<Method/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
       </main>
@@ -195,7 +199,7 @@ export default function App() {
   </div></DraftProvider>;
 }
 
-function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiary, onMeasures,appearance,gymActive,gymOpen,beginGym,finishGym,wake,audio,gymSound,summaryOpen,closeSummary }) {
+function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiary, onMeasures,appearance,gymActive,gymOpen,beginGym,finishGym,wake,audio,gymSound,onPain,summaryOpen,closeSummary }) {
   const context = dayContext(data,date), day = context.routineDay;
   const rest=context.exercises.length?null:restMessage(data,date,localDate());
   const exercises = context.exercises.map(ex=>sessionExercise(data,ex,date));
@@ -232,9 +236,11 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
     <SessionEditor key={`session-${date}`} data={data} date={date} change={change} saving={saving}/>
     <TrainingRecovery key={`recovery-${date}`} data={data} date={date} exercises={exercises} change={change} saving={saving} />
     </>}
+    <PainOverview data={data} date={date} onOpen={onPain}/>
     <section className="session-list"><div className="section-heading"><h2>{exercises.length ? 'Tu sesión' : 'Recupera para la próxima'}</h2><span>{exercises.length ? `${done} de ${planned} efectivas` : DAYS[day]}</span></div>
       {exercises.length === 0 ? <div className="rest-card" data-testid="rest-card"><Icon name="leaf" size={42} /><h3>{rest.title}</h3><p>{rest.text}</p><p>Puedes consultar otra fecha desde el menú.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} data={data} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => selectExercise(exercise.id)} change={change} saving={saving} startTimer={startTimer} gym={gymActive} current={gymActive&&activeId===exercise.id} next={gymActive&&index===currentIndex+1} />)}
     </section>
+    <CardioToday key={`cardio-today-${date}`} data={data} date={date} change={change} saving={saving}/>
     {!gymActive&&<details className="today-extra"><summary>Alimentación y recuperación del día</summary><TodayPlan key={`plan-${date}`} data={data} date={date} change={change} saving={saving} onFood={undefined} />
     <Cardio key={date} data={data} date={date} change={change} saving={saving} />
     <Recovery data={data} date={date} change={change} saving={saving} onDiary={undefined} onMeasures={undefined} /></details>}

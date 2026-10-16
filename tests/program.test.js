@@ -75,7 +75,7 @@ test('ritmo y ajustes requieren dos semanas, pesos y cumplimiento; incompatibili
 });
 test('cardio por fase y pierna, fatiga, omisión idempotente y frecuencia por día',()=>{
   let state=fixture();assert.equal(cardioRecommendation(state,'2026-10-15').min,10);assert.equal(cardioRecommendation(state,'2026-10-16').optional,true);
-  state.journal['2026-10-15'].fatigue=9;assert.equal(cardioRecommendation(state,'2026-10-15').reduce,true);
+  state.journal['2026-10-15'].fatigue=9;assert.equal(cardioRecommendation(state,'2026-10-15').reduce,false);state.journal['2026-10-14']={...state.journal['2026-10-14'],fatigue:9};assert.equal(cardioRecommendation(state,'2026-10-15').reduce,true);
   const rec=cardioRecommendation(state,'2026-10-15');state=markCardio(state,'2026-10-15','omitted',rec);state=markCardio(state,'2026-10-15','omitted',rec);assert.equal(state.cardioEvents.length,1);
   state.cardio.push({date:'2026-10-12',minutes:10},{date:'2026-10-12',minutes:5});assert.equal(cardioWeek(state,'2026-10-15').performed,1);assert.equal(cardioWeek(state,'2026-10-15').minutes,15);
   state=activatePhase(state,{kind:'cut',targetWeight:71,deadline:'2027-03-31'},'2027-01-01');assert.equal(cardioRecommendation(state,'2027-01-04').min,20);

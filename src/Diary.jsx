@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { weekDates } from './domain.js';
 import { JOURNAL_FIELDS, optionalNumber, shiftDate, sleepWarning, validateJournal, validateMeal, weightWeek } from './wellness.js';
 import TrendChart from './TrendChart.jsx';
+import {PainEditor} from './Pain.jsx';
+import {validatePainEntries} from './pain.js';
 
 export default function Diary({ data, date, setDate, change, saving }) {
   const entry = data.journal[date];
   const [fields, setFields] = useState(() => Object.fromEntries(JOURNAL_FIELDS.map(({ key }) => [key, entry?.[key] ?? ''])));
   const [pain, setPain] = useState(entry?.pain ?? '');
+  const [painEntries,setPainEntries]=useState(()=>structuredClone(entry?.painEntries??[]));
   const [goal, setGoal] = useState(String(data.settings.sleepGoal));
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -15,9 +18,10 @@ export default function Diary({ data, date, setDate, change, saving }) {
   const format = value => value === null ? '—' : value.toLocaleString('es-CL', { maximumFractionDigits: 2 });
   async function save(event) {
     event.preventDefault(); setError(''); setMessage('');
-    const values = { ...Object.fromEntries(JOURNAL_FIELDS.map(({ key }) => [key, optionalNumber(fields[key])])), pain: pain.trim(), updatedAt: new Date().toISOString() };
+    const values = { ...Object.fromEntries(JOURNAL_FIELDS.map(({ key }) => [key, optionalNumber(fields[key])])), pain: pain.trim(),painEntries, updatedAt: new Date().toISOString() };
+    const painError=validatePainEntries(painEntries,date);if(painError){setError(painError);return;}
     const invalid = validateJournal(values); if (invalid) { setError(invalid); return; }
-    if (await change(state => ({ ...state, journal: { ...state.journal, [date]: values } }))) setMessage('Diario guardado.');
+    if (await change(state => ({ ...state, journal: { ...state.journal, [date]: {...state.journal[date],...values} } }))) setMessage('Diario guardado.');
   }
   async function saveGoal(event) {
     event.preventDefault(); setError(''); setMessage('');
@@ -29,7 +33,7 @@ export default function Diary({ data, date, setDate, change, saving }) {
     <label className="wellness-date">Fecha del diario<input type="date" value={date} onChange={event => event.target.value && setDate(event.target.value)} /></label>
     {warning && <div className="notice warning" role="alert"><strong>Dos noches seguidas con menos de 7 horas.</strong><p>{warning.dates[0]}: {warning.hours[0]} h · {warning.dates[1]}: {warning.hours[1]} h. Tu meta es {data.settings.sleepGoal} h.</p></div>}
     <form className="wellness-card sleep-goal" onSubmit={saveGoal}><label>Meta de sueño (horas)<input type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={goal} onChange={event => setGoal(event.target.value)} required /></label><button className="secondary" disabled={saving}>Guardar meta</button></form>
-    <form className="wellness-card" onSubmit={save}><div className="section-heading"><h2>Cómo estás hoy</h2><span>Campos opcionales</span></div><p className="field-note">El sueño corresponde a la noche que terminó en esta fecha. Escalas: 1 es menor y el máximo es mayor.</p><div className="wellness-grid">{JOURNAL_FIELDS.map(({ key, label, min, max, step }) => <label key={key}>{label}<input type="number" aria-label={label} min={min} max={max} step={step} inputMode={step === 1 ? 'numeric' : 'decimal'} placeholder="Sin registrar" value={fields[key]} onChange={event => setFields({ ...fields, [key]: event.target.value })} /></label>)}</div><label>Dolor por zona<textarea aria-label="Dolor por zona" maxLength="3000" rows="3" placeholder="Zona y descripción, si corresponde" value={pain} onChange={event => setPain(event.target.value)} /></label><button className="primary full" disabled={saving}>Guardar diario</button></form>
+    <form className="wellness-card" onSubmit={save}><div className="section-heading"><h2>Cómo estás hoy</h2><span>Campos opcionales</span></div><p className="field-note">El sueño corresponde a la noche que terminó en esta fecha. Escalas: 1 es menor y el máximo es mayor.</p><div className="wellness-grid">{JOURNAL_FIELDS.map(({ key, label, min, max, step }) => <label key={key}>{label}<input type="number" aria-label={label} min={min} max={max} step={step} inputMode={step === 1 ? 'numeric' : 'decimal'} placeholder="Sin registrar" value={fields[key]} onChange={event => setFields({ ...fields, [key]: event.target.value })} /></label>)}</div><label>Dolor por zona<textarea aria-label="Dolor por zona" maxLength="3000" rows="3" placeholder="Zona y descripción, si corresponde" value={pain} onChange={event => setPain(event.target.value)} /></label><PainEditor entries={painEntries} onChange={setPainEntries} date={date}/><button className="primary full" disabled={saving}>Guardar diario</button></form>
     {error && <p className="error" role="alert">{error}</p>}{message && <p className="success" role="status">{message}</p>}
     <section className="wellness-card"><div className="section-heading"><h2>Peso de la semana</h2><span>kg</span></div><div className="week-selector"><button className="icon-button" aria-label="Semana anterior de peso" onClick={() => setDate(shiftDate(date, -7))}>←</button><span>{days[0]} — {days[6]}</span><button className="icon-button" aria-label="Semana siguiente de peso" onClick={() => setDate(shiftDate(date, 7))}>→</button></div><TrendChart title="Peso semanal y promedio móvil de 7 días" unit="kg" labels={days.map(day => day.slice(5))} series={[{ name: 'Peso', color: '#ff9471', values: rows.map(row => row.weight) }, { name: 'Promedio 7 días', color: '#b4d5af', dashed: true, values: rows.map(row => row.average) }]} /><p className="field-note">Promedio de los pesos registrados en los 7 días calendario hasta cada fecha. No se rellenan días sin peso; se indica cuántos registros hay.</p><div className="table-scroll"><table className="health-table"><thead><tr><th>Día</th><th>Peso</th><th>Promedio</th><th>Datos</th></tr></thead><tbody>{rows.map(row => <tr key={row.date}><th>{row.date.slice(5)}</th><td>{format(row.weight)}</td><td>{format(row.average)}</td><td>{row.count}/7</td></tr>)}</tbody></table></div></section>
     <Meals data={data} date={date} change={change} saving={saving} />

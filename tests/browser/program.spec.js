@@ -100,6 +100,7 @@ test('alerta de proteína solo al cerrar tres días completos y no se repite tra
 
 test('fatiga reduce recomendación y pantalla Comida funciona en celular',async({page})=>{
   await start(page);await go(page,'Diario');
+  await page.getByLabel('Fecha del diario',{exact:true}).fill('2026-10-14');await page.getByLabel('Fatiga (1–10)',{exact:true}).fill('9');await page.getByRole('button',{name:'Guardar diario',exact:true}).click();await expect(page.getByText('Diario guardado.',{exact:true})).toBeVisible();await page.getByLabel('Fecha del diario',{exact:true}).fill('2026-10-15');
   await page.getByLabel('Fatiga (1–10)',{exact:true}).fill('9');await page.getByRole('button',{name:'Guardar diario',exact:true}).click();
   await expect(page.getByText('Diario guardado.',{exact:true})).toBeVisible();await go(page,'Hoy');
   await expect(page.getByText('Reduce o salta el cardio hoy.',{exact:true})).toBeVisible();
