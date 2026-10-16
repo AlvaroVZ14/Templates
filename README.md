@@ -903,24 +903,11 @@ En **Menú → Ajustes → Frases del día** puedes editar, añadir, eliminar o 
 
 Para publicar, integra el PR en `main` y espera el workflow de GitHub Pages. La URL continúa siendo **https://alvarovz14.github.io/Templates/**. Con conexión, recarga y vuelve a abrir la PWA para recibir el nuevo service worker, conservando los datos del sitio.
 
-## Efectos interactivos · Prompt 16
+## Escenario interactivo y efectos visuales
 
-En **Menú → Ajustes → Tu identidad → Efectos visuales** elige **Completos**, **Reducidos** o **Apagados** y pulsa **Guardar apariencia**. Se conserva en el dispositivo y en los respaldos. Completos activa brasas, polvo, ondas y el escenario interactivo; Reducidos deja una composición estática; Apagados conserva solo el fondo fijo. La preferencia de movimiento reducido del sistema y el control anterior de pausa del fondo tienen prioridad: desactivan la animación y la interacción visual.
+El escenario The Shadow reutiliza `public/hero.jpg` o la silueta SVG local. Con efectos completos, el cursor o el dedo controla las capas y el foco rojo; mantener pulsado tensa la figura y hace latir el marcador. Soltar produce un pulso y un toque muestra una frase del banco local durante 2,8 segundos. Con teclado: Enter para frase, espacio para mantener y Escape para detener. El scroll vertical conserva su funcionamiento.
 
-Las partículas usan canvas propio, sin dependencias nuevas: 80 en escritorio y 40 en móvil (60/30 si el tiempo entre fotogramas se mantiene alto). La densidad retina se limita a 2× en escritorio, 1,5× en móvil y 2,5 millones de píxeles. Se reutilizan pequeños sprites de brillo; no se aplica desenfoque por partícula. Se busca un movimiento fluido, pero la tasa de fotogramas depende del dispositivo. Los bucles `requestAnimationFrame` y los sensores se detienen al ocultar la pestaña; los eventos son pasivos y el canvas no recibe toques. Las partículas bajan de intensidad en Hoy y aún más al enfocar los campos de registro.
-
-El escenario reutiliza `public/hero.jpg` y la alternativa SVG, ambos locales. Humo, silueta y luces se desplazan a distinta profundidad. No se añaden imágenes externas ni se cambia ningún cálculo de entrenamiento, sesión o registro.
-
-### Cómo probar cada efecto
-
-1. **Brasas y onda:** con Completos, mueve el cursor por el fondo y toca o haz clic fuera de los controles. Las brasas se apartan, dejan una pequeña estela y se expande una onda roja. No debe impedir abrir el cajón, editar pesos ni desplazar la página.
-2. **Profundidad y foco:** en Hoy, desplázate hasta la tarjeta de la sesión y mueve el cursor o el dedo sobre ella. La silueta se inclina suavemente y el foco rojo sigue el punto. En móvil, un movimiento vertical conserva el scroll y cancela la pulsación mantenida.
-3. **Tensión y pulso:** mantén pulsada la tarjeta unos instantes. La silueta aumenta un 3 %, vibra suavemente y el marcador late. Al soltar aparece un pulso y vuelve a su tamaño. Un toque corto muestra una frase contextual del banco editable, que desaparece sola. Con teclado, enfoca el escenario: Enter muestra la frase, espacio mantiene la tensión y Escape la detiene.
-4. **Inclinación:** en un teléfono compatible, inclínalo suavemente. Si su navegador exige permiso, aparecerá **Activar inclinación**: solo se solicita al tocar ese botón. Permitirlo activa el sensor; rechazarlo deja disponibles el dedo y los controles. Sin sensor, la app sigue funcionando. El sensor se calibra con la primera lectura y se limita su recorrido. La API exige contexto seguro y, cuando hay solicitud, un gesto directo ([especificación de orientación](https://www.w3.org/TR/orientation-event/)). La comprobación física en tu teléfono sigue siendo necesaria; las pruebas automatizadas simulan permiso y lecturas.
-5. **Pausa y accesibilidad:** cambia de pestaña y vuelve; luego prueba Reducidos, Apagados y la preferencia del sistema «reducir movimiento». No debe haber partículas móviles, parallax ni pulsación en esos modos. Guarda el ajuste y recarga para comprobar que se recuerda.
-6. **Offline:** carga la app una vez con conexión, ciérrala y vuelve a abrirla sin conexión. El fondo, las partículas y las frases siguen disponibles. No borres los datos del sitio.
-
-Los tests de esta etapa verifican el presupuesto retina, la física de repulsión, la pausa, los modos persistentes, el registro de previas, el tacto con scroll, pulsaciones, permisos de sensor y carga offline usando datos ficticios y navegadores aislados. La navegación sigue estando únicamente en el cajón.
+En **Menú → Ajustes → Tu identidad → Efectos visuales** se elige Completos, Reducidos o Apagados y se pulsa **Guardar apariencia**. El fuego lateral y la inclinación se describen en el Prompt 18, al final de este README. La configuración y el banco de frases continúan incluidos en el respaldo; los efectos no modifican datos de entrenamiento.
 
 ## Previas, laterales y manzana · Prompt 17
 
@@ -930,7 +917,7 @@ Las pesadas usan **50% × 10–12 y 75% × 6–8**; la excepción, **60% × 6**.
 
 La actualización añade clasificación y manzana una sola vez mediante marcadores aditivos del estado. No cambia las tablas de IndexedDB, IDs, referencias de carga, elecciones manuales, registros de series, consumos ni planes históricos. No reescribe sus nutrientes. El respaldo conserva los nuevos campos y continúa aceptando respaldos anteriores.
 
-**Laterales:** por encima de 1320 px, texto vertical, discos/barra SVG originales, humo y rasguños ocupan solo los márgenes. El canvas existente concentra las brasas allí; en móvil se limitan a bandas de 18 px y un resplandor fino. No se reserva espacio ni se reciben toques. La pestaña oculta pausa las animaciones; Reducidos deja la decoración estática y Apagados/movimiento reducido del sistema la desactiva.
+**Laterales:** por encima de 1320 px, texto vertical, discos/barra SVG originales, humo y rasguños ocupan solo los márgenes. El canvas existente concentra las brasas allí; en móvil se limitan a bandas finas (actualizadas a 12 px en Prompt 18) y un resplandor fino. No se reserva espacio ni se reciben toques. La pestaña oculta pausa las animaciones; Reducidos deja estática la decoración SVG; el fuego usa su propio modo reducido. Apagados/movimiento reducido del sistema desactiva esa decoración SVG.
 
 **Manzana:** fruta, no snack, unidad mediana con piel de referencia (~182 g); valores aproximados editables: 95 kcal, 0,5 g proteína, 25,1 g carbohidratos, 0,3 g grasa y 4,4 g fibra. Referencias: [guías alimentarias oficiales, tabla de fibra](https://www.dietaryguidelines.gov/sites/default/files/2019-05/2015-2020_Dietary_Guidelines.pdf) y [composición USDA por 100 g, tabla 43](https://www.aphis.usda.gov/sites/default/files/10_16101p.pdf). Las cantidades se redondean a una unidad mediana; pueden variar por tamaño y variedad. No se consultan esas fuentes desde la app.
 
@@ -939,3 +926,27 @@ En **Hoy → Plan de hoy → Manzanas al día** elige 0–2 (por defecto 1) y ge
 En **Comida**, **Fruta del día** registra solo lo que falta para la cantidad configurada. Si luego marcas la comida del plan que ya contiene esa manzana, retira el registro auxiliar para no duplicarla. Si ya procede de una comida o registro rápido, la casilla lo refleja y debes editar ese consumo para modificarla. **Fibra diaria** suma únicamente los valores guardados con cada consumo; indica «Sin datos» o «parcial» cuando falta fibra histórica. Puedes editar fibra en cada alimento, sin cambiar el pasado.
 
 Para probar: abre viernes con una sesión vacía y comprueba hack/prensa con dos previas; registra una efectiva de hack y verifica prensa a 60 % × 6. Elige Manual 0 en hack, recarga y vuelve a Auto. Revisa el resto de días con la tabla. En escritorio ancho mueve el cursor por los márgenes y después prueba ocultar la pestaña y los tres modos visuales. Genera planes con 0, 1 y 2 manzanas; marca Fruta del día y luego su comida, y comprueba que no se duplican. Edita la fibra de la manzana: los consumos anteriores deben conservar 4,4 g. Recarga sin conexión para verificar persistencia.
+
+## Fuego lateral y descansos dinámicos · Prompt 18
+
+El canvas propio reemplaza el polvo/ondas anteriores por chispas rápidas y brasas lentas. Cada partícula nace abajo, asciende con balanceo, se encoge y pasa de amarillo anaranjado a naranja, rojo activo, rojo sangre y rojo oscuro antes de apagarse. Los halos y estelas usan mezcla aditiva `lighter`; los brillos se precalculan, sin desenfoques por partícula. Un calor rojo-anaranjado pulsa lentamente en la base y aparecen ráfagas ocasionales.
+
+El dibujo se recorta a los márgenes fuera de la columna central: nunca pinta en su centro. En ventanas estrechas usa bandas de 10 px y en móvil, 12 px, sin reservar espacio ni recibir eventos. Mover el cursor por un lateral aparta las partículas; hacer clic allí lanza una ráfaga desde ese punto. Los controles quedan excluidos. Se reutiliza un solo canvas y se conserva la decoración SVG anterior.
+
+- **Completos:** 100 partículas por lado en escritorio (80 si se adapta a un equipo lento), hasta 120 con ráfagas; 20 en total en móvil, con máximo 25 al hacer ráfagas.
+- **Reducidos:** mitad de partículas, sin ráfagas ni parpadeo, a un máximo de 30 dibujos por segundo. El escenario conserva su imagen fija.
+- **Apagados:** sin fuego. La preferencia de movimiento reducido del sistema y el control de pausa del fondo dejan solo calor estático, sin partículas ni parallax.
+- Retina se limita a 2× (1,5× en móvil) y 2,5 millones de píxeles. Mientras un campo de series, previas, referencia o notas tiene el foco, se reducen cantidad/intensidad, se limita a 30 dibujos/s y se desactivan las ráfagas. Ocultar la pestaña cancela el bucle y las escuchas; no se acumulan ráfagas para la vuelta.
+
+**Inclinación opcional:** está apagada al abrir Hoy y no se guarda como preferencia activa. Los computadores y dispositivos sin API compatible no muestran la opción. En móviles sin permiso obligatorio se confirma disponibilidad con una lectura válida; en los que exigen permiso, aparece el botón compatible y solo se solicita al tocarlo. Las primeras muestras vacías se toleran durante tres segundos; si no llega ninguna válida después de activar, se oculta el control y sigue funcionando el dedo. La mera existencia de la API no demuestra que haya hardware; algunos navegadores solo permiten confirmarlo después del permiso. No se fuerzan solicitudes ni se activa el efecto al detectar el sensor. [Especificación de orientación](https://www.w3.org/TR/orientation-event/).
+
+**Descanso:** el mensaje busca la siguiente fecha con ejercicios desde la fecha consultada, aplicando rutina y excepciones del calendario. Cruza semanas y bloques de descansos; no fija un límite arbitrario de siete días. Muestra «mañana» cuando corresponde, el nombre del día calculado y la sesión derivada de los músculos configurados. Si no hay sesiones, lo indica. El título distingue hoy, mañana y otra fecha. Los recordatorios de Medidas también calculan su día desde su fecha quincenal; la revisión de recuperación se llama Revisión semanal. La lista de nombres del calendario se centraliza en `DAYS`.
+
+### Probar esta etapa
+
+1. En escritorio ancho, mira ambos márgenes: las chispas ascienden rápido, las brasas flotan y se apagan antes de arriba. Mueve el cursor y haz clic en el lateral para ver la repulsión y la ráfaga. En móvil, comprueba los bordes finos y el scroll.
+2. Escribe un peso en Hoy: el fuego se atenúa y no aparecen ráfagas mientras registras. Cambia a otra pestaña y vuelve. Prueba Reducidos, Apagados y movimiento reducido del sistema. Con el último debe quedar solo el calor fijo.
+3. En computador, no debe aparecer Activar inclinación. En un teléfono compatible, comprueba que está desactivada y lee la explicación. Actívala voluntariamente, inclina suavemente y luego desactívala. Si rechazas el permiso o no hay sensor, usa el dedo.
+4. Consulta miércoles: debe anunciar jueves y su sesión, normalmente «mañana (jueves): Hombro + Brazo». Consulta domingo: «mañana (lunes)». Si esa fecha no es hoy, el título no debe decir Hoy. El día siguiente al actual usa Mañana.
+5. En Rutina, deja libre el siguiente día de entrenamiento y guarda: el mensaje debe saltarlo. Prueba también una excepción de descanso desde Tipo de día y hora de entrenamiento. Si cambias los músculos de la siguiente sesión, su nombre se actualiza.
+6. Carga una vez con conexión y recarga offline: todo sigue disponible. La etapa no añade campos persistidos, cambia el formato de IndexedDB ni modifica historial, rutinas o registros por sí sola.

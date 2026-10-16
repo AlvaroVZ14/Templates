@@ -8,31 +8,31 @@ async function heroPoint(page){await stage(page).scrollIntoViewIfNeeded();const 
 async function mode(page,value){await go(page,'Ajustes');await page.getByLabel('Efectos visuales',{exact:true}).selectOption(value);await page.getByRole('button',{name:'Guardar apariencia'}).click();await expect(page.getByText('Apariencia guardada.')).toBeVisible();}
 async function instrument(page){
   await page.addInitScript(()=>{
-    window.effectDraws=0;window.effectWaves=0;window.testHidden=false;
+    window.effectDraws=0;window.effectAdditive=0;window.testHidden=false;
     Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.testHidden});
-    const clear=CanvasRenderingContext2D.prototype.clearRect,arc=CanvasRenderingContext2D.prototype.arc;
+    const clear=CanvasRenderingContext2D.prototype.clearRect,draw=CanvasRenderingContext2D.prototype.drawImage;
     CanvasRenderingContext2D.prototype.clearRect=function(...args){if(this.canvas.classList.contains('ember-field'))window.effectDraws++;return clear.apply(this,args);};
-    CanvasRenderingContext2D.prototype.arc=function(...args){if(this.canvas.classList.contains('ember-field'))window.effectWaves++;return arc.apply(this,args);};
+    CanvasRenderingContext2D.prototype.drawImage=function(...args){if(this.canvas.classList.contains('ember-field')&&this.globalCompositeOperation==='lighter')window.effectAdditive++;return draw.apply(this,args);};
   });
 }
 
 test('brasas retina, ondas, pausa oculta y modos persistentes sin interferir con formularios',async({page})=>{
   await instrument(page);await page.setViewportSize({width:1440,height:900});await page.goto('./');await chooseDate(page,'2026-10-12');
-  const canvas=page.getByTestId('ember-field');await expect(canvas).toHaveAttribute('data-particles','80');await expect(canvas).toHaveAttribute('data-running','true');
+  const canvas=page.getByTestId('ember-field');await expect(canvas).toHaveAttribute('data-particles','200');await expect(canvas).toHaveAttribute('data-running','true');
   expect(await canvas.evaluate(el=>getComputedStyle(el).pointerEvents)).toBe('none');expect(await canvas.evaluate(el=>el.width*el.height)).toBeLessThanOrEqual(2500000);
-  const point=await heroPoint(page);await page.mouse.move(point.x,point.y);await page.mouse.down();await page.mouse.up();
-  await expect.poll(()=>page.evaluate(()=>window.effectWaves)).toBeGreaterThan(0);
+  await page.mouse.click(20,450);await expect.poll(()=>canvas.evaluate(el=>Number(el.dataset.bursts))).toBeGreaterThan(0);
+  await expect.poll(()=>page.evaluate(()=>window.effectAdditive)).toBeGreaterThan(0);
   await page.evaluate(()=>{window.testHidden=true;document.dispatchEvent(new Event('visibilitychange'));});await expect(canvas).toHaveAttribute('data-running','false');
   const paused=await page.evaluate(()=>window.effectDraws);await page.waitForTimeout(120);expect(await page.evaluate(()=>window.effectDraws)).toBe(paused);
   await page.evaluate(()=>{window.testHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await expect(canvas).toHaveAttribute('data-running','true');await expect.poll(()=>page.evaluate(()=>window.effectDraws)).toBeGreaterThan(paused);
   const weight=page.getByLabel('Peso de trabajo de Press banca',{exact:true});await weight.fill('100');await expect(canvas).toHaveClass(/is-registering/);
   await weight.blur();await expect(canvas).not.toHaveClass(/is-registering/);
   await page.getByRole('button',{name:'Guardar Aproximación 1',exact:true}).click();await expect(page.locator('.log-row[data-kind=approach]')).toHaveCount(1);
-  await mode(page,'reduced');await expect(canvas).toHaveAttribute('data-running','false');const still=await page.evaluate(()=>window.effectDraws);await page.waitForTimeout(100);expect(await page.evaluate(()=>window.effectDraws)).toBe(still);
+  await mode(page,'reduced');await expect(canvas).toHaveAttribute('data-running','true');await expect(canvas).toHaveAttribute('data-particles','100');await expect(canvas).toHaveAttribute('data-bursts','0');const before=await page.evaluate(()=>window.effectDraws);await expect.poll(()=>page.evaluate(()=>window.effectDraws)).toBeGreaterThan(before);
   await page.reload();await expect(stage(page)).toHaveAttribute('data-effects','reduced');await expect(stage(page)).not.toHaveClass(/shadow-enabled/);
   await mode(page,'off');await expect(canvas).toHaveCount(0);await go(page,'Hoy');await expect(stage(page)).not.toHaveClass(/shadow-enabled/);
   await mode(page,'full');await go(page,'Hoy');await expect(stage(page)).toHaveClass(/shadow-enabled/);
-  await page.emulateMedia({reducedMotion:'reduce'});await expect(canvas).toHaveCount(0);await expect(stage(page)).not.toHaveClass(/shadow-enabled/);await expect(page.getByTestId('shadow-scene')).toHaveClass(/is-paused/);
+  await page.emulateMedia({reducedMotion:'reduce'});await expect(canvas).toHaveAttribute('data-effects','static');await expect(canvas).toHaveAttribute('data-particles','0');await expect(canvas).toHaveAttribute('data-running','false');await expect(stage(page)).not.toHaveClass(/shadow-enabled/);await expect(page.getByTestId('shadow-scene')).toHaveClass(/is-paused/);
   const staticTransform=await stage(page).locator('.shadow-subject').evaluate(el=>getComputedStyle(el).transform);
   expect(['none','matrix(1, 0, 0, 1, 0, 0)']).toContain(staticTransform);
   await page.mouse.move(600,600);await expect(stage(page)).toHaveCSS('--shadow-x','0');
@@ -40,7 +40,7 @@ test('brasas retina, ondas, pausa oculta y modos persistentes sin interferir con
 
 test('tres capas, foco, tensión, pulso y frases sin cambiar entrenamientos; también offline',async({page,context})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('./');await chooseDate(page,'2026-10-12');await expect(page.getByTestId('ember-field')).toHaveAttribute('data-particles','40');
+  await page.goto('./');await chooseDate(page,'2026-10-12');await expect(page.getByTestId('ember-field')).toHaveAttribute('data-particles','20');
   const hero=stage(page),point=await heroPoint(page);
   await page.mouse.move(point.x,point.y);await expect.poll(()=>hero.evaluate(el=>Number(el.style.getPropertyValue('--shadow-x')))).toBeGreaterThan(.1);
   expect(await hero.locator('.shadow-subject').evaluate(el=>getComputedStyle(el).transform)).not.toBe('none');expect(await hero.locator('.shadow-spotlight').evaluate(el=>getComputedStyle(el).display)).toBe('block');
@@ -62,7 +62,7 @@ test('tacto y scroll conservados en móvil retina',async({browser})=>{
   const context=await browser.newContext({isMobile:true,hasTouch:true,deviceScaleFactor:3,viewport:{width:390,height:844},baseURL:'http://localhost:4175/Templates/'}),page=await context.newPage();
   await page.addInitScript(()=>{window.DeviceOrientationEvent=undefined;});
   await page.goto('./');const hero=stage(page),point=await heroPoint(page),canvas=page.getByTestId('ember-field');
-  await expect(canvas).toHaveAttribute('data-particles','40');expect(await canvas.evaluate(el=>el.width)).toBe(585);
+  await expect(canvas).toHaveAttribute('data-particles','20');expect(await canvas.evaluate(el=>el.width)).toBe(585);
   await page.touchscreen.tap(point.x,point.y);await expect(hero.locator('.shadow-quote')).toBeVisible();await expect(hero.locator('.shadow-quote')).toHaveCount(0,{timeout:4500});
   const session=await context.newCDPSession(page),before=await page.evaluate(()=>scrollY);
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:point.x,y:point.y}]});await expect(hero).toHaveClass(/is-tensing/);
@@ -74,14 +74,21 @@ test('tacto y scroll conservados en móvil retina',async({browser})=>{
   await context.close();
 });
 
+test.describe('inclinación móvil opcional',()=>{
+test.use({isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile Safari/604.1'});
 for(const permission of ['granted','denied'])test(`inclinación ${permission}: permiso solo al tocar y alternativa con dedo`,async({page})=>{
   await page.addInitScript(result=>{window.sensorRequests=0;window.DeviceOrientationEvent=class extends Event{static async requestPermission(){window.sensorRequests++;return result;}};},permission);
   await page.goto('./');const hero=stage(page),button=page.getByRole('button',{name:'Activar inclinación',exact:true});await button.scrollIntoViewIfNeeded();expect(await page.evaluate(()=>window.sensorRequests)).toBe(0);
+  if(permission==='granted')await hero.screenshot({path:'test-results/p18-tilt-mobile.png'});
   await button.click();expect(await page.evaluate(()=>window.sensorRequests)).toBe(1);
   await expect(page.locator('.shadow-sensor-message')).toContainText(permission==='granted'?'activada':'Usa el dedo');
   if(permission==='granted'){
     await page.waitForTimeout(850);await page.evaluate(()=>{const send=(beta,gamma)=>{const event=new Event('deviceorientation');Object.assign(event,{beta,gamma});dispatchEvent(event);};send(0,0);send(12,15);});
-    await expect.poll(()=>hero.evaluate(el=>Number(el.style.getPropertyValue('--shadow-x')))).toBeGreaterThan(.2);await expect(button).toHaveCount(0);
+    await expect.poll(()=>hero.evaluate(el=>Number(el.style.getPropertyValue('--shadow-x')))).toBeGreaterThan(.2);await expect(page.getByRole('button',{name:'Desactivar inclinación'})).toBeVisible();
   }else{const point=await heroPoint(page);await page.mouse.click(point.x,point.y);await expect(hero.locator('.shadow-quote')).toBeVisible();}
   await page.emulateMedia({reducedMotion:'reduce'});await expect(button).toHaveCount(0);await expect(hero).not.toHaveClass(/shadow-enabled/);
+});
+test('permiso concedido sin sensor: oculta la opción tras esperar lecturas válidas',async({page})=>{
+  await page.clock.install();await page.addInitScript(()=>{window.DeviceOrientationEvent=class extends Event{static async requestPermission(){return 'granted';}};});await page.goto('./');await page.getByRole('button',{name:'Activar inclinación',exact:true}).click();await expect(page.getByRole('button',{name:'Desactivar inclinación',exact:true})).toBeVisible();await page.clock.fastForward(3200);await expect(page.getByRole('button',{name:/Activar inclinación|Desactivar inclinación/})).toHaveCount(0);await expect(page.locator('.shadow-sensor-message')).toContainText('No se detectó un sensor');
+});
 });

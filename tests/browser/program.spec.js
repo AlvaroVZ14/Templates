@@ -47,7 +47,7 @@ test('cuatro comidas, consumo único, edición histórica de alimentos y recarga
 test('calendario corrige descanso, recuperación opcional y cardio omitido persisten',async({page})=>{
   await start(page);await go(page,'Hoy');
   await chooseDate(page,'2026-10-18');
-  await expect(page.getByRole('heading',{name:'Recuperación de hoy',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Recuperación del día',exact:true})).toBeVisible();
   await page.getByLabel('Descanso cumplido',{exact:true}).click();
   await expect(page.getByLabel('Descanso cumplido',{exact:true})).toBeChecked();
   await page.getByRole('button',{name:'Omitir cardio hoy',exact:true}).click();
@@ -61,7 +61,7 @@ test('calendario corrige descanso, recuperación opcional y cardio omitido persi
   await page.getByLabel('Hora de entrenamiento',{exact:true}).fill('17:00');
   await page.getByRole('button',{name:'Guardar calendario',exact:true}).click();
   await expect(page.getByText('Calendario guardado. Regenera el plan previsto para aplicar la distribución.',{exact:true})).toBeVisible();
-  await expect(page.getByRole('heading',{name:'Recuperación de hoy',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Recuperación del día',exact:true})).toHaveCount(0);
   await expect(page.locator('.cardio-section')).toContainText('Solo caminata suave opcional');
   await page.getByRole('button',{name:'Generar 4 comidas',exact:true}).click();
   const state=await stored(page);expect(state.mealPlans['2026-10-18'].context.type).toBe('legs');expect(state.mealPlans['2026-10-18'].context.trainingTime).toBe('17:00');
