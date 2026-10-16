@@ -3,7 +3,7 @@ import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, TITLES, dayInd
 import { updateState } from './db.js';
 import {DraftProvider,useDrafts} from './drafts.jsx';
 import {incompleteSession} from './navigation.js';
-import {Drawer,EdgeSwipe,SessionNavigation,NavigationSettings,Method} from './Navigation.jsx';
+import {Drawer,EdgeSwipe,NavigationSettings,Method} from './Navigation.jsx';
 import ExerciseCard from './ExerciseCard.jsx';
 import Cardio from './Cardio.jsx';
 import Diary from './Diary.jsx';
@@ -76,7 +76,7 @@ export default function App() {
   const [menuOpen,setMenuOpen]=useState(false);
   const drafts=useDrafts(data,setData,setError);
   const navigating=useRef(false);
-  async function navigate(target,nextDate=date){
+  async function navigate(target,nextDate=target==='today'?(data?.navigationSettings?.lastSession??date):date){
     if(navigating.current)return;
     if(target===page&&nextDate===date){setMenuOpen(false);return;}
     navigating.current=true;
@@ -84,6 +84,7 @@ export default function App() {
       await drafts.flush();
       setError('');
       if(page==='today'&&data&&incompleteSession(data,date,drafts.entries())&&!window.confirm('Hay una sesión o un registro a medio completar. Tu borrador está guardado y lo recuperarás al volver. ¿Quieres cambiar de pantalla o sesión?'))return;
+      if(target==='today'){const next=await updateState(state=>({...state,navigationSettings:{...state.navigationSettings,lastSession:nextDate}}));setData(next);}
       setDate(nextDate);setPage(target);setMenuOpen(false);
     }catch{/* Keep the form visible when a draft cannot be saved. */}
     finally{navigating.current=false;}
@@ -97,7 +98,7 @@ export default function App() {
     setError('');
     try {
       const state = await updateState(existing => captureAnchors(advancePhases(existing ? migrateState(existing) : initialState(),localDate())));
-      setData(state);
+      setData(state);setDate(state.navigationSettings?.lastSession??localDate());
     } catch { setError('No se pudo abrir IndexedDB. Permite el almacenamiento del navegador y vuelve a intentar.'); }
   }
   useEffect(() => { boot(); }, []);
@@ -114,41 +115,33 @@ export default function App() {
   async function startTimer(seconds, label) { return change(state => ({ ...state, timer: { end: Date.now() + seconds * 1000, duration: seconds, label } })); }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
-  return <DraftProvider value={drafts}><div className="app-shell">
+  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide}`}>
     <header className="masthead">
-      <a className="brand" href="#today" onClick={event => { event.preventDefault(); navigate('today'); }} aria-label="Heavy Duty, ir a Hoy">
+      <div className="brand" aria-label="Heavy Duty">
         <span className="brand-symbol"><Icon name="bar" size={29} /></span><span>HEAVY<span className="brand-light">DUTY</span><small>PERSONAL TRAINING LOG</small></span>
-      </a>
+      </div>
       <div className="header-actions"><button className="menu-button" aria-label="Abrir menú" aria-expanded={menuOpen} aria-haspopup="dialog" onClick={()=>setMenuOpen(true)}><span aria-hidden="true">☰</span><span className="menu-word">Menú</span></button><span className={`connection ${!pwa.online ? 'offline' : ''}`}><i />{!pwa.online ? 'Sin conexión' : pwa.ready ? 'Offline listo' : 'Local · privado'}</span>
-        <button className="icon-button install-button" aria-label="Instalar aplicación" onClick={() => pwa.prompt ? pwa.install() : setInstallHelp(!installHelp)}><Icon name="download" /></button></div>
+</div>
     </header>
     {installHelp && <aside className="install-help"><strong>Instala Heavy Duty</strong><p>En Android o escritorio: menú del navegador → Instalar aplicación. En iPhone: Safari → Compartir → Añadir a pantalla de inicio.</p><p>{pwa.ready ? 'La app está preparada para abrir sin conexión.' : 'La instalación y el modo offline se preparan en la versión de producción, con HTTPS o localhost.'}</p><button className="quiet" onClick={() => setInstallHelp(false)}>Entendido</button></aside>}
     {(error || pwa.error) && <div className="error global-error" role="alert">{error || pwa.error}{!data && <button className="quiet" onClick={boot}>Reintentar</button>}</div>}
     {!data ? <main className="loading" aria-live="polite">{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</main> : <>
       <main id="main-content">
-        <StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/>
-        {page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
+        {page !== 'today' && page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
         {page === 'today' && <Today data={data} date={date} setDate={value=>navigate('today',value)} change={change} saving={saving} startTimer={startTimer} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} />}
         <div hidden={page !== 'routine'}><Routine data={data} change={change} saving={saving} /></div>
         {page === 'volume' && <Volume data={data} date={date} setDate={setDate} />}
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} />}
-        {page==='settings'&&<NavigationSettings data={data} change={change} saving={saving}/>}
+        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
         {page==='method'&&<Method/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
       </main>
       {data.timer && <Timer timer={data.timer} onClose={() => change(state => ({ ...state, timer: null }))} />}
     </>}
-    <nav className="bottom-nav" aria-label="Navegación principal">
-      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario'], ['measurements', 'ruler', 'Medidas'], ['food', 'food', 'Comida'],['history','clock','Historial']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
-    </nav>
     {data&&<><EdgeSwipe side={drawerSide} onOpen={()=>setMenuOpen(true)}/><Drawer open={menuOpen} onClose={()=>setMenuOpen(false)} side={drawerSide} data={data} date={date} page={page} navigate={navigate}/></>}
   </div></DraftProvider>;
-}
-
-function WeekStrip({ date, setDate, data }) {
-  return <div className="week-strip" aria-label="Días de la semana">{weekDates(date).map((value, index) => <button key={value} onClick={() => setDate(value)} className={`${value === date ? 'selected' : ''} ${value === localDate() ? 'is-today' : ''}`} aria-pressed={value === date} aria-label={`${DAYS[index]} ${value}`}><span>{DAYS[index].slice(0, 3)}</span><strong>{Number(value.slice(-2))}</strong><i className={dayContext(data,value).type==='rest' ? 'rest-dot' : ''} /></button>)}</div>;
 }
 
 function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiary, onMeasures }) {
@@ -162,10 +155,8 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
   const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
   const activeId = open === null ? exercises[0]?.id : open;
   return <>
-    <div className="page-heading"><div><p className="eyebrow">TU ÚNICA COMPETENCIA ERES TÚ</p><h1>A entrenar<span className="accent">.</span></h1></div><label className="date-picker"><span>{date === localDate() ? 'Hoy' : 'Fecha'}<Icon name="today" size={17} /></span><input aria-label="Fecha de entrenamiento" type="date" value={date} onChange={event => event.target.value && setDate(event.target.value)} /></label></div>
-    <WeekStrip data={data} date={date} setDate={setDate} />
-    <SessionNavigation data={data} date={date} setDate={setDate}/>
-    <PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact />
+    <div className="page-heading"><div><p className="eyebrow">TU ÚNICA COMPETENCIA ERES TÚ</p><h1>A entrenar<span className="accent">.</span></h1></div></div>
+    <details className="today-extra"><summary>Fase y ajustes del d?a</summary><PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact /></details>
     <section className="session-hero">
       <div className="hero-copy"><span className="pill">{exercises.length ? 'HEAVY DUTY / BLOOD & GUTS' : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? [2, 6].includes(day) ? 'Sesión personalizada' : TITLES[day] : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
       <div className="progress-ring" style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
@@ -178,9 +169,9 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
     <section className="session-list"><div className="section-heading"><h2>{exercises.length ? 'Tu sesión' : 'Recupera para la próxima'}</h2><span>{exercises.length ? `${done} de ${planned} efectivas` : DAYS[day]}</span></div>
       {exercises.length === 0 ? <div className="rest-card"><Icon name="leaf" size={42} /><h3>Hoy toca descansar.</h3><p>Tu rutina vuelve {day === 2 ? 'el jueves' : 'el lunes'}. Puedes consultar otro día en la semana de arriba.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} data={data} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => setOpen(activeId === exercise.id ? '' : exercise.id)} change={change} saving={saving} startTimer={startTimer} />)}
     </section>
-    <TodayPlan key={`plan-${date}`} data={data} date={date} change={change} saving={saving} onFood={onFood} />
+    <details className="today-extra"><summary>Alimentaci?n y recuperaci?n del d?a</summary><TodayPlan key={`plan-${date}`} data={data} date={date} change={change} saving={saving} onFood={undefined} />
     <Cardio key={date} data={data} date={date} change={change} saving={saving} />
-    <Recovery data={data} date={date} change={change} saving={saving} onDiary={onDiary} onMeasures={onMeasures} />
+    <Recovery data={data} date={date} change={change} saving={saving} onDiary={undefined} onMeasures={undefined} /></details>
     <p className="local-footnote"><span className="tiny-dot" /> Guardado en este dispositivo · Sin cuenta ni servidor</p>
   </>;
 }

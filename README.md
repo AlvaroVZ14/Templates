@@ -715,3 +715,11 @@ y [service workers de MDN](https://developer.mozilla.org/en-US/docs/Web/API/Serv
 `.gitignore` excluye dependencias, `dist/`, archivos de entorno, claves locales y
 resultados de pruebas. Implementación asistida por Codex; la revisión humana queda
 a cargo del propietario del repositorio.
+
+## Navegación simplificada (PROMPT 10 A)
+
+La barra inferior fue eliminada, incluido su espacio reservado. El botón discreto de menú queda en la esquina del lado elegido en Ajustes; la app respeta las áreas seguras del sistema. El cajón es la única navegación y se cierra tocando fuera, con gesto, Escape o Atrás. Allí están Hoy, Historial, Medidas, Diario, Comida, Progreso, Método, Ajustes y Rutina, además de fechas y comparación semanal.
+
+Al abrir siempre se entra en Hoy, recuperando la última fecha de entrenamiento seleccionada en IndexedDB. El permiso de almacenamiento y la instalación se consultan desde Ajustes. Los paneles secundarios de Hoy están plegados; el registro y sus borradores conservan su lógica.
+
+Comprobación: recarga y confirma que no hay barra inferior ni hueco fijo; abre el menú y visita cada sección; elige otra fecha, recarga y comprueba que vuelve a ella en Hoy; cambia izquierda/derecha en Ajustes y prueba Atrás con el cajón abierto.

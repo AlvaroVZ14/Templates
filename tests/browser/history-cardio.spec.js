@@ -1,8 +1,9 @@
+import {go,chooseDate} from './fixtures.js';
 import { test, expect } from './fixtures.js';
 
 async function monday(page) {
   await page.goto('./');
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
 }
 
 test('RPE, notas, historial gráfico y cardio sobreviven a una recarga offline', async ({ page, context }) => {
@@ -16,7 +17,7 @@ test('RPE, notas, historial gráfico y cardio sobreviven a una recarga offline',
   await expect(page.getByText('Notas guardadas.', { exact: true })).toBeVisible();
   await page.locator('.history-panel summary').click();
   await expect(page.getByRole('img', { name: 'Evolución de carga de Press banca' })).toBeVisible();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-19');
+  await chooseDate(page,'2026-10-19');
   await expect(page.getByLabel('Serie anterior')).toContainText('2026-10-12');
   await page.getByLabel('Carga de Press banca', { exact: true }).fill('102.5');
   await page.getByRole('button', { name: 'Guardar serie', exact: false }).click();
@@ -33,18 +34,18 @@ test('RPE, notas, historial gráfico y cardio sobreviven a una recarga offline',
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await context.setOffline(true);
   await page.reload();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-19');
+  await chooseDate(page,'2026-10-19');
   await expect(page.getByLabel('Notas de Press banca')).toHaveValue('Asiento 3. Bajada controlada.');
   await expect(page.getByLabel('Peso de trabajo de Press banca', { exact: true })).toHaveValue('102.5');
   await expect(page.getByLabel('Pasos diarios', { exact: true })).toHaveValue('8200');
   await expect(page.locator('.cardio-row')).toContainText('BiciModerada25 min');
-  await page.getByRole('button', { name: 'Volumen', exact: true }).click();
+  await go(page,'Volumen');
   await expect(page.locator('.volume-row').filter({ hasText: 'Pecho' }).locator('b')).toHaveText('1');
 });
 
 test('editor permite 3 preparaciones, 3 caídas y redondeo personalizado', async ({ page }) => {
   await monday(page);
-  await page.getByRole('button', { name: 'Rutina', exact: true }).click();
+  await go(page,'Rutina');
   await page.getByRole('button', { name: 'Lun', exact: true }).click();
   await page.locator('.editor-card').first().getByRole('button').first().click();
   await page.getByLabel('Series de preparación', { exact: true }).fill('3');
@@ -53,7 +54,7 @@ test('editor permite 3 preparaciones, 3 caídas y redondeo personalizado', async
   await page.getByLabel('Redondeo de sugerencias (kg)', { exact: true }).fill('5');
   await page.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect(page.getByText('Rutina guardada en este dispositivo.', { exact: true }).last()).toBeVisible();
-  await page.getByRole('button', { name: 'Hoy', exact: true }).click();
+  await go(page,'Hoy');
   await page.getByLabel('Peso de trabajo de Press banca', { exact: true }).fill('100');
   for (const [i, weight] of [[1, '40'], [2, '60'], [3, '80']]) await expect(page.getByLabel(`Peso de Aproximación ${i}`, { exact: true })).toHaveValue(weight);
   for (const [i, weight] of [[1, '80'], [2, '65'], [3, '50']]) await expect(page.getByLabel(`Peso de Caída ${i}`, { exact: true })).toHaveValue(weight);
@@ -83,7 +84,7 @@ test('migra datos de la versión anterior sin borrar series ni reiniciar descans
     db.close();
   });
   await page.reload();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
   await expect(page.getByLabel('Peso de trabajo de Press banca', { exact: true })).toHaveValue('85');
   await expect(page.locator('.log-row')).toHaveCount(1);
   await expect(page.locator('.log-row')).toContainText('RPE sin dato');

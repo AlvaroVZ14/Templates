@@ -1,8 +1,9 @@
+import {go,chooseDate} from './fixtures.js';
 import { test, expect } from './fixtures.js';
 
 async function openMonday(page) {
   await page.goto('./');
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
 }
 
 test('sin historial pide referencia y muestra preparaciones calculadas antes de guardar', async ({ page }) => {
@@ -18,10 +19,10 @@ test('sin historial pide referencia y muestra preparaciones calculadas antes de 
   await page.getByRole('button', { name: 'Guardar Aproximación 1', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Aproximación guardada');
   await page.reload();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
   await expect(page.getByLabel('Peso de trabajo de Press banca', { exact: true })).toHaveValue('100');
   await expect(page.getByRole('button', { name: 'Guardar Aproximación 1', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: 'Volumen', exact: true }).click();
+  await go(page,'Volumen');
   await expect(page.locator('.volume-row').filter({ hasText: 'Pecho' }).locator('b')).toHaveText('0');
 });
 
