@@ -108,7 +108,7 @@ test('móvil, descanso y escritorio sin desbordamientos', async ({ page }) => {
   await chooseDate(page,'2026-10-12');
   await page.screenshot({ path: 'test-results/mobile-today.png', fullPage: true });
   await chooseDate(page,'2026-10-14');
-  await expect(page.getByRole('heading', { name: 'Hoy toca descansar.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Este día es de descanso.' })).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await go(page,'Volumen');
   await page.screenshot({ path: 'test-results/desktop-volume.png', fullPage: true });

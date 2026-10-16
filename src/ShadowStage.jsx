@@ -2,14 +2,14 @@ import {useEffect,useRef,useState} from 'react';
 import {useVisualEnvironment} from './VisualEffects.jsx';
 import {clamp} from './particles.js';
 import {motivationPhrases,selectMotivation} from './motivation.js';
+import useTilt from './useTilt.js';
 
 const control='button,input,select,textarea,a,summary,[contenteditable]';
 export default function ShadowStage({appearance,data,date,className='',children}){
   const element=useRef(null),{mode,visible}=useVisualEnvironment(appearance),active=mode==='full'&&visible;
   const [tensing,setTensing]=useState(false),[releasing,setReleasing]=useState(false),[quote,setQuote]=useState(null);
-  const [permission,setPermission]=useState('unknown'),[sensorMessage,setSensorMessage]=useState('');
-  const needsPermission=typeof window.DeviceOrientationEvent?.requestPermission==='function';
   const motion=useRef({x:0,y:0,targetX:0,targetY:0,spotX:68,spotY:45}),frame=useRef(0),holdTimer=useRef(0),releaseTimer=useRef(0),quoteTimer=useRef(0),gesture=useRef(null),lastGesture=useRef(null),lastTouch=useRef(0),quoteNumber=useRef(0);
+  const tilt=useTilt(active,({x,y})=>{if(gesture.current||performance.now()-lastTouch.current<800)return;motion.current.targetX=x;motion.current.targetY=y;motion.current.spotX=clamp(68+x*20,10,90);motion.current.spotY=clamp(45+y*20,10,90);schedule();});
 
   function schedule(){
     if(frame.current||!active)return;
@@ -58,30 +58,14 @@ export default function ShadowStage({appearance,data,date,className='',children}
     if(event.key===' '){event.preventDefault();gesture.current={held:true,moved:false};setTensing(true);}
     if(event.key==='Escape'){setQuote(null);release(false);}
   }
-  async function enableSensor(){
-    // Permission APIs require a direct user activation. Never call at startup.
-    try{const result=await window.DeviceOrientationEvent.requestPermission();setPermission(result);setSensorMessage(result==='granted'?'Inclinación activada. Puedes seguir usando el dedo.':'Sin permiso de inclinación. El efecto sigue funcionando con el dedo.');}
-    catch{setPermission('denied');setSensorMessage('Puedes usar el dedo; la inclinación no está disponible.');}
-  }
   useEffect(()=>{
     if(!active){cancelAnimationFrame(frame.current);frame.current=0;clearTimeout(holdTimer.current);clearTimeout(releaseTimer.current);clearTimeout(quoteTimer.current);gesture.current=null;setTensing(false);setReleasing(false);setQuote(null);motion.current={x:0,y:0,targetX:0,targetY:0,spotX:68,spotY:45};if(element.current){element.current.style.setProperty('--shadow-x','0');element.current.style.setProperty('--shadow-y','0');}return;}
     const cancel=()=>release();window.addEventListener('pointerup',cancel,{passive:true});window.addEventListener('pointercancel',cancel,{passive:true});window.addEventListener('blur',cancel);
     return()=>{window.removeEventListener('pointerup',cancel);window.removeEventListener('pointercancel',cancel);window.removeEventListener('blur',cancel);cancelAnimationFrame(frame.current);frame.current=0;clearTimeout(holdTimer.current);clearTimeout(releaseTimer.current);clearTimeout(quoteTimer.current);};
   },[active]);
-  useEffect(()=>{
-    if(!active||!window.isSecureContext||(needsPermission&&permission!=='granted')||!window.DeviceOrientationEvent)return;
-    let baseline=null;
-    const orient=event=>{
-      if(!Number.isFinite(event.beta)||!Number.isFinite(event.gamma)||gesture.current||performance.now()-lastTouch.current<800)return;
-      baseline??={beta:event.beta,gamma:event.gamma};let x=clamp((event.gamma-baseline.gamma)/25,-1,1),y=clamp((event.beta-baseline.beta)/35,-1,1);
-      const angle=screen.orientation?.angle??window.orientation??0;if(Math.abs(angle)===90)[x,y]=[y*Math.sign(angle),-x*Math.sign(angle)];else if(Math.abs(angle)===180){x=-x;y=-y;}
-      motion.current.targetX=x;motion.current.targetY=y;motion.current.spotX=clamp(68+x*20,10,90);motion.current.spotY=clamp(45+y*20,10,90);schedule();
-    };
-    window.addEventListener('deviceorientation',orient,{passive:true});return()=>window.removeEventListener('deviceorientation',orient);
-  },[active,permission,needsPermission]);
-  return <section ref={element} className={`session-hero shadow-interactive ${className} ${tensing?'is-tensing':''} ${releasing?'is-releasing':''} ${active?'shadow-enabled':''}`} tabIndex={active?0:undefined} aria-label="The Shadow: escenario de la sesión" data-effects={mode} onPointerDown={down} onPointerMove={move} onPointerUp={()=>release()} onPointerCancel={()=>release(false)} onPointerLeave={leave} onClick={click} onKeyDown={keyDown} onKeyUp={event=>{if(event.key===' '&&event.target===event.currentTarget){event.preventDefault();release();}}} onContextMenu={event=>{if(active&&!event.target.closest(control))event.preventDefault();}}>
+  return <section ref={element} className={`session-hero shadow-interactive ${className} ${tilt.available?'has-tilt':''} ${tensing?'is-tensing':''} ${releasing?'is-releasing':''} ${active?'shadow-enabled':''}`} tabIndex={active?0:undefined} aria-label="The Shadow: escenario de la sesión" data-effects={mode} onPointerDown={down} onPointerMove={move} onPointerUp={()=>release()} onPointerCancel={()=>release(false)} onPointerLeave={leave} onClick={click} onKeyDown={keyDown} onKeyUp={event=>{if(event.key===' '&&event.target===event.currentTarget){event.preventDefault();release();}}} onContextMenu={event=>{if(active&&!event.target.closest(control))event.preventDefault();}}>
     {children}
-    {active&&<div className="shadow-instructions"><span>{!sensorMessage&&'Mueve · mantén pulsado · toca para una frase'}{sensorMessage&&<span className="shadow-sensor-message" role="status" title={sensorMessage}>{permission==='granted'?'Inclinación activada.':'Sin inclinación. Usa el dedo.'}</span>}</span>{needsPermission&&permission!=='granted'&&window.isSecureContext&&<button className="shadow-sensor" type="button" onClick={enableSensor}>Activar inclinación</button>}</div>}
+    {active&&<div className="shadow-instructions"><span>Mueve · mantén pulsado · toca para una frase</span>{tilt.available&&<div className="tilt-controls"><button className="shadow-sensor" type="button" onClick={tilt.toggle} disabled={tilt.busy} aria-pressed={tilt.enabled}>{tilt.enabled?'Desactivar inclinación':'Activar inclinación'}</button><small>{tilt.enabled?'Inclinar el teléfono mueve el foco y las capas.':'Desactivada por defecto: al inclinar el teléfono mueve el foco y las capas.'}</small></div>}{tilt.message&&<span className="shadow-sensor-message" role="status">{tilt.message}</span>}</div>}
     {quote&&active&&<p key={quote.id} className="shadow-quote" role="status" aria-live="polite">{quote.text}</p>}
   </section>;
 }

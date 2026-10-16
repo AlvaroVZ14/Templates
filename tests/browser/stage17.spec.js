@@ -39,5 +39,5 @@ test('laterales sin ocupar espacio, parallax, pausa y modos visuales',async({pag
   await go(page,'Ajustes');await page.getByLabel('Efectos visuales',{exact:true}).selectOption('reduced');await page.getByRole('button',{name:'Guardar apariencia'}).click();await expect(sides).toHaveClass(/is-paused/);expect(await sides.locator('.side-smoke').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
   await page.getByLabel('Efectos visuales',{exact:true}).selectOption('off');await page.getByRole('button',{name:'Guardar apariencia'}).click();await expect(sides).toHaveCount(0);
   await page.getByLabel('Efectos visuales',{exact:true}).selectOption('full');await page.getByRole('button',{name:'Guardar apariencia'}).click();await page.setViewportSize({width:390,height:844});await expect(sides.locator('.side-column').first()).not.toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  await page.emulateMedia({reducedMotion:'reduce'});await expect(sides).toHaveCount(0);await expect(page.getByTestId('ember-field')).toHaveCount(0);
+  await page.emulateMedia({reducedMotion:'reduce'});await expect(sides).toHaveCount(0);await expect(page.getByTestId('ember-field')).toHaveAttribute('data-effects','static');
 });
