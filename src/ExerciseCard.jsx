@@ -6,6 +6,7 @@ import { trainingLogError } from './training.js';
 import { ProgressionPanel } from './TrainingPanels.jsx';
 import { PreparationCount } from './PreparationControls.jsx';
 import './set-animations.css';
+import {ExercisePainNotice,FailureSafety} from './Pain.jsx';
 
 export default function ExerciseCard({ exercise: ex, index, date, data, logs, expanded, toggle, change, saving, startTimer,gym=false,current=false,next=false }) {
   const draft=useFormDraft(`exercise:${date}:${ex.id}`,date);
@@ -107,6 +108,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   return <article className={`exercise-card ${expanded ? 'expanded' : ''} ${current?'gym-current':''} ${next?'gym-next-card':''}`}>
     {savedEffective && <span key={savedEffective} className="effective-save-flash" aria-hidden="true" />}
     <button className="exercise-summary" onClick={toggle} disabled={gym&&saving} aria-expanded={expanded} aria-controls={`exercise-${ex.id}`}><span className={`exercise-number ${effective.length >= ex.sets ? 'complete' : ''}`}>{effective.length >= ex.sets ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{current?'ACTUAL · ':next?'SIGUIENTE · ':''}{ex.muscle}</span><strong>{ex.name}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''}</small></span><span className="exercise-count">{effective.length}<small>/{ex.sets}</small></span><span className="chevron">›</span></button>
+    <ExercisePainNotice data={data} exercise={ex} date={date}/>
     {(!gym||expanded)&&<PreparationCount exercise={ex} data={data} date={date} currentWeight={currentWeight} reference={reference} target={target} preparations={preparations} logs={logs} unit={unit} onReferenceChange={updateReference} onTargetChange={updateTarget} onSaveReference={saveReference} onSave={savePreparation} change={change} saving={saving} />}
     {expanded && <div className="exercise-body" id={`exercise-${ex.id}`}>
       <ProgressionPanel key={`${ex.profileId}-${date}`} data={data} exercise={ex} date={date} change={change} saving={saving} />
@@ -136,6 +138,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
         <div className="input-pair"><label>Carga ({unit})<input aria-label={`Carga de ${ex.name}`} type="number" min="0" max="1500" step="0.5" inputMode="decimal" value={weight} onChange={event => setWeight(event.target.value)} required /></label><label>Repeticiones<input aria-label={`Repeticiones de ${ex.name}`} type="number" min="1" max="200" value={reps} onChange={event => setReps(event.target.value)} required /></label></div>
         <div className="input-pair"><label>RPE (0–10)<input aria-label={`RPE de ${ex.name}`} type="number" min="0" max="10" step="0.5" inputMode="decimal" value={rpe} onChange={event => setRpe(event.target.value)} required /></label><label className="check-label"><input type="checkbox" checked={failure} disabled={['warmup', 'approach'].includes(kind)} onChange={event => { setFailure(event.target.checked); if(event.target.checked)setFailureMotion(value=>value+1); }} /><span key={failureMotion} className={failureMotion ? 'failure-shake' : undefined}>Llegué al fallo<small>Con ejecución controlada</small></span></label></div>
         <label>Descanso real antes (s, opcional)<input aria-label={`Descanso real de ${ex.name}`} type="number" min="0" max="86400" value={restReal} onChange={event=>setRestReal(event.target.value)}/></label>
+        <FailureSafety data={data} exercise={ex} enabled={failure&&!['warmup','approach'].includes(kind)} change={change} saving={saving}/>
         <button className="primary full" type="submit" disabled={saving}>Guardar serie<span>+ descanso</span></button>
       </form>
       {error && <p className="error" role="alert">{error}</p>}{message && <p className="success" role="status">{message}</p>}

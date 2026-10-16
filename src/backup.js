@@ -2,6 +2,8 @@ import {migrateState,validateRoutine,KINDS} from './domain.js';
 import {hydrateCollections,projectCollections,verifyProjection} from './history.js';
 import {JOURNAL_FIELDS} from './wellness.js';
 import {validateFood,MACROS} from './program/nutrition.js';
+import {validatePainEntries} from './pain.js';
+import {validateCardioSettings,validateCardioSnapshot} from './program/cardio.js';
 export const BACKUP_STORES=['app','sessions','cardio','journal','measurements','phases','sessionRevisions','migrationBackups'];
 const collections=['sessions','cardio','journal','measurements','phases'];
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
@@ -19,6 +21,12 @@ function validateState(state){
  for(const [day,entry] of Object.entries(next.journal)){require(date(day)&&object(entry),'Diario no válido.');for(const field of JOURNAL_FIELDS){const value=entry[field.key];require(value==null||Number.isFinite(value)&&value>=field.min&&value<=field.max,`Valor de diario no válido: ${field.key}.`);}require(entry.pain==null||typeof entry.pain==='string','Dolor no válido.');}
  for(const profile of Object.values(next.profiles)){require(object(profile)&&(profile.workWeight==null||Number.isFinite(profile.workWeight)&&profile.workWeight>=0&&profile.workWeight<=1500),'Peso de trabajo no válido.');require(profile.notes==null||typeof profile.notes==='string','Notas de ejercicio no válidas.');require(profile.targetReps==null||Number.isInteger(profile.targetReps)&&profile.targetReps>0&&profile.targetReps<=200,'Reps objetivo no válidas.');}
  for(const row of next.cardio)require(object(row)&&date(row.date)&&Number.isFinite(row.minutes)&&row.minutes>0&&typeof row.type==='string','Cardio no válido.');
+ for(const [day,entry] of Object.entries(next.journal))if(entry.painEntries!==undefined)require(!validatePainEntries(entry.painEntries,day),'Registros de dolor no válidos.');
+ if(next.cardioSettings)require(!validateCardioSettings(next.cardioSettings),'Plan de cardio no válido.');
+ if(next.cardioSettingsHistory!==undefined)require(Array.isArray(next.cardioSettingsHistory)&&next.cardioSettingsHistory.every(row=>object(row)&&date(row.date)&&typeof row.id==='string'&&!validateCardioSettings(row.settings)),'Historial de ajustes de cardio no válido.');
+ if(next.safetySettings)require(object(next.safetySettings)&&object(next.safetySettings.hidden)&&Object.values(next.safetySettings.hidden).every(value=>typeof value==='boolean'),'Ajustes de seguridad no válidos.');
+ for(const [day,row] of Object.entries(next.cardioDays??{}))if(row.recommendation?.version===2)require(date(day)&&validateCardioSnapshot(row.recommendation),'Minutos recomendados no válidos.');
+ for(const row of next.cardio)if(row.recommendation?.version===2)require(validateCardioSnapshot(row.recommendation),'Objetivo histórico de cardio no válido.');
  for(const [day,value] of Object.entries(next.dailySteps))require(date(day)&&Number.isInteger(value)&&value>=0,'Pasos no válidos.');
  for(const row of next.measurements)require(object(row)&&date(row.date)&&object(row.values)&&Object.values(row.values).every(value=>value===null||Number.isFinite(value)&&value>0&&value<=500),'Medidas no válidas.');
  for(const row of next.phases)require(object(row)&&typeof row.id==='string'&&['bulk','cut','maintain'].includes(row.kind)&&date(row.startDate),'Fase no válida.');
@@ -68,9 +76,13 @@ export function combineStates(current,incoming){
  // exercise in the same day and relink its records; archive originals unchanged.
  const relink=log=>({...log,exerciseId:mapping.get(log.exerciseId)??log.exerciseId});source.logs=source.logs.map(relink);source.techniqueTrials=(source.techniqueTrials??[]).map(relink);
  if(source.gymSession)source.gymSession.currentExerciseId=mapping.get(source.gymSession.currentExerciseId)??source.gymSession.currentExerciseId;
+ if(source.safetySettings?.hidden)source.safetySettings.hidden=Object.fromEntries(Object.entries(source.safetySettings.hidden).map(([id,value])=>[mapping.get(id)??id,value]));
  source.trainingDrafts=Object.fromEntries(Object.entries(source.trainingDrafts??{}).map(([key,value])=>[key.split(':').map(part=>mapping.get(part)??part).join(':'),value]));
  source.sessions=source.sessions.map(session=>({...session,exercises:session.exercises.map(ex=>({...ex,id:mapping.get(ex.id)??ex.id,instance:mapping.has(ex.id)?`${mapping.get(ex.id)}${ex.instance.slice(ex.id.length)}`:ex.instance,sets:ex.sets.map(set=>({...set,source:relink(set.source)}))}))}));
  const merged=combineValues(current,source);merged.routine=routine;
+ // One score per zone/day; the local report wins while both raw sources remain
+ // archived by importBackup. Different IDs must not create duplicate zones.
+ for(const [day,entry] of Object.entries(merged.journal))if(current.journal[day]?.painEntries&&source.journal[day]?.painEntries){const zones=new Map(source.journal[day].painEntries.map(row=>[row.zone,row]));for(const row of current.journal[day].painEntries)zones.set(row.zone,row);entry.painEntries=[...zones.values()];}
  // Sessions are joined by calendar date; their sets are rebuilt from merged logs.
  const sessions=new Map(source.sessions.map(row=>[row.date,structuredClone(row)]));for(const row of current.sessions??[]){const previous=sessions.get(row.date);sessions.set(row.date,previous?{...previous,...structuredClone(row),exercises:combineValues(row.exercises,previous.exercises)}:structuredClone(row));}
  merged.sessions=[...sessions.values()];merged.schemaVersion=7;validateState(merged);return merged;

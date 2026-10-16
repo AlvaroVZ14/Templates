@@ -14,5 +14,6 @@ import './stage.css';
 import './effects.css';
 import './sides.css';
 import './gym.css';
+import './safety-cardio.css';
 
 createRoot(document.getElementById('root')).render(<App />);

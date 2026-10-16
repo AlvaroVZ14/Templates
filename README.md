@@ -173,13 +173,15 @@ la versión anterior y recalcula únicamente la distribución del día seleccion
 los consumos anteriores mantienen su propia referencia. Los planes regenerados
 tienen historial. Todas las fechas usan el calendario de **America/Santiago**.
 
-Cardio aparece después de las pesas: volumen 10–15 min, 3–4 días/semana;
-mini cut 20–30 min zona 2, 4–5 días; mantención 15–20 min, 3 días. Pierna propone
-solo caminata suave opcional. Fatiga ≥8 o dos noches consecutivas con menos de 7 h
-recomiendan reducir o saltar. Un estancamiento de dos semanas durante mini cut
-permite confirmar 5–10 minutos adicionales; nunca se aplica solo. Registrar una
-sesión marca realizado; también puedes marcar omitido. La frecuencia cuenta días
-distintos, conserva minutos e historial y no compensa omisiones.
+Cardio tiene una tarjeta diaria con minutos concretos: volumen 12 min × 4 días,
+mini cut 25 min × 5 y mantención 15 min × 3. Los rangos base y días se editan en
+Ajustes; el calendario determina la sesión y protege pierna con solo caminata
+opcional de 5–10 min. Dos días consecutivos de fatiga alta o sueño bajo reducen
+el tiempo a la mitad o permiten saltarlo. Un estancamiento de dos semanas con
+datos suficientes en mini cut solo sugiere confirmar 5–10 minutos adicionales.
+Hecho guarda minutos reales editables sin duplicar el registro planificado.
+El objetivo guardado conserva su versión; las omisiones no se compensan.
+Detalles y comprobación por fase en Prompt 20 al final de este README.
 
 En descanso aparece **Recuperación de hoy** con casillas persistentes por fecha
 para sueño, pasos según tolerancia, movilidad, hidratación, peso y sensaciones.
@@ -795,7 +797,7 @@ Para comprobar: abre Método desde el cajón, abre y cierra cada apartado (tambi
 
 En **Progreso** e **Historial**, usa **Resumen semanal** o **Resumen mensual**, elige la fecha de corte y pulsa **Copiar**. El semanal compara los últimos siete días con los siete previos; el mensual compara el mes hasta el corte con el mes calendario anterior completo. Las fechas y duraciones quedan explícitas. El texto no se envía a servidores; solo se copia al pulsar el botón. Si el navegador no permite el portapapeles, se selecciona para copiar manualmente.
 
-Incluye series guardadas y técnicas, RPE, fallo y descanso real, volumen por músculo, cardio y pasos, peso y ritmo respecto a la fase, medidas, nutrición, sueño, estrés, energía, fatiga y dolor, fase, descarga y Progreso al cierre de cada período. Los promedios muestran cuántos días tienen datos y no rellenan ausencias con cero. El dolor se conserva como texto por fecha, sin un promedio ficticio. Los borradores no cuentan.
+Incluye series guardadas y técnicas, RPE, fallo y descanso real, volumen por músculo, cardio y pasos, peso y ritmo respecto a la fase, medidas, nutrición, sueño, estrés, energía, fatiga y dolor, fase, descarga y Progreso al cierre de cada período. Los promedios muestran cuántos días tienen datos y no rellenan ausencias con cero. El texto de dolor se conserva; los registros por zona incluyen su escala por fecha, sin un promedio ficticio. Los borradores no cuentan.
 
 La tendencia de cada ejercicio es descriptiva (media de la mejor carga por reps efectiva de cada día, mismo ejercicio y equipo, sin descarga); no convierte una semana corta en una evaluación de Progreso. Cada período usa su referencia cronológica anterior. En mes, el ritmo de peso compara primera y última media de siete días, normalizado por semana; si el período aún es corto usa los últimos 14 días y lo indica. Los indicadores mantienen sus ventanas propias de cuatro semanas. Ambos textos terminan con la solicitud de análisis indicada por el usuario; la app no genera ni aplica esas recomendaciones automáticamente.
 
@@ -1017,3 +1019,108 @@ no se cambia la versión de IndexedDB ni se borran datos.
 5. Termina: comprueba duración, efectivas y mejoras si había una sesión anterior.
    El fondo vuelve a tu preferencia. Exporta un respaldo para conservar también la
    sesión abierta o su resumen fuera del navegador.
+
+## Dolor, seguridad y cardio diario · Prompt 20
+
+### Diario y zonas con molestias
+
+En **Diario → Añadir zona con molestias**, registra zona, dolor 0–10, descripción,
+si es punzante/articular y desde cuándo empezó (opcional). Se guarda con
+**Guardar diario**. Un 0 cierra el episodio de esa zona; no registrar nada no
+significa ausencia de dolor. El texto libre anterior se conserva y sigue editable.
+
+En Hoy se avisa en los ejercicios de carga relacionados desde **6/10**, o si la
+zona aparece en las **tres últimas sesiones con registros de entrenamiento**.
+Varias series en un día cuentan como una sesión; una sesión sin diario no cuenta
+como dolor repetido. El mapa orientativo incluye músculos y articulaciones de
+carga y se puede consultar en **Zonas con molestias**, desde el único menú lateral.
+Esta vista muestra historial por zona, intensidades registradas y los textos
+originales. Los textos ambiguos con varias zonas no reciben una intensidad
+inventada: se pide completar los campos por zona. Solo se lee una puntuación
+antigua cuando aparece explícita como `7/10` junto a una única zona.
+
+Los avisos proponen revisar la carga, omitir técnicas o sustituir desde Rutina;
+**no cambian pesos, técnicas ni ejercicios automáticamente**. Se aconseja consultar
+a un profesional si es punzante/articular o el inicio declarado o los registros
+del episodio abarcan más de 14 días. Los registros separados no prueban dolor
+continuo; los antiguos piden actualizar el diario, sin afirmar el estado actual.
+Son reglas informativas solicitadas para esta app, no un diagnóstico ni umbrales
+clínicos validados. Como referencia general, [NHS recomienda consultar por dolor
+articular persistente o recurrente](https://www.nhs.uk/symptoms/joint-pain/).
+
+Al registrar fallo en los pesados de barra/mancuernas de press/remo y en hack/prensa
+aparece un recordatorio: seguros o compañero, detenerse en fallo técnico y mantener
+la forma. Puede ocultarse y volver a mostrarse por ejercicio de la rutina. Esto
+no oculta los avisos de dolor. Si duele, el aviso indica detener la serie.
+
+### Plan de cardio
+
+**Cardio de hoy** está fuera de los desplegables y también aparece durante el modo
+gimnasio. Siempre muestra un número de minutos. Con la rutina inicial y sin ajustes:
+
+| Fase | Sesiones de cardio | Minutos por sesión | Total semanal |
+|---|---|---:|---:|
+| Volumen | Lunes, martes, jueves, sábado | 12 (base editable 10–15) | 48 |
+| Mini cut | Lunes, martes, jueves, sábado y domingo de descanso | 25 (20–30) | 125 |
+| Mantención | Lunes, jueves, sábado | 15 (15–20) | 45 |
+
+Pierna tiene **0 min obligatorios**, con caminata suave opcional de 5–10 min. Los
+descansos de volumen/mantención tienen 0 y solo pasos, por defecto 8.000–10.000.
+En mini cut se elige un descanso para zona 2, por defecto domingo. La tarjeta
+explica el tipo, intensidad, horario después de pesas (o descanso sin pesas) y motivo.
+
+En **Ajustes → Cardio por fase** puedes cambiar minutos base, extras confirmados,
+tipo, días y pasos. Auto elige las cuatro primeras sesiones sin cuádriceps para
+volumen/mini cut; para mantención, primera, central y última disponibles. El
+descanso de mini cut se toma del último día libre real de la semana. En la rutina
+inicial coincide con la tabla. Una sesión movida con `rutina del día` conserva su
+asignación; los cambios de descansos se respetan. Las casillas manuales fijan tu
+selección; **Volver a Auto** restaura el cálculo. Nunca se obliga a cardio en pierna
+ni se compensa un día omitido sumando minutos a otro.
+
+Con dos fechas consecutivas de fatiga ≥ umbral configurado (8 por defecto), sueño
+menor de 7 h, o una combinación, el tiempo se divide exactamente por dos: 12 → 6,
+25 → 12,5, 15 → 7,5 min. Las fechas sin datos no se rellenan. El aviso permite
+saltarlo. Si el promedio no baja tras dos semanas de mini cut con suficientes
+pesajes, sugiere sumar 5–10 min y exige confirmación; no cambia el plan solo.
+
+Zona 2 se explica como **«Ritmo en que puedes hablar frases completas sin quedarte
+sin aire»**. La guía de pulsaciones es opcional y está apagada inicialmente:
+60–70% de `220 − edad`, edad 23 editable (aprox. 118–138). Es una aproximación
+solicitada, no una zona individual validada. Prioriza poder conversar; [CDC explica
+el uso del habla para valorar la intensidad](https://www.cdc.gov/physical-activity-basics/measuring/index.html).
+
+**Hecho** guarda los minutos reales, editables en pasos de medio minuto; después,
+**Actualizar minutos hechos** corrige ese registro sin duplicarlo. El formulario
+anterior queda para cardio adicional y pasos: no registres ahí otra vez la misma
+actividad. Se muestran minutos hechos/recomendados de la semana y cada día. Los
+resúmenes semanal y mensual incluyen ambos totales, detalle diario y dolor por zona.
+
+Los objetivos se guardan al marcar Hecho/Omitir y mantienen su versión en el
+historial. La tarjeta muestra el plan actual si después cambias el calendario o
+ajustes, indicando si difiere del objetivo guardado. Los días no confirmados usan
+el plan calculado, no una afirmación de actividad realizada. Los ajustes tienen
+fecha de aplicación y conservan sus versiones. Los registros anteriores con solo
+un rango no reciben un objetivo histórico inventado: la comparación se identifica
+como referencia calculada. Todo se incluye en el respaldo JSON existente y sigue
+offline; no hay cambio de versión de IndexedDB ni borrado automático.
+
+### Cómo comprobarlo
+
+1. En Diario, guarda hombro 6/10. En Hoy deben avisar los press/elevaciones, sin
+   cambiar sus pesos ni el resto de ejercicios. Marca punzante/articular o un inicio
+   de hace más de dos semanas para ver la recomendación de consulta. Registra 0 en
+   una fecha posterior para cerrar el episodio. Revisa el historial desde el menú.
+2. En press banca, marca fallo y oculta el recordatorio de seguridad. Recarga:
+   permanece oculto solo en ese ejercicio; puedes volver a mostrarlo. Hack y prensa
+   deben tener su propio recordatorio.
+3. Consulta una semana completa dentro de una fase: compara la tabla de arriba.
+   Cambia fase desde Comida → Editar o cambiar fase. Los días anteriores al inicio
+   de esa fase conservan la fase que tenían, por lo que una semana de transición
+   puede tener un total mixto.
+4. Marca Hecho con 11 min, cambia a 10 y actualiza: debe quedar un solo registro.
+   Recarga offline y comprueba la semana y el resumen semanal. Omite un día: el
+   siguiente no debe aumentar.
+5. Registra dos días seguidos con fatiga alta o sueño bajo: la siguiente tarjeta
+   debe indicar la mitad y explicar por qué. Mueve la sesión desde el calendario
+   y revisa el cardio asignado; modifica días/minutos desde Ajustes.
