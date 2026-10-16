@@ -31,6 +31,6 @@ try{
   await page.waitForTimeout(500);const gym=await measure();
   results.push({viewport:mobile?'390x844 DPR3 touch':'1440x900 DPR1',full,gym});await context.close();
  }
- await writeFile('docs/audit/performance.json',JSON.stringify({environment:'Chromium headless local; viewport emulado, sin CPU throttling; no es prueba en celular físico',sampleSeconds:3,results},null,2));
+ await writeFile(process.argv[2]??'docs/audit/performance.json',JSON.stringify({environment:'Chromium headless local; viewport emulado, sin CPU throttling; no es prueba en celular físico',sampleSeconds:3,results},null,2));
  console.log(JSON.stringify(results));
 }finally{await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

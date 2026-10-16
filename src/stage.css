@@ -7,9 +7,9 @@
 .ambient-scene .shadow-athlete {right:5%;height:100%;top:0}
 .ambient-scene .shadow-veil {background:linear-gradient(90deg,#0A0A0A99,transparent 45%,#0A0A0A66),linear-gradient(0deg,#0A0A0A,transparent 65%)}
 .ambient-scene .stage-smoke {opacity:.15}
-.stage-beams {position:absolute;inset:0;opacity:.6;background:conic-gradient(from -27deg at 22% 110%,transparent 0deg 4deg,#E2E3E414 7deg 10deg,transparent 13deg 40deg),conic-gradient(from -15deg at 86% 115%,transparent 0deg 2deg,#E2E3E411 5deg 8deg,transparent 11deg 40deg);animation:stage-lights 14s ease-in-out infinite alternate}
-.stage-smoke {position:absolute;inset:-20%;background:radial-gradient(ellipse at 70% 70%,#B5B7BC33,transparent 38%),radial-gradient(ellipse at 40% 45%,#B5B7BC26,transparent 35%),radial-gradient(ellipse at 85% 20%,#D2D2D22B,transparent 38%);opacity:.5;animation:smoke-near 26s ease-in-out infinite alternate;pointer-events:none}
-.smoke-far {background:radial-gradient(ellipse at 60% 50%,#D1D2D42B,transparent 40%),radial-gradient(ellipse at 85% 65%,#B5B7BC26,transparent 30%);opacity:.35;animation-name:smoke-far;animation-duration:34s}
+.stage-beams {position:absolute;inset:0;opacity:.6;background:conic-gradient(from -27deg at 22% 110%,transparent 0deg 4deg,#F1EDE414 7deg 10deg,transparent 13deg 40deg),conic-gradient(from -15deg at 86% 115%,transparent 0deg 2deg,#F1EDE411 5deg 8deg,transparent 11deg 40deg);animation:stage-lights 14s ease-in-out infinite alternate}
+.stage-smoke {position:absolute;inset:-20%;background:radial-gradient(ellipse at 70% 70%,#B7B7B733,transparent 38%),radial-gradient(ellipse at 40% 45%,#B7B7B726,transparent 35%),radial-gradient(ellipse at 85% 20%,#D2D2D22B,transparent 38%);opacity:.5;animation:smoke-near 26s ease-in-out infinite alternate;pointer-events:none}
+.smoke-far {background:radial-gradient(ellipse at 60% 50%,#D2D2D22B,transparent 40%),radial-gradient(ellipse at 85% 65%,#B7B7B726,transparent 30%);opacity:.35;animation-name:smoke-far;animation-duration:34s}
 .shadow-media {object-position:64% center;opacity:.7}
 .session-hero .shadow-veil {background:linear-gradient(90deg,#0A0A0AFA,#0A0A0ABD 42%,#0A0A0A22 75%),linear-gradient(0deg,#0A0A0ACC,transparent 45%,transparent 80%,#0A0A0A88)}
 .session-hero .shadow-glow {right:-90px;top:-70px;background:radial-gradient(ellipse,#C8102E88,transparent 64%);z-index:1;mix-blend-mode:screen}

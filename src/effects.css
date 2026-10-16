@@ -30,7 +30,7 @@
 .shadow-enabled.has-tilt .shadow-instructions {position:static;grid-column:1/-1;max-width:none;display:flex;width:100%}
 .tilt-controls {display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;width:100%}
 .tilt-controls small {font-size:11px;line-height:1.6;color:var(--steel)}
-.shadow-quote {position:absolute;left:22px;right:22px;top:18px;z-index:6;background:#120C10ED;border:1px solid #AF2943;border-left:3px solid var(--active);padding:16px 18px;font-family:'Anton',Impact,sans-serif;font-size:clamp(18px,3vw,25px);text-transform:uppercase;letter-spacing:.6px;line-height:1.4;overflow-wrap:anywhere;pointer-events:none;animation:shadow-quote-enter 200ms ease-out}
+.shadow-quote {position:absolute;left:22px;right:22px;top:18px;z-index:6;background:#0E0E0EED;border:1px solid #AF2943;border-left:3px solid var(--active);padding:16px 18px;font-family:'Anton',Impact,sans-serif;font-size:clamp(18px,3vw,25px);text-transform:uppercase;letter-spacing:.6px;line-height:1.4;overflow-wrap:anywhere;pointer-events:none;animation:shadow-quote-enter 200ms ease-out}
 .app-shell[data-effects=reduced] *,.app-shell[data-effects=off] * {animation:none!important;transition:none!important}
 .app-shell[data-effects=reduced] .effective-save-flash,.app-shell[data-effects=off] .effective-save-flash {display:none}
 @keyframes shadow-flex {from{transform:scale(1.03) translateX(-.35px)}to{transform:scale(1.03) translateX(.35px)}}

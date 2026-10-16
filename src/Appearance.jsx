@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
+import {IronSilhouettes} from './Grunge.jsx';
 
 export const DEFAULT_APPEARANCE = {name:'BLOOD & GUTS', motto:'POCAS SERIES. MÁXIMA INTENCIÓN.', motion:true, customMedia:true, effects:'full'};
 export const appearanceFor = data => {
@@ -61,6 +62,8 @@ export function ShadowBackground({appearance,ambient=false}) {
   },[paused,custom]);
   return <div className={`shadow-scene ${ambient?'ambient-scene':''} ${paused?'is-paused':''}`} aria-hidden="true" data-testid={ambient?'ambient-scene':'shadow-scene'}>
     <div className="shadow-glow"/>
+    <IronSilhouettes/>
+    {!ambient&&custom?.type==='image'&&<div className="hero-collage"><StillableImage key={`collage-${custom.src}`} src={localAsset(custom.src)} paused={paused} onError={()=>{}}/></div>}
     <div className="shadow-subject"><div className="shadow-figure"><svg className="shadow-athlete" viewBox="0 0 360 460" focusable="false">
       <path d="M161 29 Q179 15 196 29 L202 54 Q200 74 188 80 L190 91 Q218 88 239 109 L253 128 L267 112 L272 84 L266 71 L270 56 L281 50 L293 58 L301 81 L300 113 Q291 152 270 169 Q255 181 233 165 L222 158 L225 203 Q217 239 207 253 L224 294 L228 343 L241 403 L254 433 L253 448 L210 448 L194 400 L185 350 L179 304 L169 350 L159 402 L147 448 L105 448 L105 434 L118 407 L131 345 L133 293 L149 254 Q135 237 128 203 L130 159 L118 166 Q96 182 79 169 Q58 153 48 115 L47 82 L55 59 L67 50 L79 56 L84 71 L77 85 L83 113 L97 129 L111 109 Q132 88 160 91 L162 80 Q149 73 149 54Z"/>
       <path className="shadow-detail" d="M161 97 L178 113 L190 96 M133 131 Q156 116 178 138 Q199 116 222 131 M147 165 Q166 170 178 159 Q192 170 211 165 M178 140 L178 225 M158 193 L171 197 M185 197 L199 193 M156 214 L170 217 M186 217 L201 214 M148 255 L177 273 L207 254 M144 293 L157 330 M212 293 L199 330"/>

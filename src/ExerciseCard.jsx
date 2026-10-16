@@ -1,3 +1,4 @@
+import {Cracks,Stamp} from './Grunge.jsx';
 import {useFormDraft,useDraftState} from './drafts.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { EQUIPMENT, EXTENSIONS, KINDS, exerciseHistory, extensionSuggestions, formatSeconds, preparationSuggestions, recordSet, removeLog, validateLog } from './domain.js';
@@ -24,6 +25,8 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(null);
   const [savedEffective, setSavedEffective] = useState('');
+  const [savedSet,setSavedSet]=useState('');
+  useEffect(()=>{if(savedSet){const id=setTimeout(()=>setSavedSet(''),350);return()=>clearTimeout(id);}},[savedSet]);
   const [failureMotion, setFailureMotion] = useState(0);
   const preparationSaves=useRef(new Set());
   const observedPreparations=useRef(new Set(logs.filter(log=>log.kind==='approach'&&log.step).map(log=>log.step)));
@@ -100,12 +103,12 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
       const next = referenceError()||ex.deload ? state : { ...state, profiles: { ...state.profiles, [ex.profileId]: { ...profile, ...state.profiles[ex.profileId], workWeight: currentWeight, targetReps: Number(target) } } };
       return recordSet(next, ex, log);
     });
-    if (success) {if(!values.step)draft.clear();if(log.kind === 'effective')setSavedEffective(log.id);setMessage(`${KINDS[log.kind]} guardada · ${log.weight} ${unit} × ${log.reps} · RPE ${log.rpe}`);}
+    if (success) {setSavedSet(log.id);if(!values.step)draft.clear();if(log.kind === 'effective')setSavedEffective(log.id);setMessage(`${KINDS[log.kind]} guardada · ${log.weight} ${unit} × ${log.reps} · RPE ${log.rpe}`);}
     return success;
   }
-  const rows = (items, title) => items.length > 0 && <div className="log-group"><h4>{title}</h4>{items.map(log => <div className="log-row" data-kind={log.kind} key={log.id}><span className="log-mark">{log.kind === 'effective' ? '✓' : '·'}</span><div><strong>{KINDS[log.kind]}{log.step ? ` ${log.step}` : ''}{log.parentId ? ` · de E${effective.findIndex(item => item.id === log.parentId) + 1}` : ''}</strong><small>{log.failure ? 'Llegué al fallo' : 'Sin fallo'} · RPE {log.rpe ?? 'sin dato'}</small></div><b>{log.weight}<small> {unit}</small> × {log.reps}</b><button className="icon-button" aria-label={`Eliminar ${KINDS[log.kind]} de ${ex.name}`} disabled={saving} onClick={() => setDeleting(log.id)}>×</button></div>)}</div>;
+  const rows = (items, title) => items.length > 0 && <div className="log-group"><h4>{title}</h4>{items.map(log => <div className={`log-row ${savedSet===log.id?'fresh-set':''}`} data-kind={log.kind} key={log.id}><span className="log-mark">{log.kind === 'effective' ? '✓' : '·'}</span><div><strong>{KINDS[log.kind]}{log.step ? ` ${log.step}` : ''}{log.parentId ? ` · de E${effective.findIndex(item => item.id === log.parentId) + 1}` : ''}</strong><small>{log.failure ? <><Stamp>FALLO</Stamp>Llegué al fallo</> : 'Sin fallo'} · RPE {log.rpe ?? 'sin dato'}</small></div><b>{log.weight}<small> {unit}</small> × {log.reps}</b><button className="icon-button" aria-label={`Eliminar ${KINDS[log.kind]} de ${ex.name}`} disabled={saving} onClick={() => setDeleting(log.id)}>×</button></div>)}</div>;
 
-  return <article className={`exercise-card ${expanded ? 'expanded' : ''} ${current?'gym-current':''} ${next?'gym-next-card':''}`}>
+  return <article className={`exercise-card ${expanded ? 'expanded' : ''} ${current?'gym-current':''} ${next?'gym-next-card':''}`}><Cracks/>
     {savedEffective && <span key={savedEffective} className="effective-save-flash" aria-hidden="true" />}
     <button className="exercise-summary" onClick={toggle} disabled={gym&&saving} aria-expanded={expanded} aria-controls={`exercise-${ex.id}`}><span className={`exercise-number ${effective.length >= ex.sets ? 'complete' : ''}`}>{effective.length >= ex.sets ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{current?'ACTUAL · ':next?'SIGUIENTE · ':''}{ex.muscle}</span><strong>{ex.name}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''}</small></span><span className="exercise-count">{effective.length}<small>/{ex.sets}</small></span><span className="chevron">›</span></button>
     <ExercisePainNotice data={data} exercise={ex} date={date}/>

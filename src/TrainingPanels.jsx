@@ -1,3 +1,4 @@
+import {Stamp} from './Grunge.jsx';
 import { useState } from 'react';
 import { MUSCLES } from './domain.js';
 import { activeDeload, applyProgression, deloadAdvice, finishDeload, introduceTechnique, muscleRecovery, progression, startDeload } from './training.js';
@@ -18,7 +19,7 @@ export function ProgressionPanel({data,exercise,date,change,saving}){
 export function TrainingRecovery({data,date,exercises,change,saving}){
   const deload=activeDeload(data,date),advice=deloadAdvice(data,date),muscles=new Set(exercises.map(ex=>ex.muscle));
   const [message,setMessage]=useState('');
-  return <section className="wellness-card training-recovery"><div className="section-heading"><h2>Estímulo y recuperación</h2><span>{deload?'Descarga activa':'Reglas visibles'}</span></div>
+  return <section className="wellness-card training-recovery"><div className="section-heading"><h2>Estímulo y recuperación</h2><span>{deload?<><Stamp>DESCARGA</Stamp>Descarga activa</>:'Reglas visibles'}</span></div>
     <p className="field-note">Días desde el último estímulo efectivo por músculo. Se cuenta el músculo principal registrado; preparaciones y extensiones no crean otro estímulo.</p>
     <div className="stimulus-list">{MUSCLES.map(muscle=>{const item=muscleRecovery(data,muscle,date);return <div key={muscle}><strong>{muscle}{muscles.has(muscle)?' · hoy':''}</strong><span>{item.label}</span>{muscles.has(muscle)&&item.warning&&<p className="recovery-warning">Menos de 48 h de recuperación desde la sesión anterior ({item.last}). Revisa si conviene posponer este músculo.</p>}{muscles.has(muscle)&&item.uncertain&&<p>Han pasado dos fechas, pero falta la hora: no se pueden confirmar 48 h completas.</p>}</div>;})}</div>
     <h3 className="program-subtitle">Descarga</h3><p className={advice.due&&!deload?'notice':'field-note'}>{advice.reason}</p>

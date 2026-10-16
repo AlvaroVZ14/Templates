@@ -1,5 +1,5 @@
 export const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
-export const FIRE_COLORS=['#FFD080','#FF981F','#FF501A','#FF1A1A','#C8102E','#480B18'];
+export const FIRE_COLORS=['#F1EDE4','#E1A0AA','#D83A50','#C8102E','#8B1327','#480B18'];
 export function particleBudget(width,height,dpr=1,coarse=false,reduced=false){
   const mobile=coarse||width<=640,scale=reduced?.5:1;
   return {mobile,count:(mobile?20:200)*scale,minimum:(mobile?16:160)*scale,maxBursts:reduced?0:mobile?5:40,ratio:Math.min(Math.max(1,dpr),mobile?1.5:2,Math.sqrt(2500000/Math.max(1,width*height)))};

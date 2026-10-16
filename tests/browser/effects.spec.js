@@ -54,7 +54,7 @@ test('tres capas, foco, tensión, pulso y frases sin cambiar entrenamientos; tam
     const layout=await hero.evaluate(el=>{const stats=el.querySelector('.hero-stats').getBoundingClientRect(),hint=el.querySelector('.shadow-instructions').getBoundingClientRect();return {gap:hint.top-stats.bottom,overflow:document.documentElement.scrollWidth>innerWidth};});
     expect(layout.overflow).toBe(false);expect(layout.gap,`instrucciones separadas a ${width}px`).toBeGreaterThanOrEqual(4);
   }
-  await page.evaluate(()=>navigator.serviceWorker.ready);await context.setOffline(true);await page.reload();await expect(hero).toBeVisible();await expect(hero.locator('img.shadow-media')).toBeVisible();
+  await page.evaluate(()=>navigator.serviceWorker.ready);await context.setOffline(true);await page.reload();await expect(hero).toBeVisible();await expect(hero.locator('.shadow-figure img.shadow-media')).toBeVisible();
   await page.setViewportSize({width:1440,height:900});await heroPoint(page);await page.screenshot({path:'test-results/p16-shadow-desktop.png'});expect(errors).toEqual([]);
 });
 

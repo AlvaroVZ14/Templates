@@ -1,9 +1,9 @@
 /* BLOOD & GUTS: presentation only. All assets, including type, stay local. */
 :root {
   --bg:#0A0A0A; --panel:#161616; --panel-raised:#202020; --border:#383838;
-  --blood:#C8102E; --active:#FF1A1A; --steel:#A6ABB1; --bone:#F1EDE4;
-  --muted:var(--steel); --orange:var(--blood); --green:#A7BCA5;
-  --signal-green:#A7BCA5; --signal-amber:#D6B778; --signal-red:#E1A0AA;
+  --blood:#C8102E; --active:#FF1A1A; --steel:#AAAAAA; --bone:#F1EDE4;
+  --muted:var(--steel); --orange:var(--blood); --green:#B6B6B6;
+  --signal-green:#B6B6B6; --signal-amber:#E1A0AA; --signal-red:#E1A0AA;
   font-family:'Barlow','Segoe UI',sans-serif; font-weight:400; color:var(--bone); background:var(--bg);
 }
 body {background:var(--bg);line-height:1.5}
@@ -11,10 +11,10 @@ body {background:var(--bg);line-height:1.5}
 button,input,select,textarea {font-family:inherit}
 #root :where(button,input,select,textarea,form,article,details,section,.brand-symbol,.exercise-number,.pill,.outlined-tag,.drawer-day,.log-mark,.storage-symbol,.editor-toolbar,.work-preview,.ratio-card,.notice,.phase-state,.complete-day,.rest-complete,.volume-summary,.volume-table,.week-selector,.delete-confirm,.suggestion-empty,.training-recommendation,.stimulus-list>div,.rest-card,.backup-reminder,.approach-panel,.install-help,.error,.storage-result,.date-picker) {border-radius:0}
 button {font-weight:600;line-height:1.3}
-button:disabled {opacity:1;color:#9DA1A6;background:#252525;border-color:#454545}
+button:disabled {opacity:1;color:#A1A1A1;background:#252525;border-color:#454545}
 :is(button,a,input,select,textarea,summary):focus-visible {outline:2px solid var(--active);outline-offset:3px}
 input,select,textarea {min-height:56px;background:#0E0E0E;border-color:#555;color:var(--bone);font-size:16px;caret-color:var(--active)}
-input::placeholder,textarea::placeholder {color:#A1A5AB;opacity:1}
+input::placeholder,textarea::placeholder {color:#A5A5A5;opacity:1}
 input:focus,select:focus,textarea:focus {border-color:var(--active)}
 input:disabled {color:var(--steel);background:#222;opacity:1}
 input[type=number] {font-family:'Anton',Impact,sans-serif;font-weight:400;letter-spacing:.5px;font-variant-numeric:tabular-nums;font-size:25px}
@@ -65,7 +65,7 @@ h2 {line-height:1.3}
 .hero-copy {max-width:65%;z-index:2}
 .hero-date {font-size:13px;color:var(--steel);letter-spacing:.4px;margin-top:24px}
 .session-hero h2 {font-family:'Anton',Impact,sans-serif;font-size:clamp(30px,4vw,46px);line-height:1.25;letter-spacing:.8px;font-weight:400;max-width:600px}
-.hero-caption {color:#C4C3C2;font-size:15px;margin-top:12px;max-width:none}
+.hero-caption {color:#C3C3C3;font-size:15px;margin-top:12px;max-width:none}
 .hero-stats {color:var(--steel);font-size:13px;gap:24px;margin-top:28px;flex-wrap:wrap}
 .hero-stats b {color:var(--bone);font-size:26px;margin-right:5px}
 .progress-ring {width:120px;height:120px;padding:4px;background:conic-gradient(var(--active) var(--progress),#454545 0);margin:0;z-index:2}
@@ -98,27 +98,27 @@ h2 {line-height:1.3}
 .expanded>.exercise-summary {background:linear-gradient(90deg,#2B1218,#161616 75%);border-left:3px solid var(--blood);padding-left:19px}
 .exercise-body {border-color:var(--border);padding:24px}
 .work-reference,.suggested-set,.work-preview,.approach-panel,.preparation-settings,.training-recommendation,.previous-set,.planned-meal,.food-record,.phase-state,.complete-day,.rest-complete,.ratio-card {background:#1C1C1C;border-color:#484848}
-.work-reference {border-left:3px solid #64676B;padding:20px}
+.work-reference {border-left:3px solid #676767;padding:20px}
 .work-reference h3 {font-size:23px}
 .work-reference p,.approach-panel p,.preparation-count p,.technique-note,.field-note,.waist-caption {font-size:13px;color:var(--steel);line-height:1.8}
 .preparation-count strong,.preparation-settings strong {font-size:14px;color:var(--bone)}
 .preparation-choices button {background:#252525;border-color:#555;color:var(--steel);font-size:15px;min-height:48px;min-width:48px}
 .preparation-choices button[aria-pressed=true] {background:#35131C;border-color:var(--active);color:var(--bone)}
-.suggested-set {padding:18px;border-left:3px solid #64676B}
+.suggested-set {padding:18px;border-left:3px solid #676767}
 .suggested-heading strong {font-size:17px}
 .suggested-heading>span {font-size:12px;color:var(--steel);text-align:right}
 .suggested-inputs label {font-size:12px}
 .suggested-inputs label:first-child input {font-family:'Anton',Impact,sans-serif;font-size:38px;font-weight:400;min-height:72px;color:var(--bone);letter-spacing:.5px}
 .suggested-inputs input:disabled {color:var(--steel)}
 .suggested-set.saved {background:#202020;border-color:#555;border-left-color:var(--green)}
-.suggested-set[data-kind=approach],.suggested-set[data-kind=warmup] {color:#CBCDD0}
-.suggested-set[data-kind=approach] .primary,.suggested-set[data-kind=warmup] .primary {background:#3A3C3F;border-color:#6E7277;color:var(--bone)}
+.suggested-set[data-kind=approach],.suggested-set[data-kind=warmup] {color:#CDCDCD}
+.suggested-set[data-kind=approach] .primary,.suggested-set[data-kind=warmup] .primary {background:#3C3C3C;border-color:#727272;color:var(--bone)}
 .suggested-set:is([data-kind=drop],[data-kind=rp],[data-kind=forced],[data-kind=negative]),.work-preview {border-color:#7D2A3A;border-left:3px solid var(--blood);background:#251218}
 .work-preview>span {color:var(--steel);font-size:13px}
 .work-preview strong {font-size:48px;color:var(--bone);line-height:1.3}
 .work-preview strong small {color:var(--steel);font-family:'Barlow',sans-serif;font-size:14px}
 .work-preview>b {font-size:16px;color:var(--bone)}
-.previous-set {border-color:#67696D;background:#202020}
+.previous-set {border-color:#696969;background:#202020}
 .previous-set>span {font-size:11px;color:var(--steel)}
 .previous-set p {font-size:14px;color:var(--bone)}
 .set-form>.input-pair input {font-size:38px;font-weight:400;min-height:72px;letter-spacing:.5px}
@@ -130,7 +130,7 @@ h2 {line-height:1.3}
 .log-row strong {font-size:14px;color:var(--bone)}
 .log-row div small,.log-row>b small {font-size:12px;color:var(--steel)}
 .log-row>b {font-family:'Anton',Impact,sans-serif;font-size:20px;letter-spacing:.4px}
-.log-mark {background:#2B2C2E;color:var(--steel)}
+.log-mark {background:#2C2C2C;color:var(--steel)}
 .effective-mark,.log-row[data-kind=effective] .log-mark {background:#38131D;color:#F0AFBC;border:1px solid #8B2D3E}
 .rest-shortcuts>span {font-size:13px;color:var(--steel)}
 .rest-shortcuts button {font-size:12px;min-height:52px;background:#202020;border-color:#555;color:var(--steel);white-space:normal}
@@ -171,19 +171,19 @@ h2 {line-height:1.3}
 .volume-row-top>span {font-size:15px;color:var(--steel)}
 .volume-row-top>b {font-family:'Anton',Impact,sans-serif;font-size:25px;color:var(--bone)}
 .volume-track {border-radius:0;background:#282828}
-.planned-track {background:#65686C;border-radius:0}
+.planned-track {background:#686868;border-radius:0}
 .done-track {background:var(--blood);border-radius:0}
 .legend {font-size:12px!important;color:var(--steel)}
 .legend i {background:var(--blood)}
-.legend i:nth-of-type(2) {background:#65686C}
+.legend i:nth-of-type(2) {background:#686868}
 .volume-explainer h3 {font-size:20px}
 .volume-explainer p {font-size:14px;color:var(--steel)}
-.notice,.storage-notice.notice,.backup-reminder {background:#1D1B17;border-color:#665638;color:#D9CDB6}
+.notice,.storage-notice.notice,.backup-reminder {background:#1B1B1B;border-color:#575757;color:#CECECE}
 .notice strong,.backup-reminder strong,.storage-compact strong {font-size:15px;color:var(--bone)}
-.notice p,.storage-compact p,.storage-options p {color:#C8BFAE;font-size:13px}
-.storage-symbol {color:var(--signal-amber);background:#2A241A}
+.notice p,.storage-compact p,.storage-options p {color:#C0C0C0;font-size:13px}
+.storage-symbol {color:var(--signal-amber);background:#252525}
 .storage-options summary {color:var(--signal-amber);font-size:14px}
-.storage-options .storage-result {border-color:var(--signal-amber);background:#26231F}
+.storage-options .storage-result {border-color:var(--signal-amber);background:#232323}
 .storage-options .secondary {font-size:14px;min-height:52px}
 .storage-result {border-color:var(--blood);color:var(--bone)}
 .success {color:var(--signal-green);font-size:14px}
@@ -219,24 +219,24 @@ h2 {line-height:1.3}
 .history-chart text,.trend-chart text {fill:var(--steel);font-family:'Barlow',sans-serif;font-size:10px}
 .history-chart polyline {stroke:var(--active)}
 .history-chart circle {fill:var(--active)}
-.trend-chart [stroke="#ff9471"] {stroke:var(--active)}
-.trend-chart [fill="#ff9471"] {fill:var(--active)}
+.trend-chart [stroke="#E1A0AA"] {stroke:var(--active)}
+.trend-chart [fill="#E1A0AA"] {fill:var(--active)}
 .chart-legend i[style*="255, 148, 113"] {background:var(--active)!important}
 .chart-legend span {font-size:12px;color:var(--steel)}
 .chart-empty {font-size:14px;color:var(--steel)}
-.progress-card {position:relative;border-top:4px solid #62676C;padding:26px}
-.progress-card.green {border-top-color:#748D70}
-.progress-card.amber {border-top-color:#AF8C4F}
+.progress-card {position:relative;border-top:4px solid #666666;padding:26px}
+.progress-card.green {border-top-color:#868686}
+.progress-card.amber {border-top-color:#8F8F8F}
 .progress-card.red {border-top-color:#9D4B5A}
 .progress-card-heading {align-items:flex-start;margin-bottom:25px}
 .progress-card h2 {font-size:26px;line-height:1.3}
 .progress-card-heading>div>span {font-size:13px;color:var(--steel)}
 .progress-card .signal {border-radius:0;width:40px;height:40px;color:var(--steel);background:#252525}
-.progress-card.green .signal {color:var(--signal-green);background:#20271F}
-.progress-card.amber .signal {color:var(--signal-amber);background:#2B251B}
+.progress-card.green .signal {color:var(--signal-green);background:#252525}
+.progress-card.amber .signal {color:var(--signal-amber);background:#262626}
 .progress-card.red .signal {color:var(--signal-red);background:#2D1B20}
 .progress-value {font-size:30px;color:var(--bone);line-height:1.4;margin-bottom:18px}
-.progress-card p {font-size:14px;color:#C5C6C8;line-height:1.8}
+.progress-card p {font-size:14px;color:#C6C6C6;line-height:1.8}
 .progress-action {color:var(--steel);border-color:var(--border)}
 .progress-card details {font-size:13px;color:var(--steel)}
 .monthly-reviews small {color:var(--steel);font-size:13px}
@@ -274,7 +274,7 @@ h2 {line-height:1.3}
 .method-section small {font-size:14px;color:var(--steel)}
 .method-chevron {color:var(--steel)}
 .method-content {border-color:var(--border);padding:4px 24px 24px}
-.method-content p,.method-content li {font-size:15px;color:#C9C9CA;line-height:1.85}
+.method-content p,.method-content li {font-size:15px;color:#C9C9C9;line-height:1.85}
 .method-content strong {color:var(--bone)}
 .method-section summary:focus-visible {outline-color:var(--active)}
 .appearance-settings {display:flex;flex-direction:column;gap:20px}

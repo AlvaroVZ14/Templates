@@ -1,3 +1,5 @@
+import GrungeAtmosphere,{Cracks,PosterTitle} from './Grunge.jsx';
+import {useVisualEnvironment} from './VisualEffects.jsx';
 import usePwa from './usePwa.js';
 import {parseRoutineDraft} from './routineDraft.js';
 import {shiftDate} from './wellness.js';
@@ -15,7 +17,7 @@ import GymPanel,{GymSummary} from './GymPanel.jsx';
 import {finishGymSession,openGymSession,startGymSession} from './gym.js';
 import useWakeLock from './useWakeLock.js';
 import useRestAudio from './useRestAudio.js';
-import {restMessage,sessionTitle} from './calendarText.js';
+import {restMessage} from './calendarText.js';
 import {LOAD_TYPES,PATTERNS,classifyExercise} from './classification.js';
 import Progress from './Progress.jsx';
 import {captureMonthlyReviews} from './progress.js';
@@ -95,6 +97,7 @@ export default function App() {
   const configuredAppearance=appearanceFor(data),gymOpen=openGymSession(data);
   const gymActive=Boolean(gymOpen&&page==='today'&&date===gymOpen.date);
   const appearance=gymActive?{...configuredAppearance,motion:false,effects:configuredAppearance.effects==='off'?'off':'reduced'}:configuredAppearance;
+  const visual=useVisualEnvironment(appearance);
   const wake=useWakeLock(gymActive),audio=useRestAudio(gymActive);
   useEffect(()=>{document.title=appearance.name;},[appearance.name]);
   const [impact,setImpact]=useState(false),impactTimer=useRef(null);
@@ -145,11 +148,12 @@ export default function App() {
   }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
-  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer||gymActive?'timer-visible':''} ${gymActive?'gym-active':''} ${impact?'screen-impact':''}`} data-page={page} data-effects={appearance.effects} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09',weights:'10',pain:'11'})[page]}"`}} onChangeCapture={failureImpact}>
+  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer||gymActive?'timer-visible':''} ${gymActive?'gym-active':''} ${impact?'screen-impact':''}`} data-page={page} data-effects={appearance.effects} data-grunge={visual.mode} data-visible={visual.visible} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09',weights:'10',pain:'11'})[page]}"`}} onChangeCapture={failureImpact}>
+    <GrungeAtmosphere ready={!!data} day={clockDay} scene={page} mode={visual.mode} visible={visual.visible} gym={gymActive} name={appearance.name}/>
     <ShadowBackground appearance={appearance} ambient/>
     <ParticleBackground appearance={appearance} page={page}/>
     <SideDecor appearance={appearance}/>
-    <header className="masthead">
+    <header className="masthead"><Cracks header/>
       <div className="brand" aria-label={appearance.name}>
         <span className="brand-symbol"><Icon name="bar" size={29} /></span><span className="brand-name">{appearance.name}<small>DIARIO DE ENTRENAMIENTO · NATURAL</small></span>
       </div>
@@ -209,7 +213,7 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
     <details className="today-extra"><summary>Fase y ajustes del día</summary><PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact /></details>
     <ShadowStage appearance={appearance} data={data} date={date} className={planned>0&&done>=planned?'session-complete':''}>
       <ShadowBackground appearance={appearance}/>
-      <div className="hero-copy"><span className="pill">{exercises.length ? appearanceFor(data).name : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? sessionTitle(exercises) : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
+      <Cracks/><div className="hero-copy"><span className="pill">{exercises.length ? appearanceFor(data).name : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p>{exercises.length?<PosterTitle exercises={exercises}/>:<h2>Día de descanso</h2>}<p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
       <div className={`progress-ring ${completeFlash?'completion-pop':''}`} style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
     </ShadowStage>
     <div className="training-note"><Icon name="leaf" size={18} /><span>{exercises.some(ex=>ex.deload)?'Descarga: ejecución controlada, sin fallo y sin técnicas.':'Natural. Ejecución controlada. Series efectivas al fallo técnico.'}</span></div>
