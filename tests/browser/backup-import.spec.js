@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {onboardingTest as test,expect} from './fixtures.js';
 import {initialState} from '../../src/domain.js';
 import {projectCollections} from '../../src/history.js';
 import {progressReport} from '../../src/progress.js';

@@ -1,5 +1,5 @@
 import {go,chooseDate,menu} from './navigation-helpers.js';
-import {test,expect} from '@playwright/test';
+import {onboardingTest as test,expect} from './fixtures.js';
 
 async function boot(page){await page.clock.install({time:new Date('2026-10-15T18:00:00Z')});await page.addInitScript(()=>{Object.defineProperty(navigator,'storage',{value:{persisted:async()=>false,persist:async()=>false}});});await page.goto('./');await expect(page.getByRole('heading',{name:'Hoy'})).toBeVisible();}
 async function swipe(page,locator,dx){if(await locator.getAttribute('data-testid')==='session-swipe')await menu(page);await locator.scrollIntoViewIfNeeded();const box=await locator.boundingBox();const x=dx<0?box.x+box.width-8:box.x+8,y=box.y+box.height/2;await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx,y+3,{steps:8});await page.mouse.up();}

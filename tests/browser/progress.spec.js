@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {onboardingTest as test,expect} from './fixtures.js';
 import {initialState} from '../../src/domain.js';
 import {go} from './navigation-helpers.js';
 test('Progreso sin datos es calmado; conserva tres tarjetas y reglas accesibles',async({page})=>{

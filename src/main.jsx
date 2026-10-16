@@ -13,5 +13,6 @@ import './motivation.css';
 import './stage.css';
 import './effects.css';
 import './sides.css';
+import './gym.css';
 
 createRoot(document.getElementById('root')).render(<App />);

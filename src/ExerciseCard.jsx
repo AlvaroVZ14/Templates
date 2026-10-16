@@ -7,7 +7,7 @@ import { ProgressionPanel } from './TrainingPanels.jsx';
 import { PreparationCount } from './PreparationControls.jsx';
 import './set-animations.css';
 
-export default function ExerciseCard({ exercise: ex, index, date, data, logs, expanded, toggle, change, saving, startTimer }) {
+export default function ExerciseCard({ exercise: ex, index, date, data, logs, expanded, toggle, change, saving, startTimer,gym=false,current=false,next=false }) {
   const draft=useFormDraft(`exercise:${date}:${ex.id}`,date);
   const profile = data.profiles[ex.profileId] ?? { workWeight: null, targetReps: 8, notes: '' };
   const [reference, setReference] = useDraftState(draft,'reference',profile.workWeight === null ? '' : String(profile.workWeight));
@@ -104,10 +104,10 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   }
   const rows = (items, title) => items.length > 0 && <div className="log-group"><h4>{title}</h4>{items.map(log => <div className="log-row" data-kind={log.kind} key={log.id}><span className="log-mark">{log.kind === 'effective' ? '✓' : '·'}</span><div><strong>{KINDS[log.kind]}{log.step ? ` ${log.step}` : ''}{log.parentId ? ` · de E${effective.findIndex(item => item.id === log.parentId) + 1}` : ''}</strong><small>{log.failure ? 'Llegué al fallo' : 'Sin fallo'} · RPE {log.rpe ?? 'sin dato'}</small></div><b>{log.weight}<small> {unit}</small> × {log.reps}</b><button className="icon-button" aria-label={`Eliminar ${KINDS[log.kind]} de ${ex.name}`} disabled={saving} onClick={() => setDeleting(log.id)}>×</button></div>)}</div>;
 
-  return <article className={`exercise-card ${expanded ? 'expanded' : ''}`}>
+  return <article className={`exercise-card ${expanded ? 'expanded' : ''} ${current?'gym-current':''} ${next?'gym-next-card':''}`}>
     {savedEffective && <span key={savedEffective} className="effective-save-flash" aria-hidden="true" />}
-    <button className="exercise-summary" onClick={toggle} aria-expanded={expanded} aria-controls={`exercise-${ex.id}`}><span className={`exercise-number ${effective.length >= ex.sets ? 'complete' : ''}`}>{effective.length >= ex.sets ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{ex.muscle}</span><strong>{ex.name}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''}</small></span><span className="exercise-count">{effective.length}<small>/{ex.sets}</small></span><span className="chevron">›</span></button>
-    <PreparationCount exercise={ex} data={data} date={date} currentWeight={currentWeight} reference={reference} target={target} preparations={preparations} logs={logs} unit={unit} onReferenceChange={updateReference} onTargetChange={updateTarget} onSaveReference={saveReference} onSave={savePreparation} change={change} saving={saving} />
+    <button className="exercise-summary" onClick={toggle} disabled={gym&&saving} aria-expanded={expanded} aria-controls={`exercise-${ex.id}`}><span className={`exercise-number ${effective.length >= ex.sets ? 'complete' : ''}`}>{effective.length >= ex.sets ? '✓' : String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{current?'ACTUAL · ':next?'SIGUIENTE · ':''}{ex.muscle}</span><strong>{ex.name}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''}</small></span><span className="exercise-count">{effective.length}<small>/{ex.sets}</small></span><span className="chevron">›</span></button>
+    {(!gym||expanded)&&<PreparationCount exercise={ex} data={data} date={date} currentWeight={currentWeight} reference={reference} target={target} preparations={preparations} logs={logs} unit={unit} onReferenceChange={updateReference} onTargetChange={updateTarget} onSaveReference={saveReference} onSave={savePreparation} change={change} saving={saving} />}
     {expanded && <div className="exercise-body" id={`exercise-${ex.id}`}>
       <ProgressionPanel key={`${ex.profileId}-${date}`} data={data} exercise={ex} date={date} change={change} saving={saving} />
       <form onChangeCapture={draft.touch} className="work-reference" onSubmit={saveReference}>

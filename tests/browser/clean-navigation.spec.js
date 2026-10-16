@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {onboardingTest as test,expect} from './fixtures.js';
 import {go,menu,chooseDate} from './navigation-helpers.js';
 test('único menú, secciones accesibles, lado y última sesión conservados, Atrás cierra',async({page})=>{
  const errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto('./');await expect(page.getByRole('heading',{name:'Hoy'})).toBeVisible();await expect(page.locator('.bottom-nav')).toHaveCount(0);await expect(page.locator('main nav,main .week-strip,main .session-navigation')).toHaveCount(0);

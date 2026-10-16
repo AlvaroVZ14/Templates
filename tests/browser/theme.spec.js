@@ -60,7 +60,7 @@ test('video propio silenciado en bucle se pausa con movimiento reducido',async({
   const bytes=await readFile(new URL('../fixtures/theme-loop.webm',import.meta.url));
   await page.route('**/appearance.json',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({media:{type:'video',src:'mi-video.webm'},poster:null})}));
   await page.route('**/mi-video.webm',route=>route.fulfill({contentType:'video/webm',body:Buffer.from(bytes)}));
-  await page.goto('./');const video=page.locator('video.shadow-media');
+  await page.goto('./');await expect(page.getByRole('heading',{name:'Hoy',exact:true})).toBeVisible();const video=page.locator('video.shadow-media');
   await expect.poll(()=>page.evaluate(()=>{const el=document.querySelector('video');return el?{paused:el.paused,muted:el.muted,loop:el.loop,inline:el.playsInline,error:el.error?.code??null}:{};})).toEqual({paused:false,muted:true,loop:true,inline:true,error:null});
   await page.emulateMedia({reducedMotion:'reduce'});await expect.poll(()=>video.evaluate(el=>el.paused)).toBe(true);
 });
