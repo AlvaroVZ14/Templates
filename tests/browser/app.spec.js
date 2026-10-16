@@ -99,7 +99,7 @@ test('móvil, descanso y escritorio sin desbordamientos', async ({ page }) => {
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const tab of ['Hoy', 'Rutina', 'Volumen']) {
-      await page.getByRole('button', { name: tab, exact: true }).click();
+      await go(page,tab);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
   }

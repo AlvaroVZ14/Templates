@@ -71,17 +71,17 @@ test('Medidas y Diario caben en móvil y el recordatorio admite medidas parciale
   await expect(page.getByRole('alert')).toContainText('Toca registrar tus medidas');
   for (const width of [320,390,768,1440]) {
     await page.setViewportSize({width,height:900});
-    for (const tab of ['Medidas','Diario','Volumen']) { await page.getByRole('button',{name:tab,exact:true}).click(); expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true); }
+    for (const tab of ['Medidas','Diario','Volumen']) { await go(page,tab); expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true); }
   }
   await page.setViewportSize({width:390,height:844});
   await go(page,'Medidas');
   await page.screenshot({path:'test-results/measurements-mobile.png',fullPage:true});
 });
 
-test('el recordatorio aparece al abrir Hoy cuando vence el control',async({page})=>{
+test('el recordatorio sigue accesible desde el cajon cuando vence el control',async({page})=>{
   await page.clock.install({time:new Date('2026-10-29T12:00:00Z')});
   await page.goto('./');
-  await expect(page.getByLabel('Recordatorio de medidas',{exact:true})).toBeVisible();
+  await go(page,'Diario');await expect(page.getByLabel('Recordatorio de medidas',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Ir a Medidas',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Tus medidas.',exact:true})).toBeVisible();
   await expect(page.getByRole('alert')).toContainText('2026-10-29');

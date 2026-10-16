@@ -1,4 +1,4 @@
-.bottom-nav { width: 540px; }
+
 .wellness-date { max-width: 260px; margin-bottom: 23px; }
 .wellness-card { background: #1a1b1d; border: 1px solid var(--border); border-radius: 12px; padding: 23px; margin: 20px 0; }
 .wellness-card .section-heading { margin-bottom: 14px; }
@@ -47,7 +47,6 @@ form.sleep-goal { flex-direction: row; align-items: flex-end; gap: 15px; }
 .measurement-reminder > div { flex: 1; }
 .measurement-reminder button { flex-shrink: 0; }
 @media (max-width: 600px) {
-  .bottom-nav { width: 100%; padding-left: 8px; padding-right: 8px; }
   .wellness-card { padding: 19px 14px; }
   .wellness-grid { gap: 18px 13px; }
   .wellness-grid label { font-size: 10px; line-height: 1.5; }

@@ -1,3 +1,5 @@
+import Progress from './Progress.jsx';
+import {captureMonthlyReviews} from './progress.js';
 import { useEffect, useRef, useState } from 'react';
 import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, TITLES, dayIndex, formatSeconds, initialState, migrateState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
 import { updateState } from './db.js';
@@ -97,16 +99,17 @@ export default function App() {
   async function boot() {
     setError('');
     try {
-      const state = await updateState(existing => captureAnchors(advancePhases(existing ? migrateState(existing) : initialState(),localDate())));
+      const state = await updateState(existing => captureMonthlyReviews(captureAnchors(advancePhases(existing ? migrateState(existing) : initialState(),localDate())),localDate()));
       setData(state);setDate(state.navigationSettings?.lastSession??localDate());
     } catch { setError('No se pudo abrir IndexedDB. Permite el almacenamiento del navegador y vuelve a intentar.'); }
   }
   useEffect(() => { boot(); }, []);
+  useEffect(()=>{let day=localDate();const check=()=>{const next=localDate();if(next!==day)change(state=>state).then(saved=>{if(saved)day=next;});};const timer=setInterval(check,60000);document.addEventListener('visibilitychange',check);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',check);};},[]);
   async function change(updater) {
     if (locked.current) return false;
     locked.current = true; setSaving(true); setError('');
     try {
-      const next = await updateState(state => captureAnchors(advancePhases(updater(state),localDate())));
+      const next = await updateState(state => captureMonthlyReviews(captureAnchors(advancePhases(updater(state),localDate())),localDate()));
       setData(next);
       return true;
     } catch { setError('No se pudo guardar. Tu cambio sigue en pantalla: libera espacio o permite el almacenamiento y vuelve a intentar.'); return false; }
@@ -115,7 +118,7 @@ export default function App() {
   async function startTimer(seconds, label) { return change(state => ({ ...state, timer: { end: Date.now() + seconds * 1000, duration: seconds, label } })); }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
-  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide}`}>
+  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer?'timer-visible':''}`}>
     <header className="masthead">
       <div className="brand" aria-label="Heavy Duty">
         <span className="brand-symbol"><Icon name="bar" size={29} /></span><span>HEAVY<span className="brand-light">DUTY</span><small>PERSONAL TRAINING LOG</small></span>
@@ -130,7 +133,7 @@ export default function App() {
         {page !== 'today' && page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
         {page === 'today' && <Today data={data} date={date} setDate={value=>navigate('today',value)} change={change} saving={saving} startTimer={startTimer} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} />}
         <div hidden={page !== 'routine'}><Routine data={data} change={change} saving={saving} /></div>
-        {page === 'volume' && <Volume data={data} date={date} setDate={setDate} />}
+        {page === 'volume' && <Progress data={data}><Volume data={data} date={date} setDate={setDate}/></Progress>}
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} />}
@@ -156,7 +159,7 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
   const activeId = open === null ? exercises[0]?.id : open;
   return <>
     <div className="page-heading"><div><p className="eyebrow">TU ÚNICA COMPETENCIA ERES TÚ</p><h1>A entrenar<span className="accent">.</span></h1></div></div>
-    <details className="today-extra"><summary>Fase y ajustes del d?a</summary><PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact /></details>
+    <details className="today-extra"><summary>Fase y ajustes del día</summary><PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact /></details>
     <section className="session-hero">
       <div className="hero-copy"><span className="pill">{exercises.length ? 'HEAVY DUTY / BLOOD & GUTS' : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? [2, 6].includes(day) ? 'Sesión personalizada' : TITLES[day] : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
       <div className="progress-ring" style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
@@ -169,7 +172,7 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
     <section className="session-list"><div className="section-heading"><h2>{exercises.length ? 'Tu sesión' : 'Recupera para la próxima'}</h2><span>{exercises.length ? `${done} de ${planned} efectivas` : DAYS[day]}</span></div>
       {exercises.length === 0 ? <div className="rest-card"><Icon name="leaf" size={42} /><h3>Hoy toca descansar.</h3><p>Tu rutina vuelve {day === 2 ? 'el jueves' : 'el lunes'}. Puedes consultar otro día en la semana de arriba.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} data={data} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => setOpen(activeId === exercise.id ? '' : exercise.id)} change={change} saving={saving} startTimer={startTimer} />)}
     </section>
-    <details className="today-extra"><summary>Alimentaci?n y recuperaci?n del d?a</summary><TodayPlan key={`plan-${date}`} data={data} date={date} change={change} saving={saving} onFood={undefined} />
+    <details className="today-extra"><summary>Alimentación y recuperación del día</summary><TodayPlan key={`plan-${date}`} data={data} date={date} change={change} saving={saving} onFood={undefined} />
     <Cardio key={date} data={data} date={date} change={change} saving={saving} />
     <Recovery data={data} date={date} change={change} saving={saving} onDiary={undefined} onMeasures={undefined} /></details>
     <p className="local-footnote"><span className="tiny-dot" /> Guardado en este dispositivo · Sin cuenta ni servidor</p>
@@ -235,7 +238,7 @@ function Volume({ data, date, setDate }) {
   const extensions = data.logs.filter(log => dates.includes(log.date) && EXTENSIONS.includes(log.kind)).length;
   const label = d => new Date(`${d}T12:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
   function shift(delta) { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate() + delta); setDate(localDate(d)); }
-  return <><div className="page-heading"><div><p className="eyebrow">CADA SERIE TIENE UN PROPÓSITO</p><h1>Tu volumen<span className="accent">.</span></h1></div><span className="outlined-tag">SEMANAL</span></div>
+  return <><div className="page-heading"><div><p className="eyebrow">CADA SERIE TIENE UN PROPÓSITO</p><h2>Tu volumen<span className="accent">.</span></h2></div><span className="outlined-tag">SEMANAL</span></div>
     <div className="week-selector"><button className="icon-button" aria-label="Semana anterior" onClick={() => shift(-7)}>←</button><span>{label(dates[0])} — {label(dates[6])} <small>{dates[0].slice(0, 4)}</small></span><button className="icon-button" aria-label="Semana siguiente" onClick={() => shift(7)}>→</button></div>
     <WaistNotice records={data.measurements} date={date} />
     <div className="volume-summary"><div><span className="eyebrow">SERIES EFECTIVAS</span><strong>{total}<small> / {planned}</small></strong><p>realizadas / planeadas</p></div><div className="summary-divider" /><div><span className="eyebrow">PREPARACIÓN</span><strong>{preparations}</strong><p>guardadas aparte</p></div><div className="summary-divider" /><div><span className="eyebrow">EXTENSIONES</span><strong>{extensions}</strong><p>drop, RP y opcionales</p></div></div>

@@ -5,3 +5,5 @@
 @media(prefers-reduced-motion:no-preference){.nav-drawer[open]{animation:drawer-enter .18s ease-out}@keyframes drawer-enter{from{opacity:0;transform:translateX(15px)}to{opacity:1;transform:translateX(0)}}}
 
 .menu-button{position:absolute;top:max(22px,env(safe-area-inset-top));right:0;min-width:44px;min-height:44px;padding:8px;background:transparent;border:0}.menu-word{display:none}.masthead{position:relative}.header-actions{padding-right:50px}.menu-left .menu-button{right:auto;left:0}.menu-left .brand{margin-left:54px}.menu-left .header-actions{padding-right:0}.today-extra{margin:16px 0;border:1px solid #303133;border-radius:12px;padding:16px}.today-extra>summary{cursor:pointer;font-size:13px;color:#bcb9b4;min-height:32px}.nav-drawer{padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(28px,env(safe-area-inset-bottom))}.nav-drawer .session-navigation{margin-top:18px}.app-shell{min-height:100dvh}
+
+.app-shell.timer-visible{padding-bottom:calc(115px + env(safe-area-inset-bottom))}

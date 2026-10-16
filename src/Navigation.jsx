@@ -17,13 +17,19 @@ export function EdgeSwipe({side,onOpen}){
 }
 export function Drawer({open,onClose,side,data,date,page,navigate}){
   const dialog=useRef(null);
+  const historyTransition=useRef(Promise.resolve());
   useEffect(()=>{
-    const el=dialog.current;if(open&&!el.open)el.showModal();if(!open&&el.open)el.close();
-    if(!open)return;
-    const previous=document.body.style.overflow;document.body.style.overflow='hidden';
-    const token=crypto.randomUUID();history.pushState({...history.state,heavyDutyDrawer:token},'');
-    const back=()=>onClose();window.addEventListener('popstate',back);
-    return()=>{document.body.style.overflow=previous;window.removeEventListener('popstate',back);if(history.state?.heavyDutyDrawer===token)history.back();};
+    const el=dialog.current;if(!open){if(el.open)el.close();return;}
+    let cancelled=false,cleanup;
+    async function show(){
+      await historyTransition.current;if(cancelled)return;
+      if(!el.open)el.showModal();
+      const previous=document.body.style.overflow;document.body.style.overflow='hidden';
+      const token=crypto.randomUUID();history.pushState({...history.state,heavyDutyDrawer:token},'');
+      const back=()=>onClose();window.addEventListener('popstate',back);
+      cleanup=()=>{document.body.style.overflow=previous;window.removeEventListener('popstate',back);if(history.state?.heavyDutyDrawer===token){historyTransition.current=new Promise(resolve=>{window.addEventListener('popstate',resolve,{once:true});history.back();});}};
+    }
+    show();return()=>{cancelled=true;cleanup?.();};
   },[open]);
   const closeGesture=useSwipe(direction=>{if(direction===side)onClose();});
   return <dialog ref={dialog} className={`nav-drawer ${side}`} aria-label="Menú de navegación" onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right)onClose();}}}>

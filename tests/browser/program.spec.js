@@ -37,7 +37,7 @@ test('cuatro comidas, consumo único, edición histórica de alimentos y recarga
   await page.getByRole('button',{name:'Registrar alimento consumido',exact:true}).click();
   await expect(page.getByText('Consumo guardado. El plan previsto no cambia.',{exact:true})).toBeVisible();
   state=await stored(page);expect(state.foodLogs).toHaveLength(2);expect(state.foodLogs[0].macros.kcal).toBe(old);expect(state.foodLogs[1].macros.kcal).toBe(200);expect(state.mealPlans['2026-10-15'].total.kcal).toBe(oldPlan);
-  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await context.setOffline(true);await page.reload();
+  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await context.setOffline(true);await page.reload();await go(page,'Hoy');
   await expect(page.getByLabel('Comida 1 realizada',{exact:true})).toBeChecked();
   await page.getByLabel('Comida 1 realizada',{exact:true}).click();
   await expect(page.getByLabel('Comida 1 realizada',{exact:true})).not.toBeChecked();
