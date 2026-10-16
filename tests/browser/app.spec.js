@@ -1,8 +1,9 @@
+import {go,chooseDate} from './fixtures.js';
 import { test, expect } from './fixtures.js';
 
 async function monday(page) {
   await page.goto('./');
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
   await expect(page.getByRole('heading', { name: 'Pecho, hombro y bíceps' })).toBeVisible();
 }
 async function log(page, kind = 'Efectiva', weight = '60', reps = '8') {
@@ -25,11 +26,11 @@ test('registro, persistencia IndexedDB, volumen, preparación y extensiones', as
   await expect(page.getByRole('status')).toContainText('Aproximación guardada');
   await log(page);
   await log(page, 'Drop set', '40', '6');
-  await page.getByRole('button', { name: 'Volumen', exact: true }).click();
+  await go(page,'Volumen');
   const chest = page.locator('.volume-row').filter({ hasText: 'Pecho' });
   await expect(chest.locator('.volume-row-top')).toHaveText('Pecho891');
   await page.reload();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
   await expect(page.locator('.log-row')).toHaveCount(3);
   await page.getByRole('button', { name: 'Eliminar Efectiva de Press banca', exact: true }).click();
   await page.locator('.delete-confirm').getByRole('button', { name: 'Eliminar', exact: true }).click();
@@ -40,20 +41,20 @@ test('registro, persistencia IndexedDB, volumen, preparación y extensiones', as
 
 test('editor guarda técnicas, descansos, series, nombre y preserva borradores entre pantallas', async ({ page }) => {
   await monday(page);
-  await page.getByRole('button', { name: 'Rutina', exact: true }).click();
+  await go(page,'Rutina');
   await page.getByRole('button', { name: 'Lun', exact: true }).click();
   await page.locator('.editor-card').first().getByRole('button').first().click();
   await page.getByLabel('Nombre del ejercicio').fill('Press banca controlado');
   await page.getByLabel('Series efectivas', { exact: true }).fill('3');
   await page.getByLabel('Antes de la efectiva').fill('240');
   await page.getByLabel('Permitir forzadas').check();
-  await page.getByRole('button', { name: 'Hoy', exact: true }).click();
-  await page.getByRole('button', { name: 'Rutina', exact: true }).click();
+  await go(page,'Hoy');
+  await go(page,'Rutina');
   await expect(page.getByLabel('Nombre del ejercicio')).toHaveValue('Press banca controlado');
   await page.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect(page.getByText('Rutina guardada en este dispositivo.', { exact: true }).last()).toBeVisible();
   await page.reload();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
   await expect(page.locator('.exercise-card').first()).toContainText('Press banca controlado');
   await expect(page.getByLabel('Tipo de serie').locator('option')).toHaveCount(6);
   await page.getByLabel('Tipo de serie').selectOption('forced');
@@ -84,11 +85,11 @@ test('PWA precachea los assets, permite recargar y guardar sin red', async ({ pa
   expect(paths.urls.every(path => path.startsWith('/Templates/'))).toBe(true);
   await context.setOffline(true);
   await page.reload();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
   await expect(page.getByText('Sin conexión', { exact: true })).toBeVisible();
   await log(page, 'Efectiva', '62.5', '7');
   await page.reload();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await chooseDate(page,'2026-10-12');
   await expect(page.locator('.log-row')).toHaveCount(1);
   await expect(page.locator('.log-row')).toContainText('62.5');
 });
@@ -98,18 +99,18 @@ test('móvil, descanso y escritorio sin desbordamientos', async ({ page }) => {
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const tab of ['Hoy', 'Rutina', 'Volumen']) {
-      await page.getByRole('button', { name: tab, exact: true }).click();
+      await go(page,tab);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: 'Hoy', exact: true }).click();
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-12');
+  await go(page,'Hoy');
+  await chooseDate(page,'2026-10-12');
   await page.screenshot({ path: 'test-results/mobile-today.png', fullPage: true });
-  await page.getByLabel('Fecha de entrenamiento').fill('2026-10-14');
+  await chooseDate(page,'2026-10-14');
   await expect(page.getByRole('heading', { name: 'Hoy toca descansar.' })).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.getByRole('button', { name: 'Volumen', exact: true }).click();
+  await go(page,'Volumen');
   await page.screenshot({ path: 'test-results/desktop-volume.png', fullPage: true });
 });
 

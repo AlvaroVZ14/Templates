@@ -1,0 +1,4 @@
+import {expect} from '@playwright/test';
+export async function menu(page){if(!await page.getByRole('dialog').isVisible())await page.getByRole('button',{name:'Abrir menú',exact:true}).click();return page.getByRole('dialog');}
+export async function go(page,name){const drawer=await menu(page);await drawer.getByRole('button',{name:name==='Volumen'?'Progreso':name,exact:true}).click();await expect(drawer).not.toBeVisible();if(name==='Volumen'&&await page.locator('.weekly-volume-details').count())await page.locator('.weekly-volume-details summary').click();}
+export async function chooseDate(page,date){const drawer=await menu(page);await expect(drawer).toBeVisible();const field=drawer.getByLabel('Fecha de entrenamiento',{exact:true});if(await field.inputValue()===date)await drawer.getByRole('button',{name:'Cerrar men\u00fa'}).click();else await field.fill(date);await expect(drawer).not.toBeVisible();}

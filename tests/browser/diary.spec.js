@@ -1,7 +1,8 @@
+import {go,chooseDate} from './fixtures.js';
 import { test, expect } from './fixtures.js';
 
 async function openDiary(page,date='2026-10-15') {
-  await page.goto('./'); await page.getByRole('button',{name:'Diario',exact:true}).click();
+  await page.goto('./'); await go(page,'Diario');
   await page.getByLabel('Fecha del diario',{exact:true}).fill(date);
 }
 test('diario, aviso de dos noches, meta y peso semanal se guardan offline',async({page,context})=>{
@@ -27,7 +28,7 @@ test('diario, aviso de dos noches, meta y peso semanal se guardan offline',async
   await expect(page.locator('.health-table tbody tr').filter({hasText:'10-15'})).toContainText('71');
   await page.evaluate(async()=>{await navigator.serviceWorker.ready;});
   await context.setOffline(true); await page.reload();
-  await page.getByRole('button',{name:'Diario',exact:true}).click();
+  await go(page,'Diario');
   await page.getByLabel('Fecha del diario',{exact:true}).fill('2026-10-15');
   await expect(page.getByLabel('Peso corporal (kg)',{exact:true})).toHaveValue('72');
   await expect(page.getByLabel('Dolor por zona',{exact:true})).toHaveValue('Hombro derecho, leve.');

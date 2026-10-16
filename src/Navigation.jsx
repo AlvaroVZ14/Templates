@@ -17,11 +17,19 @@ export function EdgeSwipe({side,onOpen}){
 }
 export function Drawer({open,onClose,side,data,date,page,navigate}){
   const dialog=useRef(null);
+  const historyTransition=useRef(Promise.resolve());
   useEffect(()=>{
-    const el=dialog.current;if(open&&!el.open)el.showModal();if(!open&&el.open)el.close();
-    if(!open)return;
-    const previous=document.body.style.overflow;document.body.style.overflow='hidden';
-    return()=>{document.body.style.overflow=previous;};
+    const el=dialog.current;if(!open){if(el.open)el.close();return;}
+    let cancelled=false,cleanup;
+    async function show(){
+      await historyTransition.current;if(cancelled)return;
+      if(!el.open)el.showModal();
+      const previous=document.body.style.overflow;document.body.style.overflow='hidden';
+      const token=crypto.randomUUID();history.pushState({...history.state,heavyDutyDrawer:token},'');
+      const back=()=>onClose();window.addEventListener('popstate',back);
+      cleanup=()=>{document.body.style.overflow=previous;window.removeEventListener('popstate',back);if(history.state?.heavyDutyDrawer===token){historyTransition.current=new Promise(resolve=>{window.addEventListener('popstate',resolve,{once:true});history.back();});}};
+    }
+    show();return()=>{cancelled=true;cleanup?.();};
   },[open]);
   const closeGesture=useSwipe(direction=>{if(direction===side)onClose();});
   return <dialog ref={dialog} className={`nav-drawer ${side}`} aria-label="Menú de navegación" onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right)onClose();}}}>
@@ -31,7 +39,8 @@ export function Drawer({open,onClose,side,data,date,page,navigate}){
       const context=dayContext(data,value),rest=!context.exercises.length,today=value===localDate();
       return <button key={value} className={`${today?'today':''} ${date===value&&page==='today'?'selected':''}`} aria-current={date===value&&page==='today'?'date':undefined} onClick={()=>navigate('today',value)}><span className="drawer-day">{DAYS[index].slice(0,3)}<b>{value.slice(-2)}</b></span><span><strong>{rest?'Descanso':TITLES[context.routineDay]}</strong><small>{DAYS[index]}{today?' · Hoy':''}{rest?' · Recuperación':''}</small></span><span aria-hidden="true">{rest?'○':'›'}</span></button>;
     })}</nav>
-    <nav className="drawer-links" aria-label="Secciones">{[['history','Historial','◷'],['measurements','Medidas','↔'],['diary','Diario','▤'],['volume','Progreso','↗'],['routine','Rutina','✎'],['food','Comida','◉'],['method','Método','◇'],['settings','Ajustes','⚙']].map(([id,label,icon])=><button key={id} aria-current={page===id?'page':undefined} onClick={()=>navigate(id)}><span aria-hidden="true">{icon}</span>{label}<span aria-hidden="true">›</span></button>)}</nav>
+    <nav className="drawer-links" aria-label="Secciones">{[['today','Hoy','□'],['history','Historial','◷'],['measurements','Medidas','↔'],['diary','Diario','▤'],['volume','Progreso','↗'],['routine','Rutina','✎'],['food','Comida','◉'],['method','Método','◇'],['settings','Ajustes','⚙']].map(([id,label,icon])=><button key={id} aria-current={page===id?'page':undefined} onClick={()=>navigate(id)}><span aria-hidden="true">{icon}</span>{label}<span aria-hidden="true">›</span></button>)}</nav>
+    <label>Fecha de entrenamiento<input aria-label="Fecha de entrenamiento" type="date" value={date} onChange={event=>{if(event.target.value)navigate('today',event.target.value);}}/></label><SessionNavigation data={data} date={date} setDate={value=>navigate('today',value)}/>
     <p className="drawer-foot">Solo tú. Tu ritmo. Tu progreso.<br/>Datos privados en este dispositivo.</p>
   </dialog>;
 }
@@ -49,6 +58,6 @@ export function SessionNavigation({data,date,setDate}){
 export function NavigationSettings({data,change,saving}){
   const side=data.navigationSettings?.drawerSide??'right';
   const [message,setMessage]=useState('');
-  return <><div className="page-heading"><div><p className="eyebrow">A TU MANERA</p><h1>Ajustes<span className="accent">.</span></h1></div></div><section className="wellness-card"><h2>Menú al alcance del pulgar</h2><p>Elige el borde desde el que se abre el cajón. También puedes usar el botón Menú.</p><label>Lado del menú<select aria-label="Lado del menú" disabled={saving} value={side} onChange={async event=>{const value=event.target.value;setMessage('');if(await change(state=>({...state,navigationSettings:{...state.navigationSettings,drawerSide:value}})))setMessage('Preferencia guardada.');}}><option value="right">Derecha (por defecto)</option><option value="left">Izquierda</option></select></label>{message&&<p className="success" role="status">{message}</p>}<p className="field-note">Desliza desde el borde elegido hacia dentro. Para pasar entre sesiones, desliza la franja con flechas de Hoy. Los gráficos y campos conservan sus gestos.</p></section></>;
+  return <><div className="page-heading"><div><p className="eyebrow">A TU MANERA</p><h1>Ajustes<span className="accent">.</span></h1></div></div><section className="wellness-card"><h2>Menú al alcance del pulgar</h2><p>Elige el borde desde el que se abre el cajón. También puedes usar el botón Menú.</p><label>Lado del menú<select aria-label="Lado del menú" disabled={saving} value={side} onChange={async event=>{const value=event.target.value;setMessage('');if(await change(state=>({...state,navigationSettings:{...state.navigationSettings,drawerSide:value}})))setMessage('Preferencia guardada.');}}><option value="right">Derecha (por defecto)</option><option value="left">Izquierda</option></select></label>{message&&<p className="success" role="status">{message}</p>}<p className="field-note">Desliza desde el borde elegido hacia dentro. Para pasar entre sesiones, desliza la franja con flechas dentro del cajón. Los gráficos y campos conservan sus gestos.</p></section></>;
 }
 export function Method(){return <><div className="page-heading"><div><p className="eyebrow">INTENCIÓN EN CADA REPETICIÓN</p><h1>El método<span className="accent">.</span></h1></div></div><section className="wellness-card method-copy"><h2>Heavy Duty / Blood &amp; Guts</h2><p>Poco volumen, ejecución controlada y registro de cada serie. El fallo técnico llega cuando no puedes completar otra repetición con buena ejecución.</p><h3>Prepara, ejecuta, recupera</h3><p>Las series previas se adaptan al orden de la sesión y al peso de trabajo. Nunca al fallo, nunca por encima del 80% y fuera del volumen efectivo.</p><p>Drop set: reduce un 20% por caída. Rest-pause: conserva el peso y descansa 15–20 segundos. Introduce una técnica a la vez; forzadas y negativas requieren activación manual.</p><h3>La recuperación también cuenta</h3><p>Consulta los días desde el último estímulo y las recomendaciones con su motivo en Hoy. En descarga se mantienen las previas, se reduce el volumen y se retiran las técnicas y el fallo.</p><p className="field-note">La progresión se apoya en tus registros. Ajusta cargas y descansos a tu capacidad y ejecución.</p></section></>;}

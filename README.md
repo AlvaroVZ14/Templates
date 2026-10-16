@@ -715,3 +715,67 @@ y [service workers de MDN](https://developer.mozilla.org/en-US/docs/Web/API/Serv
 `.gitignore` excluye dependencias, `dist/`, archivos de entorno, claves locales y
 resultados de pruebas. Implementación asistida por Codex; la revisión humana queda
 a cargo del propietario del repositorio.
+
+## Navegación simplificada (PROMPT 10 A)
+
+La barra inferior fue eliminada, incluido su espacio reservado. El botón discreto de menú queda en la esquina del lado elegido en Ajustes; la app respeta las áreas seguras del sistema. El cajón es la única navegación y se cierra tocando fuera, con gesto, Escape o Atrás. Allí están Hoy, Historial, Medidas, Diario, Comida, Progreso, Método, Ajustes y Rutina, además de fechas y comparación semanal.
+
+Al abrir siempre se entra en Hoy, recuperando la última fecha de entrenamiento seleccionada en IndexedDB. El permiso de almacenamiento y la instalación se consultan desde Ajustes. Los paneles secundarios de Hoy están plegados; el registro y sus borradores conservan su lógica.
+
+Comprobación: recarga y confirma que no hay barra inferior ni hueco fijo; abre el menú y visita cada sección; elige otra fecha, recarga y comprueba que vuelve a ella en Hoy; cambia izquierda/derecha en Ajustes y prueba Atrás con el cajón abierto.
+
+## Progreso y revisión mensual (PROMPT 10 B)
+
+**Menú → Progreso** muestra un mensaje calmado y tres tarjetas con icono, estado,
+motivo, acción y reglas desplegables. No cambia pesos, rutina, técnicas ni metas.
+El volumen semanal anterior sigue disponible en **Series semanales por músculo**.
+
+- **Rendimiento:** mejor carga × reps efectiva por ejercicio y sesión, promediada
+  en bloques consecutivos de 28 días. Compara el mismo ejercicio y equipo en ambos
+  bloques, con al menos dos sesiones por bloque; cada ejercicio comparable tiene
+  el mismo peso en el indicador. Incluye press banca/inclinado/militar, jalón,
+  remos, hack squat y prensa; excluye gemelos en prensa, previas, extensiones y
+  descarga. Verde desde +1%; ámbar para ±1% y descensos aislados, incluida la zona
+  de −1% a −2%. Rojo solo si tanto la comparación actual como la anterior caen
+  más de 2%, con los mismos ejercicios en tres bloques de cuatro semanas.
+- **Cuerpo:** diferencia entre los promedios de las dos últimas semanas de siete
+  días, con al menos cuatro pesos por semana, dentro de la fase actual. En volumen,
+  verde exige +0,25–0,5 kg/semana, cintura ≤1 cm/mes y las otras cinco medidas
+  estables o subiendo. Compara medidas quincenales separadas 10–21 días y recientes
+  (≤21 días). Para cintura necesita una separación de 21–40 días y muestra su ritmo
+  normalizado a 30 días; superar 1 cm/mes marca rojo. Si faltan mediciones no da
+  verde. En mini cut exige −0,5 a −0,7 kg/semana y rendimiento ≥−1%. Mantención no
+  reutiliza los objetivos de otra fase y se muestra como observación.
+- **Constancia y recuperación:** sesiones completadas del plan de los últimos 28
+  días, promedio de sueño observado y semanas desde descarga/inicio. Verde exige
+  ≥85%, ≥7 h (mínimo 14 registros de sueño) y menos de seis semanas desde descarga
+  o inicio. Una descarga activa reinicia ese contador; no se activa automáticamente.
+  Sesión completada: cierre con efectivas o todas las efectivas previstas. Para
+  fechas sin plan histórico se usa la rutina actual con las excepciones del calendario;
+  por eso modificar retrospectivamente la rutina puede cambiar este cálculo actual.
+
+Cada tarjeta exige al menos cuatro semanas observadas antes de evaluar; los días
+ausentes no se rellenan. Muestra «datos insuficientes, vuelve en X semanas». La
+comparación de rendimiento necesita además un bloque previo comparable: con solo
+cuatro semanas disponibles todavía no hay ocho semanas para comparar. Un
+estancamiento de una a tres semanas nunca produce rojo de rendimiento.
+
+El día 1 se guarda la revisión del **mes recién cerrado**, con los tres estados,
+sus valores y el cambio frente a la revisión anterior (puntos porcentuales para
+rendimiento/constancia; kg/semana para cuerpo). Sin referencia comparable indica
+«sin comparación disponible». Si la app estaba cerrada, prepara los meses pendientes
+al abrir; si permanece abierta, comprueba el cambio de fecha cada minuto y al
+volver a primer plano. No necesita conexión ni un servidor en segundo plano.
+
+Las revisiones se guardan una sola vez por mes en `app/state.monthlyReviews` de
+IndexedDB 2, sin sobrescribirse al editar registros posteriores ni purgarse por
+antigüedad. Se consultan todas en **Historial → Revisión mensual**; Progreso solo
+muestra la más reciente. La copia JSON también las incluye. No se requiere un cambio
+de versión de la base: se añade un campo al estado existente sin borrar colecciones.
+
+Prueba con tus registros habituales: entra en Progreso, abre «Cómo se calcula» y
+comprueba que los periodos incompletos no reciben una evaluación. En Historial,
+despliega una revisión mensual, recarga y confirma que conserva su mes y sus valores.
+Las pruebas automatizadas usan fechas y datos ficticios para comprobar subidas,
+dos caídas consecutivas, cambios de equipo, cintura, mini cut, sueño, descarga y
+cierre mensual con recarga offline, sin tocar datos del navegador del usuario.
