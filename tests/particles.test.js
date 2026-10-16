@@ -18,7 +18,7 @@ test('ciclo de vida: sube, se encoge, se apaga y renace abajo sin saltar al bord
   const rng=random(),particles=createParticles(1,1920,900,rng),p=particles[0];p.age=p.life*.4;advanceParticles(particles,null,1920,900,0,rng);const before={y:p.y,size:p.size,alpha:p.alpha};p.age=p.life*.9;advanceParticles(particles,null,1920,900,0,rng);
   assert.ok(p.y<before.y);assert.ok(p.size<before.size);assert.ok(p.alpha<before.alpha);assert.ok(p.y>900*.1);
   p.age=p.life;advanceParticles(particles,null,1920,900,16,rng);assert.ok(particles[0].y>=900);assert.equal(particles[0].age,0);
-  assert.equal(fireColor(0),'#FFD080');assert.equal(fireColor(.55),'#FF1A1A');assert.equal(fireColor(.7),'#C8102E');assert.equal(fireColor(1),'#480B18');
+  assert.equal(fireColor(0),'#F1EDE4');assert.equal(fireColor(.55),'#C8102E');assert.equal(fireColor(.7),'#8B1327');assert.equal(fireColor(1),'#480B18');
 });
 test('puntero aparta suavemente con estela, sin alterar el lateral lejano',()=>{
   const particles=createParticles(2,1920,900,random()),control=structuredClone(particles[1]),pointer={active:true,x:particles[0].x-8,y:particles[0].y};

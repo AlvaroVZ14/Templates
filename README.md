@@ -1148,3 +1148,22 @@ Se conserva por decisión explícita la precarga corporal solicitada del Prompt
 La app publicada está en **https://alvarovz14.github.io/Templates/**. Los cambios
 de esta etapa llegan allí después de aprobar y fusionar su PR a `main` y completar
 GitHub Actions.
+## Estética grunge (Prompt 22)
+
+Títulos inclinados con brillo rojo, cabecera por músculo, película sucia, collage
+con tu `public/hero.jpg` en grises y grietas discretas en las esquinas. Se mantienen
+la silueta, las brasas y el cajón como única navegación. Sin amarillo: también se
+revisaron alertas, gráficos, iconos y el fuego. En Progreso: ✓ verde apagado,
+= gris acero (estable/sin evaluación), ! rojo; las reglas no cambian.
+
+En **Ajustes → Efectos visuales → Completos** se ven la apertura de 1,3 s (tocable
+para omitir y una vez al día chileno), cortes diagonales al cambiar de sección,
+película por pasos y destellos de grietas cada 14–19 s. Guarda una serie para ver
+su destello; los sellos usan fallo, descarga y récords ya existentes. Reducidos,
+Apagados, modo gimnasio y movimiento reducido del sistema limitan los efectos.
+
+[Revisión, capturas y pasos para probar cada efecto](docs/design/p22-review.md).
+La actualización llega a [la PWA](https://alvarovz14.github.io/Templates/) después
+del merge a `main` y GitHub Actions; usa el aviso de versión nueva para recargar
+conservando tus registros. Si aún tienes una versión antigua sin aviso, cierra
+todas las ventanas de la PWA y vuelve a abrir con conexión, sin borrar datos.

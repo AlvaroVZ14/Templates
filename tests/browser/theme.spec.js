@@ -47,11 +47,11 @@ test.use({serviceWorkers:'block'}); // Route synthetic media without SW intercep
 test('fondo propio opcional y animación pausada al ocultar la pestaña',async({page})=>{
   await page.addInitScript(()=>{window.testHidden=false;Object.defineProperty(document,'hidden',{get:()=>window.testHidden,configurable:true});});
   await page.route('**/appearance.json',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({media:{type:'image',src:'icon-512.png'},poster:null})}));
-  await page.goto('./');await expect(page.getByTestId('shadow-scene').locator('img.shadow-media')).toBeVisible();
+  await page.goto('./');await expect(page.getByTestId('shadow-scene').locator('.shadow-figure img.shadow-media')).toBeVisible();
   await expect(page.getByTestId('shadow-scene')).not.toHaveClass(/is-paused/);
   await page.evaluate(()=>{window.testHidden=true;document.dispatchEvent(new Event('visibilitychange'));});
   await expect(page.getByTestId('shadow-scene')).toHaveClass(/is-paused/);
-  await expect(page.getByTestId('shadow-scene').locator('img.shadow-media')).toHaveCount(0);await expect(page.getByTestId('shadow-scene').locator('canvas.shadow-media')).toBeVisible();
+  await expect(page.getByTestId('shadow-scene').locator('.shadow-figure img.shadow-media')).toHaveCount(0);await expect(page.getByTestId('shadow-scene').locator('.shadow-figure canvas.shadow-media')).toBeVisible();
   expect(await page.getByTestId('shadow-scene').locator('.shadow-glow').evaluate(el=>getComputedStyle(el).animationPlayState)).toBe('paused');
   await page.evaluate(()=>{window.testHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await expect(page.getByTestId('shadow-scene')).not.toHaveClass(/is-paused/);
 });

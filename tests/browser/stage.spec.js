@@ -15,7 +15,7 @@ test('banco editable conserva frase del día y hero optimizado sin conexión',as
   const hero=await page.evaluate(async()=>{for(const name of await caches.keys()){const response=await(await caches.open(name)).match(new URL('hero.jpg',location.href));if(response)return {size:(await response.blob()).size,type:response.headers.get('Content-Type')};}return null;});
   expect(hero.size).toBeLessThan(200000);expect(hero.type).toContain('image/jpeg');
   await context.setOffline(true);await page.reload();await expect(heading).toHaveText('MI PLAN. MI ESFUERZO. MI REGISTRO.');
-  await expect(page.getByTestId('shadow-scene').locator('img.shadow-media')).toBeVisible();
+  await expect(page.getByTestId('shadow-scene').locator('.shadow-figure img.shadow-media')).toBeVisible();
   for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
 });
 
@@ -26,14 +26,14 @@ test('marcador completo destella y respeta movimiento reducido',async({page})=>{
   await expect(page.locator('.session-hero')).toHaveClass(/session-complete/);await expect(page.locator('.progress-ring')).toHaveClass(/completion-pop/);await expect(page.locator('.progress-ring strong')).toHaveText('1/1');
   await page.emulateMedia({reducedMotion:'reduce'});expect(await page.locator('.progress-ring').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
   await expect(page.getByTestId('shadow-scene')).toHaveClass(/is-paused/);
-  await expect(page.getByTestId('shadow-scene').locator('canvas.shadow-media')).toBeVisible();
+  await expect(page.getByTestId('shadow-scene').locator('.shadow-figure canvas.shadow-media')).toBeVisible();
 });
 
 test.describe('fallback local',()=>{
   test.use({serviceWorkers:'block'});
   test('si falta hero.jpg conserva la silueta propia',async({page})=>{
     await page.route('**/hero.jpg',route=>route.fulfill({status:404,body:''}));await page.goto('./');
-    const scene=page.getByTestId('shadow-scene');await expect(scene.locator('.shadow-athlete')).toBeVisible();await expect(scene.locator('img.shadow-media')).toHaveCount(0);
+    const scene=page.getByTestId('shadow-scene');await expect(scene.locator('.shadow-athlete')).toBeVisible();await expect(scene.locator('.shadow-figure img.shadow-media')).toHaveCount(0);
     await page.screenshot({path:'test-results/p15-svg-fallback.png',fullPage:false});
   });
 });

@@ -15,5 +15,6 @@ import './effects.css';
 import './sides.css';
 import './gym.css';
 import './safety-cardio.css';
+import './grunge.css';
 
 createRoot(document.getElementById('root')).render(<App />);
