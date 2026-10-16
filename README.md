@@ -779,3 +779,9 @@ despliega una revisión mensual, recarga y confirma que conserva su mes y sus va
 Las pruebas automatizadas usan fechas y datos ficticios para comprobar subidas,
 dos caídas consecutivas, cambios de equipo, cintura, mini cut, sueño, descarga y
 cierre mensual con recarga offline, sin tocar datos del navegador del usuario.
+
+## Guía del método (PROMPT 11)
+
+En **Menú → Método** hay siete secciones desplegables: Filosofía, Tipos de serie, Técnicas de intensidad, Descansos, Recuperación, Progresión y Cómo leer esta app. La primera empieza abierta y puedes consultar el resto de forma independiente, también sin conexión. El texto resume las ideas solicitadas y las reglas ya implementadas, sin citas atribuidas ni cambios de entrenamiento o almacenamiento.
+
+Para comprobar: abre Método desde el cajón, abre y cierra cada apartado (también con Tab y Enter) y comprueba que conserva la lectura en una pantalla estrecha.
