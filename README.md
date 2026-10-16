@@ -785,3 +785,11 @@ cierre mensual con recarga offline, sin tocar datos del navegador del usuario.
 En **Menú → Método** hay siete secciones desplegables: Filosofía, Tipos de serie, Técnicas de intensidad, Descansos, Recuperación, Progresión y Cómo leer esta app. La primera empieza abierta y puedes consultar el resto de forma independiente, también sin conexión. El texto resume las ideas solicitadas y las reglas ya implementadas, sin citas atribuidas ni cambios de entrenamiento o almacenamiento.
 
 Para comprobar: abre Método desde el cajón, abre y cierra cada apartado (también con Tab y Enter) y comprueba que conserva la lectura en una pantalla estrecha.
+
+## Resúmenes copiables (PROMPT 12)
+
+En **Progreso** e **Historial**, usa **Resumen semanal** o **Resumen mensual**, elige la fecha de corte y pulsa **Copiar**. El semanal compara los últimos siete días con los siete previos; el mensual compara el mes hasta el corte con el mes calendario anterior completo. Las fechas y duraciones quedan explícitas. El texto no se envía a servidores; solo se copia al pulsar el botón. Si el navegador no permite el portapapeles, se selecciona para copiar manualmente.
+
+Incluye series guardadas y técnicas, RPE, fallo y descanso real, volumen por músculo, cardio y pasos, peso y ritmo respecto a la fase, medidas, nutrición, sueño, estrés, energía, fatiga y dolor, fase, descarga y Progreso al cierre de cada período. Los promedios muestran cuántos días tienen datos y no rellenan ausencias con cero. El dolor se conserva como texto por fecha, sin un promedio ficticio. Los borradores no cuentan.
+
+La tendencia de cada ejercicio es descriptiva (media de la mejor carga por reps efectiva de cada día, mismo ejercicio y equipo, sin descarga); no convierte una semana corta en una evaluación de Progreso. Cada período usa su referencia cronológica anterior. En mes, el ritmo de peso compara primera y última media de siete días, normalizado por semana; si el período aún es corto usa los últimos 14 días y lo indica. Los indicadores mantienen sus ventanas propias de cuatro semanas. Ambos textos terminan con la solicitud de análisis indicada por el usuario; la app no genera ni aplica esas recomendaciones automáticamente.
