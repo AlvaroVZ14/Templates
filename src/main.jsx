@@ -7,5 +7,7 @@ import './program/program.css';
 import './training.css';
 import './history.css';
 import './navigation.css';
+import './fonts.css';
+import './theme.css';
 
 createRoot(document.getElementById('root')).render(<App />);
