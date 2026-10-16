@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 async function openMeasures(page,date='2026-10-15') {
   await page.goto('./'); await page.getByRole('button',{name:'Medidas',exact:true}).click();

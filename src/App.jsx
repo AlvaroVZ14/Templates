@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, TITLES, dayIndex, formatSeconds, initialState, migrateState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
 import { updateState } from './db.js';
+import {DraftProvider,useDrafts} from './drafts.jsx';
+import {incompleteSession} from './navigation.js';
+import {Drawer,EdgeSwipe,SessionNavigation,NavigationSettings,Method} from './Navigation.jsx';
 import ExerciseCard from './ExerciseCard.jsx';
 import Cardio from './Cardio.jsx';
 import Diary from './Diary.jsx';
@@ -70,6 +73,22 @@ export default function App() {
   const [page, setPage] = useState('today');
   const [date, setDate] = useState(localDate());
   const pwa = usePwa();
+  const [menuOpen,setMenuOpen]=useState(false);
+  const drafts=useDrafts(data,setData,setError);
+  const navigating=useRef(false);
+  async function navigate(target,nextDate=date){
+    if(navigating.current)return;
+    if(target===page&&nextDate===date){setMenuOpen(false);return;}
+    navigating.current=true;
+    try{
+      await drafts.flush();
+      setError('');
+      if(page==='today'&&data&&incompleteSession(data,date,drafts.entries())&&!window.confirm('Hay una sesión o un registro a medio completar. Tu borrador está guardado y lo recuperarás al volver. ¿Quieres cambiar de pantalla o sesión?'))return;
+      setDate(nextDate);setPage(target);setMenuOpen(false);
+    }catch{/* Keep the form visible when a draft cannot be saved. */}
+    finally{navigating.current=false;}
+  }
+  const drawerSide=data?.navigationSettings?.drawerSide??'right';
   const [storage,setStorage]=useState(null);
   const [storageBusy,setStorageBusy]=useState(false),storageRequest=useRef(false);
   const requestStorage=async(manual=false)=>{if(storageRequest.current)return;storageRequest.current=true;setStorageBusy(true);try{const result=await requestPersistentStorage();setStorage(previous=>({...result,attempt:(previous?.attempt??0)+(manual?1:0)}));}finally{storageRequest.current=false;setStorageBusy(false);}};
@@ -95,12 +114,12 @@ export default function App() {
   async function startTimer(seconds, label) { return change(state => ({ ...state, timer: { end: Date.now() + seconds * 1000, duration: seconds, label } })); }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
-  return <div className="app-shell">
+  return <DraftProvider value={drafts}><div className="app-shell">
     <header className="masthead">
-      <a className="brand" href="#today" onClick={event => { event.preventDefault(); setPage('today'); }} aria-label="Heavy Duty, ir a Hoy">
+      <a className="brand" href="#today" onClick={event => { event.preventDefault(); navigate('today'); }} aria-label="Heavy Duty, ir a Hoy">
         <span className="brand-symbol"><Icon name="bar" size={29} /></span><span>HEAVY<span className="brand-light">DUTY</span><small>PERSONAL TRAINING LOG</small></span>
       </a>
-      <div className="header-actions"><span className={`connection ${!pwa.online ? 'offline' : ''}`}><i />{!pwa.online ? 'Sin conexión' : pwa.ready ? 'Offline listo' : 'Local · privado'}</span>
+      <div className="header-actions"><button className="menu-button" aria-label="Abrir menú" aria-expanded={menuOpen} aria-haspopup="dialog" onClick={()=>setMenuOpen(true)}><span aria-hidden="true">☰</span><span className="menu-word">Menú</span></button><span className={`connection ${!pwa.online ? 'offline' : ''}`}><i />{!pwa.online ? 'Sin conexión' : pwa.ready ? 'Offline listo' : 'Local · privado'}</span>
         <button className="icon-button install-button" aria-label="Instalar aplicación" onClick={() => pwa.prompt ? pwa.install() : setInstallHelp(!installHelp)}><Icon name="download" /></button></div>
     </header>
     {installHelp && <aside className="install-help"><strong>Instala Heavy Duty</strong><p>En Android o escritorio: menú del navegador → Instalar aplicación. En iPhone: Safari → Compartir → Añadir a pantalla de inicio.</p><p>{pwa.ready ? 'La app está preparada para abrir sin conexión.' : 'La instalación y el modo offline se preparan en la versión de producción, con HTTPS o localhost.'}</p><button className="quiet" onClick={() => setInstallHelp(false)}>Entendido</button></aside>}
@@ -108,21 +127,24 @@ export default function App() {
     {!data ? <main className="loading" aria-live="polite">{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</main> : <>
       <main id="main-content">
         <StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/>
-        {page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { setDate(localDate()); setPage('measurements'); }}>Ir a Medidas</button></aside>}
-        {page === 'today' && <Today data={data} date={date} setDate={setDate} change={change} saving={saving} startTimer={startTimer} onFood={()=>setPage('food')} onDiary={()=>setPage('diary')} onMeasures={()=>setPage('measurements')} />}
+        {page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
+        {page === 'today' && <Today data={data} date={date} setDate={value=>navigate('today',value)} change={change} saving={saving} startTimer={startTimer} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} />}
         <div hidden={page !== 'routine'}><Routine data={data} change={change} saving={saving} /></div>
         {page === 'volume' && <Volume data={data} date={date} setDate={setDate} />}
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
-        {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>setPage('diary')} />}
+        {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} />}
+        {page==='settings'&&<NavigationSettings data={data} change={change} saving={saving}/>}
+        {page==='method'&&<Method/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
       </main>
       {data.timer && <Timer timer={data.timer} onClose={() => change(state => ({ ...state, timer: null }))} />}
     </>}
     <nav className="bottom-nav" aria-label="Navegación principal">
-      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario'], ['measurements', 'ruler', 'Medidas'], ['food', 'food', 'Comida'],['history','clock','Historial']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
+      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario'], ['measurements', 'ruler', 'Medidas'], ['food', 'food', 'Comida'],['history','clock','Historial']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
     </nav>
-  </div>;
+    {data&&<><EdgeSwipe side={drawerSide} onOpen={()=>setMenuOpen(true)}/><Drawer open={menuOpen} onClose={()=>setMenuOpen(false)} side={drawerSide} data={data} date={date} page={page} navigate={navigate}/></>}
+  </div></DraftProvider>;
 }
 
 function WeekStrip({ date, setDate, data }) {
@@ -133,6 +155,7 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
   const context = dayContext(data,date), day = context.routineDay;
   const exercises = context.exercises.map(ex=>sessionExercise(data,ex,date));
   const [open, setOpen] = useState(null);
+  useEffect(()=>setOpen(null),[date]);
   const logs = data.logs.filter(log => log.date === date);
   const planned = exercises.reduce((sum, ex) => sum + ex.sets, 0);
   const done = logs.filter(log => log.kind === 'effective').length;
@@ -140,7 +163,8 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
   const activeId = open === null ? exercises[0]?.id : open;
   return <>
     <div className="page-heading"><div><p className="eyebrow">TU ÚNICA COMPETENCIA ERES TÚ</p><h1>A entrenar<span className="accent">.</span></h1></div><label className="date-picker"><span>{date === localDate() ? 'Hoy' : 'Fecha'}<Icon name="today" size={17} /></span><input aria-label="Fecha de entrenamiento" type="date" value={date} onChange={event => event.target.value && setDate(event.target.value)} /></label></div>
-    <WeekStrip data={data} date={date} setDate={value => { setOpen(null); setDate(value); }} />
+    <WeekStrip data={data} date={date} setDate={setDate} />
+    <SessionNavigation data={data} date={date} setDate={setDate}/>
     <PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact />
     <section className="session-hero">
       <div className="hero-copy"><span className="pill">{exercises.length ? 'HEAVY DUTY / BLOOD & GUTS' : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? [2, 6].includes(day) ? 'Sesión personalizada' : TITLES[day] : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>

@@ -6,5 +6,6 @@ import './wellness.css';
 import './program/program.css';
 import './training.css';
 import './history.css';
+import './navigation.css';
 
 createRoot(document.getElementById('root')).render(<App />);

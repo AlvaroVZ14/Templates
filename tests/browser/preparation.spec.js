@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 async function monday(page){await page.clock.install({time:new Date('2026-10-12T15:00:00Z')});await page.goto('./');await expect(page.locator('.session-list .exercise-card')).toHaveCount(8);}
 async function open(page,name){await page.locator('.session-list .exercise-summary').filter({hasText:name}).click();}
 const reference=(page,name)=>page.getByLabel(`Peso de trabajo de ${name}`,{exact:true});

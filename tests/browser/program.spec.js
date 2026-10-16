@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures.js';
 
 async function start(page){
   await page.clock.install({time:new Date('2026-10-15T15:00:00Z')});await page.goto('./');
