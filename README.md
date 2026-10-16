@@ -902,3 +902,22 @@ Hoy sustituye «A entrenar» por una frase grande. El banco inicial contiene 30 
 En **Menú → Ajustes → Frases del día** puedes editar, añadir, eliminar o restaurar los originales; pulsa **Guardar frases** para aplicar. El banco se conserva localmente y viaja en el respaldo JSON. No se consultan APIs externas para elegir frases. El nombre y el lema siguen editándose en Tu identidad.
 
 Para publicar, integra el PR en `main` y espera el workflow de GitHub Pages. La URL continúa siendo **https://alvarovz14.github.io/Templates/**. Con conexión, recarga y vuelve a abrir la PWA para recibir el nuevo service worker, conservando los datos del sitio.
+
+## Efectos interactivos · Prompt 16
+
+En **Menú → Ajustes → Tu identidad → Efectos visuales** elige **Completos**, **Reducidos** o **Apagados** y pulsa **Guardar apariencia**. Se conserva en el dispositivo y en los respaldos. Completos activa brasas, polvo, ondas y el escenario interactivo; Reducidos deja una composición estática; Apagados conserva solo el fondo fijo. La preferencia de movimiento reducido del sistema y el control anterior de pausa del fondo tienen prioridad: desactivan la animación y la interacción visual.
+
+Las partículas usan canvas propio, sin dependencias nuevas: 80 en escritorio y 40 en móvil (60/30 si el tiempo entre fotogramas se mantiene alto). La densidad retina se limita a 2× en escritorio, 1,5× en móvil y 2,5 millones de píxeles. Se reutilizan pequeños sprites de brillo; no se aplica desenfoque por partícula. Se busca un movimiento fluido, pero la tasa de fotogramas depende del dispositivo. Los bucles `requestAnimationFrame` y los sensores se detienen al ocultar la pestaña; los eventos son pasivos y el canvas no recibe toques. Las partículas bajan de intensidad en Hoy y aún más al enfocar los campos de registro.
+
+El escenario reutiliza `public/hero.jpg` y la alternativa SVG, ambos locales. Humo, silueta y luces se desplazan a distinta profundidad. No se añaden imágenes externas ni se cambia ningún cálculo de entrenamiento, sesión o registro.
+
+### Cómo probar cada efecto
+
+1. **Brasas y onda:** con Completos, mueve el cursor por el fondo y toca o haz clic fuera de los controles. Las brasas se apartan, dejan una pequeña estela y se expande una onda roja. No debe impedir abrir el cajón, editar pesos ni desplazar la página.
+2. **Profundidad y foco:** en Hoy, desplázate hasta la tarjeta de la sesión y mueve el cursor o el dedo sobre ella. La silueta se inclina suavemente y el foco rojo sigue el punto. En móvil, un movimiento vertical conserva el scroll y cancela la pulsación mantenida.
+3. **Tensión y pulso:** mantén pulsada la tarjeta unos instantes. La silueta aumenta un 3 %, vibra suavemente y el marcador late. Al soltar aparece un pulso y vuelve a su tamaño. Un toque corto muestra una frase contextual del banco editable, que desaparece sola. Con teclado, enfoca el escenario: Enter muestra la frase, espacio mantiene la tensión y Escape la detiene.
+4. **Inclinación:** en un teléfono compatible, inclínalo suavemente. Si su navegador exige permiso, aparecerá **Activar inclinación**: solo se solicita al tocar ese botón. Permitirlo activa el sensor; rechazarlo deja disponibles el dedo y los controles. Sin sensor, la app sigue funcionando. El sensor se calibra con la primera lectura y se limita su recorrido. La API exige contexto seguro y, cuando hay solicitud, un gesto directo ([especificación de orientación](https://www.w3.org/TR/orientation-event/)). La comprobación física en tu teléfono sigue siendo necesaria; las pruebas automatizadas simulan permiso y lecturas.
+5. **Pausa y accesibilidad:** cambia de pestaña y vuelve; luego prueba Reducidos, Apagados y la preferencia del sistema «reducir movimiento». No debe haber partículas móviles, parallax ni pulsación en esos modos. Guarda el ajuste y recarga para comprobar que se recuerda.
+6. **Offline:** carga la app una vez con conexión, ciérrala y vuelve a abrirla sin conexión. El fondo, las partículas y las frases siguen disponibles. No borres los datos del sitio.
+
+Los tests de esta etapa verifican el presupuesto retina, la física de repulsión, la pausa, los modos persistentes, el registro de previas, el tacto con scroll, pulsaciones, permisos de sensor y carga offline usando datos ficticios y navegadores aislados. La navegación sigue estando únicamente en el cajón.
