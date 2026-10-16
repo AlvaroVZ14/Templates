@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 
-export const DEFAULT_APPEARANCE = {name:'BLOOD & GUTS', motto:'POCAS SERIES. MÁXIMA INTENCIÓN.', motion:true, customMedia:true};
+export const DEFAULT_APPEARANCE = {name:'BLOOD & GUTS', motto:'POCAS SERIES. MÁXIMA INTENCIÓN.', motion:true, customMedia:true, effects:'full'};
 export const appearanceFor = data => {
   const settings=data?.appearanceSettings;
   return {
@@ -8,6 +8,7 @@ export const appearanceFor = data => {
     motto:typeof settings?.motto==='string'&&settings.motto.trim()?settings.motto.trim().slice(0,80):DEFAULT_APPEARANCE.motto,
     motion:typeof settings?.motion==='boolean'?settings.motion:true,
     customMedia:typeof settings?.customMedia==='boolean'?settings.customMedia:true,
+    effects:['full','reduced','off'].includes(settings?.effects)?settings.effects:'full',
   };
 };
 
@@ -41,7 +42,7 @@ function StillableImage({src,paused,onError}) {
 }
 
 export function ShadowBackground({appearance,ambient=false}) {
-  const paused=useMotion(appearance.motion), video=useRef(null);
+  const paused=useMotion(appearance.motion&&appearance.effects!=='off'&&appearance.effects!=='reduced'), video=useRef(null);
   const [config,setConfig]=useState(null), [failed,setFailed]=useState(false), [heroMissing,setHeroMissing]=useState(false);
   useEffect(()=>{
     if(ambient)return;
@@ -60,14 +61,14 @@ export function ShadowBackground({appearance,ambient=false}) {
   },[paused,custom]);
   return <div className={`shadow-scene ${ambient?'ambient-scene':''} ${paused?'is-paused':''}`} aria-hidden="true" data-testid={ambient?'ambient-scene':'shadow-scene'}>
     <div className="shadow-glow"/>
-    <svg className="shadow-athlete" viewBox="0 0 360 460" focusable="false">
+    <div className="shadow-subject"><div className="shadow-figure"><svg className="shadow-athlete" viewBox="0 0 360 460" focusable="false">
       <path d="M161 29 Q179 15 196 29 L202 54 Q200 74 188 80 L190 91 Q218 88 239 109 L253 128 L267 112 L272 84 L266 71 L270 56 L281 50 L293 58 L301 81 L300 113 Q291 152 270 169 Q255 181 233 165 L222 158 L225 203 Q217 239 207 253 L224 294 L228 343 L241 403 L254 433 L253 448 L210 448 L194 400 L185 350 L179 304 L169 350 L159 402 L147 448 L105 448 L105 434 L118 407 L131 345 L133 293 L149 254 Q135 237 128 203 L130 159 L118 166 Q96 182 79 169 Q58 153 48 115 L47 82 L55 59 L67 50 L79 56 L84 71 L77 85 L83 113 L97 129 L111 109 Q132 88 160 91 L162 80 Q149 73 149 54Z"/>
       <path className="shadow-detail" d="M161 97 L178 113 L190 96 M133 131 Q156 116 178 138 Q199 116 222 131 M147 165 Q166 170 178 159 Q192 170 211 165 M178 140 L178 225 M158 193 L171 197 M185 197 L199 193 M156 214 L170 217 M186 217 L201 214 M148 255 L177 273 L207 254 M144 293 L157 330 M212 293 L199 330"/>
     </svg>
     {custom?.type==='image' && <StillableImage key={custom.src} src={localAsset(custom.src)} paused={paused} onError={mediaError}/>}
-    {custom?.type==='video' && <video ref={video} className="shadow-media" src={localAsset(custom.src)} poster={localAsset(config.poster)} loop muted playsInline preload="metadata" onLoadedData={()=>{if(!paused)video.current?.play().catch(()=>{});}} onError={mediaError}/>}
+    {custom?.type==='video' && <video ref={video} className="shadow-media" src={localAsset(custom.src)} poster={localAsset(config.poster)} loop muted playsInline preload="metadata" onLoadedData={()=>{if(!paused)video.current?.play().catch(()=>{});}} onError={mediaError}/>}</div></div>
     <div className="stage-beams"/><div className="stage-smoke smoke-near"/><div className="stage-smoke smoke-far"/>
-    <div className="shadow-veil"/><div className="shadow-grain"/>
+    <div className="shadow-veil"/><div className="shadow-spotlight"/><div className="shadow-grain"/>
   </div>;
 }
 
@@ -84,6 +85,8 @@ export function AppearanceSettings({data,change,saving}) {
     <div className="section-heading"><h2>Tu identidad</h2><span>APARIENCIA</span></div>
     <label>Nombre de la app<input aria-label="Nombre de la app" required maxLength="32" value={draft.name} onChange={event=>update({name:event.target.value})}/></label>
     <label>Lema del inicio<input aria-label="Lema del inicio" required maxLength="80" value={draft.motto} onChange={event=>update({motto:event.target.value})}/></label>
+    <label>Efectos visuales<select aria-label="Efectos visuales" value={draft.effects} onChange={event=>update({effects:event.target.value})}><option value="full">Completos</option><option value="reduced">Reducidos</option><option value="off">Apagados</option></select></label>
+    <p className="field-note">Completos: brasas y escenario interactivo. Reducidos: brasas estáticas y luz fija. Apagados: solo el fondo estático. El movimiento reducido del dispositivo tiene prioridad.</p>
     <label className="check-label"><input type="checkbox" checked={draft.motion} onChange={event=>update({motion:event.target.checked})}/><span>Movimiento del fondo<small>Se pausa al ocultar la pestaña. Respeta el movimiento reducido del dispositivo.</small></span></label>
     <label className="check-label"><input type="checkbox" checked={draft.customMedia} onChange={event=>update({customMedia:event.target.checked})}/><span>Usar mi imagen o video de public/<small>hero.jpg se usa automáticamente. appearance.json permite elegir otro archivo. Sin imagen, se muestra la silueta SVG.</small></span></label>
     <button className="primary" disabled={saving||!dirty}>Guardar apariencia</button>

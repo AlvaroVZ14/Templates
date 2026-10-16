@@ -1,6 +1,8 @@
 import BackupPanel from './BackupPanel.jsx';
 import {AppearanceSettings, ShadowBackground, appearanceFor} from './Appearance.jsx';
 import {MotivationHeading, MotivationSettings} from './Motivation.jsx';
+import ParticleBackground from './VisualEffects.jsx';
+import ShadowStage from './ShadowStage.jsx';
 import Progress from './Progress.jsx';
 import {captureMonthlyReviews} from './progress.js';
 import { useEffect, useRef, useState } from 'react';
@@ -131,8 +133,9 @@ export default function App() {
   async function startTimer(seconds, label) { return change(state => ({ ...state, timer: { end: Date.now() + seconds * 1000, duration: seconds, label } })); }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
-  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer?'timer-visible':''} ${impact?'screen-impact':''}`} data-page={page} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09'})[page]}"`}} onChangeCapture={failureImpact}>
+  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer?'timer-visible':''} ${impact?'screen-impact':''}`} data-page={page} data-effects={appearance.effects} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09'})[page]}"`}} onChangeCapture={failureImpact}>
     <ShadowBackground appearance={appearance} ambient/>
+    <ParticleBackground appearance={appearance} page={page}/>
     <header className="masthead">
       <div className="brand" aria-label={appearance.name}>
         <span className="brand-symbol"><Icon name="bar" size={29} /></span><span className="brand-name">{appearance.name}<small>DIARIO DE ENTRENAMIENTO · NATURAL</small></span>
@@ -182,11 +185,11 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
   return <>
     <MotivationHeading data={data} date={date} motto={appearanceFor(data).motto}/>
     <details className="today-extra"><summary>Fase y ajustes del día</summary><PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact /></details>
-    <section className={`session-hero ${planned>0&&done>=planned?'session-complete':''}`}>
+    <ShadowStage appearance={appearanceFor(data)} data={data} date={date} className={planned>0&&done>=planned?'session-complete':''}>
       <ShadowBackground appearance={appearanceFor(data)}/>
       <div className="hero-copy"><span className="pill">{exercises.length ? appearanceFor(data).name : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? [2, 6].includes(day) ? 'Sesión personalizada' : TITLES[day] : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
       <div className={`progress-ring ${completeFlash?'completion-pop':''}`} style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
-    </section>
+    </ShadowStage>
     <div className="training-note"><Icon name="leaf" size={18} /><span>{exercises.some(ex=>ex.deload)?'Descarga: ejecución controlada, sin fallo y sin técnicas.':'Natural. Ejecución controlada. Series efectivas al fallo técnico.'}</span></div>
     <PreparationSettings data={data} date={date} exercises={exercises} change={change} saving={saving} />
     <SessionEditor key={`session-${date}`} data={data} date={date} change={change} saving={saving}/>

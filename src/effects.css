@@ -1,0 +1,49 @@
+.ember-field {position:fixed;inset:0;width:100%;height:100dvh;pointer-events:none!important;z-index:-1;opacity:.46;contain:strict}
+.ember-field.during-training {opacity:.28}
+.ember-field.is-registering {opacity:.09}
+.ember-field.embers-static {opacity:.2}
+.shadow-subject,.shadow-figure {position:absolute;inset:0}
+.shadow-interactive {--shadow-x:0;--shadow-y:0;--spot-x:68%;--spot-y:45%;touch-action:pan-y pinch-zoom}
+.shadow-enabled {user-select:none;cursor:crosshair;padding-bottom:92px}
+.shadow-enabled:focus-visible {outline:2px solid var(--active);outline-offset:4px}
+.shadow-enabled .shadow-subject {inset:-3%;transform:perspective(850px) translate3d(calc(var(--shadow-x)*12px),calc(var(--shadow-y)*8px),0) rotateX(calc(var(--shadow-y)*-2.2deg)) rotateY(calc(var(--shadow-x)*3deg));will-change:transform}
+.shadow-enabled .shadow-figure {transition:transform 220ms ease-out}
+.shadow-enabled .stage-smoke {translate:calc(var(--shadow-x)*-10px) calc(var(--shadow-y)*-6px)}
+.shadow-enabled .stage-beams {transform:translate3d(calc(var(--shadow-x)*-18px),calc(var(--shadow-y)*-10px),0)}
+.shadow-enabled .shadow-media {opacity:.92}
+.shadow-enabled .shadow-veil {background:radial-gradient(circle 155px at var(--spot-x) var(--spot-y),#0A0A0A0A,#0A0A0ACB 100%),linear-gradient(90deg,#0A0A0AE6,#0A0A0A44 70%);transform:translateZ(0)}
+.shadow-spotlight {display:none;position:absolute;inset:0;z-index:1;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(circle 135px at var(--spot-x) var(--spot-y),#FF1A1A30,#C8102E12 45%,transparent 75%)}
+.shadow-enabled .shadow-spotlight {display:block}
+.shadow-enabled.is-tensing .shadow-figure {animation:shadow-flex 160ms ease-in-out infinite alternate}
+.shadow-enabled.is-tensing .shadow-glow {animation-duration:1.3s;opacity:1;background:radial-gradient(ellipse,#FF1A1AAA,transparent 68%)}
+.shadow-enabled.is-tensing .shadow-spotlight {background:radial-gradient(circle 165px at var(--spot-x) var(--spot-y),#FF1A1A70,#C8102E30 45%,transparent 80%)}
+.shadow-enabled.is-tensing .progress-ring {animation:shadow-heart 850ms ease-in-out infinite}
+.shadow-enabled.is-releasing .shadow-figure {animation:shadow-release 650ms ease-out}
+.shadow-enabled.is-releasing .progress-ring {animation:shadow-heart 650ms ease-out}
+.shadow-instructions {position:absolute;bottom:16px;left:26px;z-index:4;max-width:calc(100% - 190px);display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;line-height:1.5;color:#C2B5B9;cursor:default}
+.shadow-instructions>span {max-width:32ch}
+.shadow-sensor {min-height:44px;padding:10px 12px;border:1px solid #87505B;background:#25161C;color:var(--bone);font-size:12px;cursor:pointer}
+.shadow-sensor-message {color:var(--bone)}
+.shadow-quote {position:absolute;left:22px;right:22px;top:18px;z-index:6;background:#120C10ED;border:1px solid #AF2943;border-left:3px solid var(--active);padding:16px 18px;font-family:'Anton',Impact,sans-serif;font-size:clamp(18px,3vw,25px);text-transform:uppercase;letter-spacing:.6px;line-height:1.4;overflow-wrap:anywhere;pointer-events:none;animation:shadow-quote-enter 200ms ease-out}
+.app-shell[data-effects=reduced] *,.app-shell[data-effects=off] * {animation:none!important;transition:none!important}
+.app-shell[data-effects=reduced] .effective-save-flash,.app-shell[data-effects=off] .effective-save-flash {display:none}
+@keyframes shadow-flex {from{transform:scale(1.03) translateX(-.35px)}to{transform:scale(1.03) translateX(.35px)}}
+@keyframes shadow-release {0%{transform:scale(1.03)}35%{transform:scale(.995)}65%{transform:scale(1.012)}100%{transform:scale(1)}}
+@keyframes shadow-heart {0%,100%{scale:1;filter:brightness(1)}45%{scale:1.035;filter:brightness(1.45)}}
+@keyframes shadow-quote-enter {from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px) {
+  .shadow-enabled {padding-bottom:24px}
+  .ember-field {opacity:.35}
+  .ember-field.during-training {opacity:.22}
+  .ember-field.is-registering {opacity:.07}
+  .shadow-enabled .shadow-subject {transform:perspective(700px) translate3d(calc(var(--shadow-x)*7px),calc(var(--shadow-y)*5px),0) rotateX(calc(var(--shadow-y)*-1.5deg)) rotateY(calc(var(--shadow-x)*2deg))}
+  .shadow-enabled .shadow-veil {background:radial-gradient(circle 120px at var(--spot-x) var(--spot-y),#0A0A0A08,#0A0A0AC7 100%),linear-gradient(90deg,#0A0A0AC9,#0A0A0A11 85%)}
+  .shadow-instructions {left:19px;bottom:20px;max-width:calc(100% - 145px);font-size:11px}
+  .shadow-instructions>span {max-width:20ch}
+  .shadow-quote {left:16px;right:16px;padding:14px;font-size:21px}
+}
+@media(prefers-reduced-motion:reduce) {
+  .ember-field {display:none}
+  .shadow-subject,.shadow-figure,.stage-beams,.stage-smoke {transform:none!important;translate:none!important;will-change:auto!important}
+  .shadow-spotlight {display:none!important}
+}
