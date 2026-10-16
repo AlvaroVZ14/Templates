@@ -879,3 +879,26 @@ El inicio contiene una silueta SVG original, grano suave y un resplandor rojo le
 - En GitHub, **Settings → Pages → Build and deployment → Source: GitHub Actions**. Ya configurado en este repositorio; el workflow publica cada cambio que llega a `main`. Si el cambio está en una rama personal, primero debe aprobarse e integrarse su PR.
 - Tras un despliegue correcto de **Publicar PWA en GitHub Pages**, abre la URL con conexión y recarga. Si ya estaba instalada, ciérrala y ábrela otra vez para que tome el nuevo service worker. No borres los datos del sitio. El icono del sistema puede tardar en actualizarse aunque el diseño ya esté actualizado.
 - Prueba Hoy, el cajón de ambos lados, Historial, Progreso y Método en móvil; edita nombre/lema en Ajustes y recarga. Ingresa un peso, guarda una previa y una efectiva y marca fallo para ver las diferencias. Activa movimiento reducido para comprobar que se detienen las animaciones. Después de la primera carga, activa modo avión y vuelve a abrirla: fuentes, iconos y fondo configurado siguen disponibles.
+
+## Escenario y previas compactas · Prompt 15
+
+La portada predeterminada está en **`public/hero.jpg`**. La incluida es una ilustración original generada con IA, inspirada en la silueta y el escenario de la referencia aportada por el usuario: no es una fotografía documental de Dorian Yates. Se optimizó a JPEG de 1536 × 1024 px y unos 115 KB. El [prompt de generación](docs/design/p15-image-prompt.md) queda documentado. Puedes reemplazar ese archivo por tu propia imagen en grises y conservar el nombre. Si no existe o no puede abrirse, aparece la silueta SVG original. `appearance.json` sigue permitiendo escoger otro medio para Hoy; el resto de pantallas usa la portada fija de forma muy sutil, sin duplicar reproducción de video.
+
+La compilación añade `hero.jpg` al precaché solo si está presente y renueva la versión al cambiar sus bytes. Se recomienda menos de 2 MiB; el límite combinado de portada, medio propio y póster es 8 MiB. Humo, luz roja y haces suaves se mueven lentamente; se pausan al ocultar la pestaña. Movimiento reducido también detiene el destello del marcador y la pequeña sacudida al marcar fallo. Las imágenes animadas muestran un fotograma estático cuando están pausadas.
+
+Las tarjetas usan corchetes rojos, cortes diagonales decorativos, números de sección y líneas finas; el cajón sigue siendo la única navegación. No cambian las fórmulas de cargas, redondeo, volumen, recuperación ni el formato del historial.
+
+### Probar las series previas
+
+1. En Hoy, toca **PREVIAS · N (Auto)** bajo cualquier ejercicio. La hoja inferior explica el motivo automático y permite elegir 0–3 o Auto.
+2. Si falta referencia, escribe ahí el peso de trabajo. Cambia el número y comprueba la vista previa en vivo; guarda para recordar el ajuste. La etiqueta Manual y **Volver a Auto** permiten recuperarlo sin borrar series registradas.
+3. Con la tarjeta del ejercicio cerrada, toca una ficha gris con porcentaje, peso y repeticiones. Queda marcada, inicia su descanso y se registra aparte, sin sumar volumen. Un doble toque no crea duplicados.
+4. Si necesitas corregir peso, reps, RPE o descanso antes de registrar, abre el ejercicio y usa el formulario de la previa correspondiente, que se conserva.
+
+### Frases del día
+
+Hoy sustituye «A entrenar» por una frase grande. El banco inicial contiene 30 textos originales sin atribuciones. La selección es estable para la fecha de sesión mostrada: en descanso usa el banco de recuperación; entrenando alterna contexto muscular y fase (volumen, mini cut o mantención), con frases generales como alternativa. No cambia mientras registras series.
+
+En **Menú → Ajustes → Frases del día** puedes editar, añadir, eliminar o restaurar los originales; pulsa **Guardar frases** para aplicar. El banco se conserva localmente y viaja en el respaldo JSON. No se consultan APIs externas para elegir frases. El nombre y el lema siguen editándose en Tu identidad.
+
+Para publicar, integra el PR en `main` y espera el workflow de GitHub Pages. La URL continúa siendo **https://alvarovz14.github.io/Templates/**. Con conexión, recarga y vuelve a abrir la PWA para recibir el nuevo service worker, conservando los datos del sitio.

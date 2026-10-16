@@ -4,13 +4,13 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
-import config, { appearanceAssets } from '../vite.config.js';
+import config, { appearanceAssets, offlineWorker } from '../vite.config.js';
 
 const scope = 'https://example.test/Templates/';
-function generatedWorker() {
+function generatedWorker(publicRoot, warnings = []) {
   let asset;
-  const plugin = config.plugins.flat().find(plugin => plugin.name === 'heavy-duty-offline');
-  plugin.generateBundle.call({ emitFile(result) { asset = result; } }, {}, {
+  const plugin = publicRoot ? offlineWorker(publicRoot) : config.plugins.flat().find(plugin => plugin.name === 'heavy-duty-offline');
+  plugin.generateBundle.call({ emitFile(result) { asset = result; }, warn(message) { warnings.push(message); } }, {}, {
     'assets/app.js': { code: '/* fixture bundle */' },
     'assets/Anton.ttf': { source: new Uint8Array([0, 1, 0, 0]) },
   });
@@ -132,6 +132,8 @@ function appearanceFixture(t) {
   mkdirSync(join(root, 'backgrounds'));
   write('backgrounds/own.webp', new Uint8Array([1, 2, 3]));
   write('backgrounds/own.mp4', new Uint8Array([4, 5, 6]));
+  write('appearance.json', JSON.stringify({ media: null, poster: null }));
+  for (const asset of ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png']) write(asset, 'fixture');
   return { root, write, validate };
 }
 
@@ -162,4 +164,51 @@ test('appearance impide publicar más de 8 MiB de fondo y póster', t => {
   write('large.mp4', Buffer.alloc(8 * 1024 * 1024));
   assert.deepEqual(validate({ media: { type: 'video', src: 'large.mp4' } }), ['large.mp4']);
   assert.throws(() => validate({ media: { type: 'video', src: 'large.mp4' }, poster: 'backgrounds/own.webp' }), /8 MiB/);
+});
+
+test('hero.jpg es opcional: su ausencia no invalida ni entra en el precaché', t => {
+  const { root, validate } = appearanceFixture(t);
+  assert.deepEqual(validate({ media: null, poster: null }), []);
+  const source = generatedWorker(root);
+  assert.doesNotMatch(source, /"hero\.jpg"/);
+  assert.match(source, /appearance\.json/);
+});
+
+test('hero.jpg presente se precachea bajo /Templates/ y cambia de versión al editarse', async t => {
+  const { root, write, validate } = appearanceFixture(t);
+  const absent = generatedWorker(root);
+  write('hero.jpg', new Uint8Array([0xff, 0xd8, 0xff, 1]));
+  assert.deepEqual(validate({ media: null, poster: null }), ['hero.jpg']);
+  const first = generatedWorker(root);
+  assert.match(first, /"hero\.jpg"/);
+  const listeners = new Map(), cachedURLs = [];
+  runInNewContext(first, {
+    URL, Headers, Response,
+    self: {
+      registration: { scope },
+      addEventListener(type, listener) { listeners.set(type, listener); },
+      async skipWaiting() {},
+    },
+    caches: { async open() { return { async addAll(urls) { cachedURLs.push(...urls); } }; } },
+  });
+  let installed;
+  listeners.get('install')({ waitUntil(promise) { installed = promise; } });
+  await installed;
+  assert.ok(cachedURLs.includes(`${scope}hero.jpg`));
+  write('hero.jpg', new Uint8Array([0xff, 0xd8, 0xff, 2]));
+  const updated = generatedWorker(root);
+  const version = source => source.match(/const CACHE = PREFIX \+ '([a-f0-9]+)'/)[1];
+  assert.notEqual(version(absent), version(first));
+  assert.notEqual(version(first), version(updated));
+});
+
+test('hero.jpg recomienda 2 MiB y comparte el máximo combinado de 8 MiB', t => {
+  const { root, write, validate } = appearanceFixture(t);
+  write('hero.jpg', Buffer.alloc(2 * 1024 * 1024 + 1));
+  const warnings = [];
+  generatedWorker(root, warnings);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /2 MiB/);
+  write('backgrounds/own.mp4', Buffer.alloc(6 * 1024 * 1024));
+  assert.throws(() => validate({ media: { type: 'video', src: 'backgrounds/own.mp4' } }), /8 MiB/);
 });

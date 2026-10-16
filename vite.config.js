@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createHash } from 'node:crypto';
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,6 +21,8 @@ export function appearanceAssets(directory = fileURLToPath(new URL('./public/', 
     paths.push(path);
   }
   const images = ['.webp', '.avif', '.png', '.jpg', '.jpeg', '.gif', '.svg'];
+  // A missing cover is intentional: the app keeps its original SVG fallback.
+  if (existsSync(resolve(publicRoot, 'hero.jpg'))) localAsset('hero.jpg', ['.jpg']);
   if (configuration.media != null) {
     const media = configuration.media;
     if (typeof media !== 'object' || !['image', 'video'].includes(media.type)) throw new Error('media debe ser null o un objeto con type image/video y src.');
@@ -28,20 +30,22 @@ export function appearanceAssets(directory = fileURLToPath(new URL('./public/', 
   }
   if (configuration.poster != null) localAsset(configuration.poster, images);
   const unique = [...new Set(paths)];
-  if (unique.reduce((size, path) => size + statSync(resolve(publicRoot, path)).size, 0) > 8 * 1024 * 1024) throw new Error('Comprime el fondo y su póster: el total máximo es 8 MiB para mantener la PWA ligera.');
+  if (unique.reduce((size, path) => size + statSync(resolve(publicRoot, path)).size, 0) > 8 * 1024 * 1024) throw new Error('Comprime la portada, el fondo y su póster: el total máximo combinado es 8 MiB para mantener la PWA ligera.');
   return unique;
 }
 
 // Precache the complete emitted bundle, including hashed JS/CSS, on first visit.
-function offlineWorker() {
+export function offlineWorker(directory = fileURLToPath(new URL('./public/', import.meta.url))) {
   return {
     name: 'heavy-duty-offline',
     apply: 'build',
     generateBundle(_, bundle) {
-      const publicAssets = ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'appearance.json', ...appearanceAssets()];
+      const publicRoot = realpathSync(directory);
+      const publicAssets = ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'appearance.json', ...appearanceAssets(publicRoot)];
+      if (publicAssets.includes('hero.jpg') && statSync(resolve(publicRoot, 'hero.jpg')).size > 2 * 1024 * 1024) this.warn?.('hero.jpg supera los 2 MiB recomendados. Comprime la portada para acelerar el primer inicio y su copia offline.');
       const files = ['index.html', ...publicAssets, ...Object.keys(bundle)];
       const hash = createHash('sha256').update(Object.values(bundle).map(x => x.code ?? String(x.source)).join(''));
-      for (const asset of publicAssets) hash.update(readFileSync(new URL(`./public/${asset}`, import.meta.url)));
+      for (const asset of publicAssets) hash.update(asset).update(readFileSync(resolve(publicRoot, asset)));
       const version = hash.digest('hex').slice(0, 12);
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: `
 const PREFIX = 'heavy-duty-' + encodeURIComponent(new URL(self.registration.scope).pathname) + '-';

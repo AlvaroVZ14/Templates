@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 
 test('identidad editable, fuentes locales offline y pantallas sin desbordamientos',async({page,context})=>{
   const external=[];page.on('request',request=>{if(!request.url().startsWith('http://localhost:4175/'))external.push(request.url());});
-  await page.goto('./');await expect(page.getByRole('heading',{name:'A entrenar.'})).toBeVisible();
+  await page.goto('./');await expect(page.getByRole('heading',{name:'Hoy'})).toBeVisible();
   await page.evaluate(()=>document.fonts.ready);
   expect(await page.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgb(10, 10, 10)');
   expect(await page.locator('h1:visible').evaluate(el=>getComputedStyle(el).fontFamily)).toContain('Anton');
@@ -37,7 +37,7 @@ test('destello solo al guardar efectiva, fallo y anillo decreciente; movimiento 
   await page.locator('.set-form').getByRole('button',{name:'Guardar serie'}).click();await expect(page.locator('.log-row[data-kind=effective]')).toHaveCount(1);await expect(page.locator('.effective-save-flash')).toHaveCount(1);
   const ring=page.locator('.rest-countdown');const before=Number(await ring.getAttribute('stroke-dashoffset'));await page.clock.fastForward(30000);await expect.poll(async()=>Number(await ring.getAttribute('stroke-dashoffset'))).toBeGreaterThan(before);
   await page.emulateMedia({reducedMotion:'reduce'});await expect(page.getByTestId('shadow-scene')).toHaveClass(/is-paused/);
-  expect(await page.locator('.shadow-glow').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
+  expect(await page.getByTestId('shadow-scene').locator('.shadow-glow').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
   await expect(page.locator('.effective-save-flash')).not.toBeVisible();
   expect(await page.locator('.failure-shake').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
 });
@@ -47,12 +47,12 @@ test.use({serviceWorkers:'block'}); // Route synthetic media without SW intercep
 test('fondo propio opcional y animación pausada al ocultar la pestaña',async({page})=>{
   await page.addInitScript(()=>{window.testHidden=false;Object.defineProperty(document,'hidden',{get:()=>window.testHidden,configurable:true});});
   await page.route('**/appearance.json',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({media:{type:'image',src:'icon-512.png'},poster:null})}));
-  await page.goto('./');await expect(page.locator('img.shadow-media')).toBeVisible();
+  await page.goto('./');await expect(page.getByTestId('shadow-scene').locator('img.shadow-media')).toBeVisible();
   await expect(page.getByTestId('shadow-scene')).not.toHaveClass(/is-paused/);
   await page.evaluate(()=>{window.testHidden=true;document.dispatchEvent(new Event('visibilitychange'));});
   await expect(page.getByTestId('shadow-scene')).toHaveClass(/is-paused/);
-  await expect(page.locator('img.shadow-media')).toHaveCount(0);await expect(page.locator('canvas.shadow-media')).toBeVisible();
-  expect(await page.locator('.shadow-glow').evaluate(el=>getComputedStyle(el).animationPlayState)).toBe('paused');
+  await expect(page.getByTestId('shadow-scene').locator('img.shadow-media')).toHaveCount(0);await expect(page.getByTestId('shadow-scene').locator('canvas.shadow-media')).toBeVisible();
+  expect(await page.getByTestId('shadow-scene').locator('.shadow-glow').evaluate(el=>getComputedStyle(el).animationPlayState)).toBe('paused');
   await page.evaluate(()=>{window.testHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await expect(page.getByTestId('shadow-scene')).not.toHaveClass(/is-paused/);
 });
 
