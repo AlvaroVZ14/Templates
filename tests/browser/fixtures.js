@@ -1,7 +1,15 @@
 import {test as base,expect} from '@playwright/test';
 // Existing feature scenarios deliberately leave partially completed workouts.
 // The navigation suite uses the base fixture and checks both confirmation paths.
-export const test=base.extend({page:async({page},use)=>{
+// Older feature scenarios explicitly postpone the new first-run setup through
+// its real UI. Prompt 19 scenarios use the base fixture to test onboarding itself.
+export const onboardingTest=base.extend({page:async({page},use)=>{
+  await page.addLocatorHandler(page.getByRole('heading',{name:'Configurar pesos',exact:true}),async()=>{
+    await page.getByRole('button',{name:'Posponer configuración',exact:true}).click();
+  });
+  await use(page);
+}});
+export const test=onboardingTest.extend({page:async({page},use)=>{
   page.on('dialog',dialog=>dialog.accept());
   await use(page);
 }});

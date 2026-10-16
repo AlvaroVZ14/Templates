@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {onboardingTest as test,expect} from './fixtures.js';
 import {go,chooseDate} from './navigation-helpers.js';
 
 test.beforeEach(async({page})=>{page.on('dialog',dialog=>dialog.accept());});
@@ -61,7 +61,7 @@ test('tres capas, foco, tensión, pulso y frases sin cambiar entrenamientos; tam
 test('tacto y scroll conservados en móvil retina',async({browser})=>{
   const context=await browser.newContext({isMobile:true,hasTouch:true,deviceScaleFactor:3,viewport:{width:390,height:844},baseURL:'http://localhost:4175/Templates/'}),page=await context.newPage();
   await page.addInitScript(()=>{window.DeviceOrientationEvent=undefined;});
-  await page.goto('./');const hero=stage(page),point=await heroPoint(page),canvas=page.getByTestId('ember-field');
+  await page.goto('./');await page.getByRole('button',{name:'Posponer configuración',exact:true}).click();const hero=stage(page),point=await heroPoint(page),canvas=page.getByTestId('ember-field');
   await expect(canvas).toHaveAttribute('data-particles','20');expect(await canvas.evaluate(el=>el.width)).toBe(585);
   await page.touchscreen.tap(point.x,point.y);await expect(hero.locator('.shadow-quote')).toBeVisible();await expect(hero.locator('.shadow-quote')).toHaveCount(0,{timeout:4500});
   const session=await context.newCDPSession(page),before=await page.evaluate(()=>scrollY);

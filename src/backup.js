@@ -30,6 +30,10 @@ function validateState(state){
  require(object(next.settings)&&Number.isFinite(next.settings.sleepGoal)&&next.settings.sleepGoal>0&&next.settings.sleepGoal<=24,'Meta de sueño no válida.');
  require(object(next.preparationSettings)&&[0,1].includes(next.preparationSettings.minimum),'Configuración de previas no válida.');
  if(next.navigationSettings)require(object(next.navigationSettings)&&(!next.navigationSettings.drawerSide||['left','right'].includes(next.navigationSettings.drawerSide))&&(!next.navigationSettings.lastSession||date(next.navigationSettings.lastSession)),'Navegación no válida.');
+ if(next.weightSetup)require(object(next.weightSetup)&&typeof next.weightSetup.reviewedAt==='string'&&Number.isFinite(Date.parse(next.weightSetup.reviewedAt)),'Configuración inicial no válida.');
+ if(next.gymSettings)require(object(next.gymSettings)&&(next.gymSettings.sound===undefined||typeof next.gymSettings.sound==='boolean'),'Ajustes de gimnasio no válidos.');
+ if(next.gymSession!=null)require(object(next.gymSession)&&date(next.gymSession.date)&&typeof next.gymSession.currentExerciseId==='string'&&Number.isFinite(Date.parse(next.sessionMeta?.[next.gymSession.date]?.startedAt)),'Sesión de gimnasio no válida.');
+ for(const meta of Object.values(next.sessionMeta??{}))if(meta.gymSummary){const summary=meta.gymSummary;require(object(summary)&&Number.isFinite(summary.durationSeconds)&&summary.durationSeconds>=0&&Number.isInteger(summary.effectiveSets)&&summary.effectiveSets>=0&&typeof summary.message==='string'&&Array.isArray(summary.records)&&summary.records.every(row=>object(row)&&typeof row.profileId==='string'&&typeof row.name==='string'&&date(row.previousDate)&&['weight','reps','previousWeight','previousReps'].every(key=>row[key]===null||Number.isFinite(row[key])&&row[key]>=0)),'Resumen de gimnasio no válido.');}
  for(const draft of Object.values(next.trainingDrafts??{}))require(object(draft)&&date(draft.date)&&object(draft.values)&&Object.values(draft.values).every(value=>value===null||['number','string','boolean'].includes(typeof value)),'Borrador no válido.');
  for(const [day,meta] of Object.entries(next.sessionMeta??{}))require(date(day)&&object(meta)&&(meta.notes==null||typeof meta.notes==='string')&&(meta.durationSeconds==null||Number.isFinite(meta.durationSeconds)&&meta.durationSeconds>=0),'Datos de sesión no válidos.');
  require(next.monthlyReviews===undefined||Array.isArray(next.monthlyReviews),'Revisiones mensuales no válidas.');
@@ -63,6 +67,7 @@ export function combineStates(current,incoming){
  // Independent installations generate different routine IDs. Join the same
  // exercise in the same day and relink its records; archive originals unchanged.
  const relink=log=>({...log,exerciseId:mapping.get(log.exerciseId)??log.exerciseId});source.logs=source.logs.map(relink);source.techniqueTrials=(source.techniqueTrials??[]).map(relink);
+ if(source.gymSession)source.gymSession.currentExerciseId=mapping.get(source.gymSession.currentExerciseId)??source.gymSession.currentExerciseId;
  source.trainingDrafts=Object.fromEntries(Object.entries(source.trainingDrafts??{}).map(([key,value])=>[key.split(':').map(part=>mapping.get(part)??part).join(':'),value]));
  source.sessions=source.sessions.map(session=>({...session,exercises:session.exercises.map(ex=>({...ex,id:mapping.get(ex.id)??ex.id,instance:mapping.has(ex.id)?`${mapping.get(ex.id)}${ex.instance.slice(ex.id.length)}`:ex.instance,sets:ex.sets.map(set=>({...set,source:relink(set.source)}))}))}));
  const merged=combineValues(current,source);merged.routine=routine;

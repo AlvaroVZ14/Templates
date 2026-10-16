@@ -950,3 +950,70 @@ El dibujo se recorta a los márgenes fuera de la columna central: nunca pinta en
 4. Consulta miércoles: debe anunciar jueves y su sesión, normalmente «mañana (jueves): Hombro + Brazo». Consulta domingo: «mañana (lunes)». Si esa fecha no es hoy, el título no debe decir Hoy. El día siguiente al actual usa Mañana.
 5. En Rutina, deja libre el siguiente día de entrenamiento y guarda: el mensaje debe saltarlo. Prueba también una excepción de descanso desde Tipo de día y hora de entrenamiento. Si cambias los músculos de la siguiente sesión, su nombre se actualiza.
 6. Carga una vez con conexión y recarga offline: todo sigue disponible. La etapa no añade campos persistidos, cambia el formato de IndexedDB ni modifica historial, rutinas o registros por sí sola.
+
+## Configurar pesos y modo gimnasio · Prompt 19
+
+La primera apertura tras esta actualización muestra **Configurar pesos**. La pantalla
+también está en el menú lateral. Cada perfil de ejercicio tiene una fila con kg y
+reps objetivo; los días que lo comparten se muestran juntos. En mancuernas son kg
+por mano. Puedes guardar una carga parcial o **Posponer configuración**: los pesos
+vacíos quedan pendientes y Hoy los sigue pidiendo antes de calcular las previas.
+El peso 0 es válido. El borrador de configuración se recupera tras recargar;
+posponer no aplica sus valores. Guardar respeta notas, redondeos, rutina y registros
+anteriores. Solo actualiza las referencias que alimentan previas/drop/rest-pause.
+
+En **Hoy**, para la fecha actual con entrenamiento, **Empezar sesión** abre el modo
+gimnasio. Se reutiliza el inicio del cronómetro anterior si ya estaba abierto. Solo
+hay una sesión de gimnasio abierta a la vez; una sesión terminada de esa fecha no
+se reinicia. Se destaca el ejercicio actual, se muestra el siguiente y los botones
+de registro son más grandes. Puedes elegir otro ejercicio tocando su encabezado;
+la selección se recuerda al cerrar y volver a abrir, incluso offline.
+
+Durante el modo gimnasio se solicita mantener la pantalla encendida. Se libera al
+ocultar/salir de la app, cambiar de sección o terminar. Al volver a la sesión
+visible se solicita de nuevo. Si el navegador lo rechaza o no dispone de la API,
+el entrenamiento sigue funcionando y aparece un estado claro con reintento cuando
+corresponde. Requiere HTTPS o localhost y depende del navegador y del ahorro de
+batería: [Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API).
+
+Los efectos pasan temporalmente a una vista estática con resplandor, sin partículas
+móviles, humo animado, video ni parallax. Tus preferencias guardadas no cambian:
+se restauran al salir o terminar. El cronómetro de descanso permanece fijo incluso
+antes de guardar la primera serie y al finalizar un descanso. Cada serie se confirma
+con **Guardar serie** y se escribe inmediatamente en IndexedDB, sin esperar al final
+de la sesión; los campos pendientes siguen siendo borradores y no cuentan como
+series. Un fallo de guardado muestra el error y conserva el formulario.
+
+El descanso solicita una vibración al llegar a cero. El **Aviso sonoro de descanso**
+está apagado por defecto; se sintetiza localmente un tono suave, sin archivos ni
+APIs externas. Actívalo desde la sesión. Tras una recarga puede ser necesario tocar
+**Habilitar sonido** por la política de audio del navegador:
+[AudioContext.resume](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/resume).
+Los avisos no se reproducen de nuevo al recargar un descanso ya vencido. El sonido
+solo se intenta con la sesión visible; no se promete una alarma con la app cerrada.
+
+**Terminar sesión** guarda duración, efectivas y mejoras frente a la última fecha
+con efectivas del mismo perfil/equipo. Compara máximos de peso y reps por separado;
+son mejoras frente a la sesión anterior, no un récord absoluto ni una estimación
+de fuerza. Sin sesión previa no inventa récords. La duración mide el tiempo desde
+el inicio hasta terminar, incluyendo cierres y pausas. Si hay campos pendientes,
+avisa y conserva sus borradores sin convertirlos en series. Los metadatos, resumen,
+selección y ajustes nuevos se incluyen y validan en el respaldo JSON existente;
+no se cambia la versión de IndexedDB ni se borran datos.
+
+### Comprobar esta etapa
+
+1. En Configurar pesos, guarda 100 kg para press banca y 24 kg por mano para press
+   inclinado con mancuernas. Deja otro vacío. En Hoy, banca debe sugerir previas de
+   50 y 75 kg; el ejercicio vacío debe pedir el peso. Recarga y vuelve desde el menú.
+2. Abre la fecha actual, toca Empezar sesión y revisa la pantalla encendida, el
+   siguiente ejercicio, el descanso fijo y el fondo estático. Cambia de sección:
+   la pantalla se libera; Volver a la sesión abierta recupera el modo gimnasio.
+3. Guarda una efectiva y escribe otra sin guardar. Tras cargar una vez con conexión,
+   recarga offline: la efectiva sigue en el historial y la otra vuelve como borrador,
+   sin duplicarse. Se conserva el ejercicio seleccionado y el descanso en curso.
+4. Activa el sonido y deja terminar un descanso: comprueba un aviso visual, vibración
+   y tono si tu equipo los permite. Prueba también sin sonido.
+5. Termina: comprueba duración, efectivas y mejoras si había una sesión anterior.
+   El fondo vuelve a tu preferencia. Exporta un respaldo para conservar también la
+   sesión abierta o su resumen fuera del navegador.

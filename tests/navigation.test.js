@@ -15,6 +15,7 @@ test('gestos filtran movimiento corto, vertical o demasiado lento',()=>{
 });
 test('borradores y sesiones incompletas avisan, los borradores no cuentan como series',()=>{
  const data=initialState(),date='2026-10-12';assert.equal(incompleteSession(data,date,{}),false);
+ assert.equal(incompleteSession(data,date,{'weights:setup':{date,values:{weight:'80'}}}),false);
  assert.equal(incompleteSession(data,date,{a:{date,values:{weight:'80'}}}),true);assert.equal(data.logs.length,0);
  assert.equal(incompleteSession(data,date,{a:{date:'2026-10-13',values:{weight:'80'}}}),false);
  data.sessionMeta={[date]:{startedAt:'2026-10-12T10:00Z'}};assert.equal(incompleteSession(data,date,{}),true);
