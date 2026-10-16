@@ -1,9 +1,10 @@
 import {hydrateCollections,projectCollections,preservationCounts,verifyProjection} from './history.js';
+import {BACKUP_STORES,validateBackup,combineStates} from './backup.js';
 
 export const DB_NAME='heavy-duty-personal';
 export const DB_VERSION=2;
 export const COLLECTIONS=['sessions','cardio','journal','measurements','phases'];
-const STORES=['app',...COLLECTIONS,'sessionRevisions','migrationBackups'];
+const STORES=BACKUP_STORES;
 let connection;
 function createStores(db){
   if(!db.objectStoreNames.contains('app'))db.createObjectStore('app');
@@ -71,4 +72,31 @@ export async function querySessions({month,year,exercise,from,to}={}){
 export async function queryRevisions(id){const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction('sessionRevisions','readonly'),req=tx.objectStore('sessionRevisions').index('bySession').getAll(id);tx.oncomplete=()=>resolve(req.result);tx.onerror=()=>reject(tx.error);});}
 export async function exportBackup(){
   const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction(STORES,'readonly'),records={};for(const name of STORES){const store=tx.objectStore(name),keys=store.getAllKeys(),values=store.getAll();values.onsuccess=()=>{records[name]=values.result.map((value,index)=>({key:keys.result[index],value}));};}tx.oncomplete=()=>resolve({format:'heavy-duty-backup',formatVersion:1,databaseName:DB_NAME,databaseVersion:db.version,exportedAt:new Date().toISOString(),records});tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
+}
+function readAllStores(tx,done){
+  const records={};let remaining=STORES.length;
+  for(const name of STORES){const store=tx.objectStore(name),keys=store.getAllKeys(),values=store.getAll();values.onsuccess=()=>{records[name]=values.result.map((value,index)=>({key:keys.result[index],value}));if(--remaining===0)done(records);};}
+}
+export async function importBackup(payload,mode){
+  // Validate before acquiring a write transaction. No clear/put happens on failure.
+  const incoming=validateBackup(payload);if(!['combine','replace'].includes(mode))throw new Error('Elige combinar o reemplazar.');
+  const db=await openDatabase();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(STORES,'readwrite');let result;
+    readAllStores(tx,records=>{try{
+      const cache=records.app.find(row=>row.key==='state')?.value,rows=Object.fromEntries(COLLECTIONS.map(key=>[key,records[key].map(row=>row.value)])),current=cache?.storageFormat===2?hydrateCollections(cache,rows):cache;
+      const next=mode==='combine'&&current?combineStates(current,incoming.state):incoming.state;
+      const before={id:`before-import-${crypto.randomUUID()}`,kind:'before-import',at:new Date().toISOString(),mode,records:Object.fromEntries(STORES.filter(key=>key!=='migrationBackups').map(key=>[key,records[key]]))};
+      const source={id:`import-source-${crypto.randomUUID()}`,kind:'import-source',at:new Date().toISOString(),records:Object.fromEntries(STORES.filter(key=>key!=='migrationBackups').map(key=>[key,incoming.records[key]]))};
+      if(mode==='replace')for(const name of STORES.filter(key=>key!=='migrationBackups'))tx.objectStore(name).clear();
+      const appKeys=new Set(mode==='replace'?[]:records.app.map(row=>row.key));for(const row of incoming.records.app)if(row.key!=='state'&&!appKeys.has(row.key))tx.objectStore('app').put(row.value,row.key);
+      result=writeState(tx,next,next.sessions??[]);
+      for(const name of ['sessionRevisions','migrationBackups']){
+        const existing=new Map((mode==='replace'&&name==='sessionRevisions'?[]:records[name]).map(row=>[row.key,row.value]));
+        for(const row of incoming.records[name]){const old=existing.get(row.key);if(old&&JSON.stringify(old)===JSON.stringify(row.value))continue;const value=old?{...row.value,id:`import-${crypto.randomUUID()}`,originalId:row.key}:row.value;tx.objectStore(name).put(value);}
+      }
+      tx.objectStore('migrationBackups').add(before);tx.objectStore('migrationBackups').add(source);
+    }catch(error){tx.abort();reject(error);}});
+    tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error??new Error('Importación cancelada; tus datos anteriores siguen intactos.'));
+  });
 }

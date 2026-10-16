@@ -5,6 +5,11 @@ Guts: poco volumen, series efectivas al fallo técnico y ejecución controlada.
 Construida con React + Vite. Sin backend, cuentas, analítica ni servicios externos.
 El repositorio conserva el nombre **Templates**.
 
+**URL final de publicación:** [https://alvarovz14.github.io/Templates/](https://alvarovz14.github.io/Templates/).
+GitHub Pages está configurado con **GitHub Actions**; cada integración en `main`
+publica si pasan las comprobaciones. La ruta `/Templates/` distingue mayúsculas.
+Hasta que termine el primer despliegue correcto, la URL puede responder 404.
+
 ## Probar en tu computador
 
 Requiere Node.js 20.19+ o 22.12+ (se recomienda Node 24) y npm.
@@ -793,3 +798,57 @@ En **Progreso** e **Historial**, usa **Resumen semanal** o **Resumen mensual**, 
 Incluye series guardadas y técnicas, RPE, fallo y descanso real, volumen por músculo, cardio y pasos, peso y ritmo respecto a la fase, medidas, nutrición, sueño, estrés, energía, fatiga y dolor, fase, descarga y Progreso al cierre de cada período. Los promedios muestran cuántos días tienen datos y no rellenan ausencias con cero. El dolor se conserva como texto por fecha, sin un promedio ficticio. Los borradores no cuentan.
 
 La tendencia de cada ejercicio es descriptiva (media de la mejor carga por reps efectiva de cada día, mismo ejercicio y equipo, sin descarga); no convierte una semana corta en una evaluación de Progreso. Cada período usa su referencia cronológica anterior. En mes, el ritmo de peso compara primera y última media de siete días, normalizado por semana; si el período aún es corto usa los últimos 14 días y lo indica. Los indicadores mantienen sus ventanas propias de cuatro semanas. Ambos textos terminan con la solicitud de análisis indicada por el usuario; la app no genera ni aplica esas recomendaciones automáticamente.
+
+## Exportar e importar todos los datos (PROMPT 13)
+
+En **Ajustes** e **Historial**, abre **Exportar/Importar respaldo**. **Exportar
+respaldo** descarga un JSON local con todos los almacenes: rutina, perfiles y pesos
+de trabajo, previas y redondeos, sesiones/series y sus versiones, cardio/pasos,
+diario, comida, medidas, fases, revisiones mensuales, ajustes y borradores guardados.
+El archivo no se envía a servidores. Comprueba que se guardó antes de cerrar el navegador.
+
+Para importar, despliega **Importar un archivo JSON**, elige el archivo y revisa
+sus contadores. Seleccionarlo no escribe nada: primero valida identificador,
+formato 1, base 2, esquema de datos compatible hasta 7, colecciones, claves, tipos,
+rangos y coherencia entre estado e historial. Rechaza versiones futuras, JSON
+inválido, claves inseguras y registros inconsistentes antes de habilitar la acción.
+Los JSON exportados por versiones anteriores de esta app con formato 1 y base 2
+siguen siendo compatibles; las migraciones de esquema necesarias son no destructivas.
+
+- **Combinar** añade registros de IDs distintos. En coincidencias por ID o fecha,
+  conserva lo local y completa campos nulos/ausentes. Une ejercicios del mismo día
+  con perfil, nombre y equipo equivalentes, aunque dos instalaciones hayan generado
+  IDs distintos, y enlaza sus series y borradores al ejercicio local. Los ejercicios
+  diferentes se añaden a la rutina. Repetir el mismo archivo no duplica series,
+  cardio ni ejercicios. Las variantes en conflicto también quedan en la copia del
+  origen importado, aunque la versión local sea la que se muestre.
+- **Reemplazar** sustituye la rutina, configuración y registros actuales por los del
+  archivo. Es la opción para recuperar la configuración y los registros de una instalación anterior. Las
+  copias de seguridad históricas del navegador se conservan.
+
+Solo al pulsar **Combinar este respaldo** o **Reemplazar con este respaldo** se
+aplica la operación completa en una única transacción IndexedDB. En esa misma
+transacción se archivan el estado anterior (`before-import`) y el origen importado
+(`import-source`) en `migrationBackups`; ambos quedan incluidos en futuras
+exportaciones. Las versiones históricas con IDs en conflicto se conservan con un
+ID nuevo y referencia al original. Si una escritura o la cuota fallan, se revierte
+todo, incluso las eliminaciones del reemplazo, y se puede reintentar.
+
+Guarda tus ediciones abiertas antes de importar. Al terminar se recarga la app en
+Hoy y se recuperan los borradores incluidos en el estado restaurado. Si tienes
+otras pestañas abiertas, recárgalas también para consultar la nueva base.
+Los archivos y copias de seguridad pertenecen a ti: mantenlos fuera del navegador.
+
+Junto a **Revisión mensual**, tanto en Progreso como en Historial, aparece un
+recordatorio de exportación. Se oculta al iniciar una exportación ese mes y vuelve
+el siguiente. El navegador no permite confirmar que conservaste el archivo:
+la app registra la descarga iniciada, no una copia externa verificada. Exportar
+solo actualiza este marcador; no cambia entrenamientos ni revisiones. El JSON
+contiene el estado anterior a actualizar el marcador.
+
+Comprobación recomendada: exporta, conserva el archivo, elígelo en Importar y
+revisa los contadores sin aplicar nada. Prueba primero **Combinar**, recarga y
+comprueba el historial y los ajustes. Usa **Reemplazar** cuando quieras restaurar
+todo el estado de ese archivo. Las pruebas automatizadas verifican ambos modos,
+la repetición sin duplicados, importación offline, preservación de campos y
+reversión ante una escritura fallida; usan bases aisladas con datos ficticios.
