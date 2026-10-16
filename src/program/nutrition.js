@@ -8,7 +8,7 @@ export function foodItem(food,quantity){return {food:structuredClone(food),quant
 export function sumItems(items){const sum=items.reduce((sum,item)=>Object.fromEntries(MACROS.map(key=>[key,sum[key]+item.macros[key]])),emptyMacros());const known=items.filter(item=>Number.isFinite(item.macros.fiber));return {...sum,...(known.length?{fiber:known.reduce((sum,item)=>sum+item.macros.fiber,0)}:{})};}
 export function validateFood(food){return !(food.portion>0&&food.portion<=10000&&MACROS.every(key=>Number.isFinite(food[key])&&food[key]>=0&&food[key]<=10000)&&(food.fiber==null||Number.isFinite(food.fiber)&&food.fiber>=0&&food.fiber<=10000))?'Porción mayor que 0 y nutrientes entre 0 y 10000.':null;}
 export function dayContext(state,date){
-  const index=(new Date(`${date}T12:00:00`).getDay()+6)%7,override=state.calendar[date];
+  const index=(new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7,override=state.calendar[date];
   const defaultType=state.routine[index].length===0?'rest':state.routine[index].some(ex=>ex.muscle==='Cuádriceps')?'legs':'weights';
   const type=override?.type??defaultType;
   const fallback=state.routine.findIndex(list=>list.length>0&&(type!=='legs'||list.some(ex=>ex.muscle==='Cuádriceps')));
@@ -67,6 +67,7 @@ function score(total,target){return Math.max(0,target.fat-total.fat)*100+Math.ab
 export function generatePlan(state,date){
   const target=goalForDate(state,date);if(!target)throw new Error('Primero confirma las metas nutricionales.');
   const context=dayContext(state,date),foods=Object.fromEntries(state.foods.map(food=>[food.id,food])),options=state.planOptions[date]??{};
+  if(['egg','bread','chicken','rice'].some(id=>!foods[id]||validateFood(foods[id])))throw new Error('Completa la base de pan, huevo, pollo y arroz antes de generar el plan.');
   const cap=target.kcal*(target.phaseKind==='bulk'?.2:target.phaseKind==='cut'?.1:Math.min(.2,target.snackBudget??.2));
   const chosen=(options.snacks??[]).map(id=>foods[id]).filter(food=>food?.snack),chosenItems=chosen.map(food=>foodItem(food,1));
   const chosenTotal=sumItems(chosenItems),chosenFit=chosenTotal.kcal<=cap;

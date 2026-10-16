@@ -85,10 +85,14 @@ async function cachedResponse(request, cached) {
   return new Response(body.slice(start, end + 1), { status: 206, statusText: 'Partial Content', headers });
 }
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES.map(local))).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES.map(path => new Request(local(path), {cache:'reload'})))));
+});
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') event.waitUntil(self.skipWaiting());
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  // Keep caches needed by other open tabs. Cleanup is limited to this app scope.
+  event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(clients => clients.filter(client => client.url.startsWith(self.registration.scope)).length > 1 ? null : caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && key !== CACHE).map(key => caches.delete(key))))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || !event.request.url.startsWith(self.registration.scope)) return;

@@ -1,3 +1,4 @@
+import {parseRoutineDraft} from './routineDraft.js';
 import {migrateState,validateRoutine,KINDS} from './domain.js';
 import {hydrateCollections,projectCollections,verifyProjection} from './history.js';
 import {JOURNAL_FIELDS} from './wellness.js';
@@ -43,6 +44,7 @@ function validateState(state){
  if(next.gymSession!=null)require(object(next.gymSession)&&date(next.gymSession.date)&&typeof next.gymSession.currentExerciseId==='string'&&Number.isFinite(Date.parse(next.sessionMeta?.[next.gymSession.date]?.startedAt)),'Sesión de gimnasio no válida.');
  for(const meta of Object.values(next.sessionMeta??{}))if(meta.gymSummary){const summary=meta.gymSummary;require(object(summary)&&Number.isFinite(summary.durationSeconds)&&summary.durationSeconds>=0&&Number.isInteger(summary.effectiveSets)&&summary.effectiveSets>=0&&typeof summary.message==='string'&&Array.isArray(summary.records)&&summary.records.every(row=>object(row)&&typeof row.profileId==='string'&&typeof row.name==='string'&&date(row.previousDate)&&['weight','reps','previousWeight','previousReps'].every(key=>row[key]===null||Number.isFinite(row[key])&&row[key]>=0)),'Resumen de gimnasio no válido.');}
  for(const draft of Object.values(next.trainingDrafts??{}))require(object(draft)&&date(draft.date)&&object(draft.values)&&Object.values(draft.values).every(value=>value===null||['number','string','boolean'].includes(typeof value)),'Borrador no válido.');
+ if(next.trainingDrafts?.['routine:editor'])require(parseRoutineDraft(next.trainingDrafts['routine:editor'].values.routine),'Borrador de rutina no válido.');
  for(const [day,meta] of Object.entries(next.sessionMeta??{}))require(date(day)&&object(meta)&&(meta.notes==null||typeof meta.notes==='string')&&(meta.durationSeconds==null||Number.isFinite(meta.durationSeconds)&&meta.durationSeconds>=0),'Datos de sesión no válidos.');
  require(next.monthlyReviews===undefined||Array.isArray(next.monthlyReviews),'Revisiones mensuales no válidas.');
  for(const row of next.monthlyReviews??[])require(object(row)&&typeof row.id==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(row.month)&&object(row.report)&&date(row.report.asOf)&&['performance','body','consistency'].every(key=>object(row.report[key])&&['green','amber','red','insufficient'].includes(row.report[key].status)&&typeof row.report[key].text==='string'&&typeof row.report[key].action==='string'&&(row.report[key].value===null||Number.isFinite(row.report[key].value)))&&object(row.changes),'Revisión mensual no válida.');
@@ -78,6 +80,8 @@ export function combineStates(current,incoming){
  if(source.gymSession)source.gymSession.currentExerciseId=mapping.get(source.gymSession.currentExerciseId)??source.gymSession.currentExerciseId;
  if(source.safetySettings?.hidden)source.safetySettings.hidden=Object.fromEntries(Object.entries(source.safetySettings.hidden).map(([id,value])=>[mapping.get(id)??id,value]));
  source.trainingDrafts=Object.fromEntries(Object.entries(source.trainingDrafts??{}).map(([key,value])=>[key.split(':').map(part=>mapping.get(part)??part).join(':'),value]));
+ const routineDraft=source.trainingDrafts['routine:editor'];
+ if(routineDraft)routineDraft.values.routine=JSON.stringify(parseRoutineDraft(routineDraft.values.routine).map(day=>day.map(ex=>({...ex,id:mapping.get(ex.id)??ex.id}))));
  source.sessions=source.sessions.map(session=>({...session,exercises:session.exercises.map(ex=>({...ex,id:mapping.get(ex.id)??ex.id,instance:mapping.has(ex.id)?`${mapping.get(ex.id)}${ex.instance.slice(ex.id.length)}`:ex.instance,sets:ex.sets.map(set=>({...set,source:relink(set.source)}))}))}));
  const merged=combineValues(current,source);merged.routine=routine;
  // One score per zone/day; the local report wins while both raw sources remain
