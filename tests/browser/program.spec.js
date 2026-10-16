@@ -15,7 +15,7 @@ async function start(page){
   await page.getByRole('button',{name:'Confirmar metas nutricionales',exact:true}).click();
   await expect(page.getByText(/Metas confirmadas desde 2026-10-15/)).toBeVisible();
 }
-async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal',1);req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
+async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
 
 test('cuatro comidas, consumo único, edición histórica de alimentos y recarga offline',async({page,context})=>{
   await start(page);

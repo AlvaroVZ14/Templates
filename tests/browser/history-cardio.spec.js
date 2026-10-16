@@ -68,7 +68,7 @@ test('editor permite 3 preparaciones, 3 caídas y redondeo personalizado', async
 test('migra datos de la versión anterior sin borrar series ni reiniciar descansos', async ({ page }) => {
   await monday(page);
   await page.evaluate(async () => {
-    const db = await new Promise((resolve, reject) => { const request = indexedDB.open('heavy-duty-personal', 1); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+    const db = await new Promise((resolve, reject) => { const request = indexedDB.open('heavy-duty-personal'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
     await new Promise((resolve, reject) => {
       const transaction = db.transaction('app', 'readwrite'), store = transaction.objectStore('app'), request = store.get('state');
       request.onsuccess = () => {
@@ -76,7 +76,7 @@ test('migra datos de la versión anterior sin borrar series ni reiniciar descans
         state.schemaVersion = 1; delete state.profiles; delete state.cardio; delete state.dailySteps;
         ex.equipment = 'free'; delete ex.profileId; ex.rests.effective = 240;
         state.logs = [{ id: 'legacy', exerciseId: ex.id, exerciseName: ex.name, muscle: ex.muscle, date: '2026-10-12', kind: 'effective', weight: 85, reps: 7, failure: true, createdAt: '2026-10-12T12:00:00Z' }];
-        store.put(state, 'state');
+        state.storageFormat=1; store.put(state, 'state');
       };
       transaction.oncomplete = resolve; transaction.onerror = () => reject(transaction.error);
     });

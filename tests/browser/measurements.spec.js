@@ -14,13 +14,13 @@ async function fillMeasures(page,values={}) {
 test('iniciales, diferencias, relaciones, recordatorio y cintura funcionan sin conexión',async({page,context})=>{
   await openMeasures(page);
   for (const [label,value] of [['Bíceps en pose (cm)','35'],['Antebrazo (cm)','31.5'],['Cintura (cm)','70'],['Pecho (cm)','100'],['Muslo (cm)','59'],['Pantorrilla (cm)','35.2']]) await expect(page.getByLabel(label,{exact:true})).toHaveValue(value);
-  await expect(page.locator('.notice')).toContainText('2026-10-29');
+  await expect(page.locator('.wellness-page .notice')).toContainText('2026-10-29');
   await expect(page.locator('.ratio-card').first()).toContainText('1,43');
   await expect(page.locator('.ratio-card').last()).toContainText('0,99');
   await page.getByLabel('Fecha de medidas',{exact:true}).fill('2026-10-29');
   await expect(page.getByRole('alert')).toContainText('Toca registrar tus medidas');
   await fillMeasures(page);
-  await expect(page.locator('.notice')).toContainText('2026-11-12');
+  await expect(page.locator('.wellness-page .notice')).toContainText('2026-11-12');
   await page.getByLabel('Fecha de medidas',{exact:true}).fill('2026-11-12');
   await fillMeasures(page,{'Bíceps en pose (cm)':'36.5','Cintura (cm)':'71.2'});
   await expect(page.locator('.measure-table tbody tr').filter({hasText:'Bíceps en pose'}).locator('td')).toHaveText(['36,5','+0,5','+1,5']);
@@ -47,8 +47,8 @@ test('migración desde diario conserva peso y favoritos y solo añade iniciales 
   await page.getByRole('button',{name:'Guardar diario',exact:true}).click();
   await expect(page.getByText('Diario guardado.',{exact:true})).toBeVisible();
   await page.evaluate(async()=>{
-    const db=await new Promise(resolve=>{const request=indexedDB.open('heavy-duty-personal',1);request.onsuccess=()=>resolve(request.result);});
-    await new Promise((resolve,reject)=>{const transaction=db.transaction('app','readwrite'),store=transaction.objectStore('app'),request=store.get('state'); request.onsuccess=()=>{const state=request.result;state.schemaVersion=3;delete state.measurements;store.put(state,'state');};transaction.oncomplete=resolve;transaction.onerror=()=>reject(transaction.error);}); db.close();
+    const db=await new Promise(resolve=>{const request=indexedDB.open('heavy-duty-personal');request.onsuccess=()=>resolve(request.result);});
+    await new Promise((resolve,reject)=>{const transaction=db.transaction('app','readwrite'),store=transaction.objectStore('app'),request=store.get('state'); request.onsuccess=()=>{const state=request.result;state.schemaVersion=3;delete state.measurements;state.storageFormat=1; store.put(state,'state');};transaction.oncomplete=resolve;transaction.onerror=()=>reject(transaction.error);}); db.close();
   });
   await page.reload(); await page.getByRole('button',{name:'Diario',exact:true}).click();
   await page.getByLabel('Fecha del diario',{exact:true}).fill('2026-10-15');
