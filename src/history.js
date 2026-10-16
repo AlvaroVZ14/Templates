@@ -1,3 +1,4 @@
+import {sessionName} from './calendarText.js';
 export const SERIES_TYPES={warmup:'Previa · calentamiento',approach:'Previa · aproximación',effective:'Efectiva',drop:'Caída de drop set',rp:'Mini-serie de rest-pause',forced:'Forzada',negative:'Negativa'};
 const clone=value=>structuredClone(value);
 const weekday=date=>(new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7;
@@ -16,7 +17,7 @@ export function projectCollections(state,previous=[]){
       ex.sets.push({id:log.id??`legacy-${date}-${order}`,type:['warmup','approach'].includes(log.kind)?'preparation':log.kind,preparationKind:['warmup','approach'].includes(log.kind)?log.kind:null,weight:log.weight,reps:log.reps,rpe:log.rpe??null,failure:log.failure??null,restRealSeconds:log.restRealSeconds??null,order,source:clone(log)});
     }
     const value=(key,fallback)=>Object.hasOwn(meta,key)?meta[key]:fallback;
-    return {id:prior?.id??`session-${date}`,date,month:date.slice(0,7),year:date.slice(0,4),routineDay:prior?.routineDay??day,routineTitle:prior?.routineTitle??['Pecho, hombro y bíceps','Espalda y tríceps','Descanso','Hombro y brazo','Pierna','Torso','Descanso'][day]??'Día sin dato',phase:prior?prior.phase:clone(phase),durationSeconds:value('durationSeconds',prior?.durationSeconds??null),notes:value('notes',prior?.notes??''),startedAt:value('startedAt',prior?.startedAt??null),endedAt:value('endedAt',prior?.endedAt??null),exerciseKeys:[...new Set(exercises.map(ex=>ex.key))],exercises};
+    return {id:prior?.id??`session-${date}`,date,month:date.slice(0,7),year:date.slice(0,4),routineDay:prior?.routineDay??day,routineTitle:prior?.routineTitle??sessionName(exercises.length?exercises:state.routine?.[day]??[])??'Día sin dato',phase:prior?prior.phase:clone(phase),durationSeconds:value('durationSeconds',prior?.durationSeconds??null),notes:value('notes',prior?.notes??''),startedAt:value('startedAt',prior?.startedAt??null),endedAt:value('endedAt',prior?.endedAt??null),exerciseKeys:[...new Set(exercises.map(ex=>ex.key))],exercises};
   });
   const dated=(data,id,date,order)=>({id,date,month:date?.slice(0,7)??'sin-fecha',order,data:clone(data)});
   return {sessions,

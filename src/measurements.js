@@ -45,7 +45,8 @@ export function measurementRatios(records, asOf) {
   });
 }
 export function measurementReminder(records, asOf) {
-  const anchor = records.find(record => record.initial)?.date ?? INITIAL_MEASUREMENT.date;
+  const anchor = records.find(record => record.initial)?.date ?? records.map(record=>record.date).sort()[0];
+  if(!anchor)return {due:true,date:asOf};
   const days = Math.floor((Date.parse(`${asOf}T00:00:00Z`) - Date.parse(`${anchor}T00:00:00Z`)) / 86400000);
   if (days < 14) return { due: false, date: shiftDate(anchor,14) };
   const cycle = Math.floor(days / 14), scheduled = shiftDate(anchor, cycle * 14);
@@ -53,11 +54,11 @@ export function measurementReminder(records, asOf) {
   return { due: !completed, date: completed ? shiftDate(scheduled,14) : scheduled };
 }
 export function previousMonth(date) {
-  const value = new Date(`${date}T12:00:00`), day = value.getDate();
-  value.setDate(1); value.setMonth(value.getMonth() - 1);
-  const last = new Date(value.getFullYear(),value.getMonth()+1,0).getDate();
-  value.setDate(Math.min(day,last));
-  return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
+  const value = new Date(`${date}T12:00:00Z`), day = value.getUTCDate();
+  value.setUTCDate(1); value.setUTCMonth(value.getUTCMonth() - 1);
+  const last = new Date(Date.UTC(value.getUTCFullYear(),value.getUTCMonth()+1,0)).getUTCDate();
+  value.setUTCDate(Math.min(day,last));
+  return `${value.getUTCFullYear()}-${String(value.getUTCMonth()+1).padStart(2,'0')}-${String(value.getUTCDate()).padStart(2,'0')}`;
 }
 export function waistWarning(records, asOf) {
   const waist = orderedMeasurements(records,asOf).filter(record => observed(record.values.waist)), latest = waist.at(-1);

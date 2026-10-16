@@ -1,6 +1,10 @@
 import {dayContext} from './program/nutrition.js';
 import {shiftDate,validDate} from './wellness.js';
 export const weekdayName=date=>new Intl.DateTimeFormat('es-CL',{weekday:'long',timeZone:'UTC'}).format(new Date(`${date}T12:00:00Z`));
+export function sessionTitle(exercises){
+  const parts=sessionName(exercises).split(' + ');
+  return parts.length===1?parts[0]:`${parts[0]}${parts.length>2?`, ${parts.slice(1,-1).map(name=>name.toLocaleLowerCase('es')).join(', ')}`:''} y ${parts.at(-1).toLocaleLowerCase('es')}`;
+}
 export function sessionName(exercises){
   const muscles=[...new Set(exercises.map(ex=>ex.muscle).filter(Boolean))];
   if(!muscles.length)return 'Sesión de entrenamiento';

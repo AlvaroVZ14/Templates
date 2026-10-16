@@ -5,11 +5,11 @@ import { migrateTraining, sessionExercise, trainingLogError } from './training.j
 import { migratePreparation, PREPARATION_STEPS } from './preparation.js';
 import {classifyExercise,migrateClassification} from './classification.js';
 import {migrateFruit} from './program/fruit.js';
+import {dayContext} from './program/nutrition.js';
 
 export const MUSCLES = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Aductor', 'Gemelo'];
 export const TARGETS = { Pecho: 8, Espalda: 9, Hombro: 8, Bíceps: 8, Tríceps: 6, Cuádriceps: 6, Femoral: 4, Aductor: 1, Gemelo: 1 };
 export const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-export const TITLES = ['Pecho, hombro y bíceps', 'Espalda y tríceps', 'Día de descanso', 'Hombro y brazo', 'Pierna', 'Torso', 'Día de descanso'];
 export const KINDS = { warmup: 'Calentamiento', approach: 'Aproximación', effective: 'Efectiva', drop: 'Drop set', rp: 'Rest-pause', forced: 'Forzadas', negative: 'Negativas' };
 export const EXTENSIONS = ['drop', 'rp', 'forced', 'negative'];
 export const PREPARATION = PREPARATION_STEPS;
@@ -68,7 +68,7 @@ export function migrateState(original) {
 export function localDate(date = new Date()) {
   return chileDate(date);
 }
-export function dayIndex(date) { return (new Date(`${date}T12:00:00`).getDay() + 6) % 7; }
+export function dayIndex(date) { return (new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7; }
 export function weekDates(date) {
   const start = new Date(`${date}T12:00:00Z`);
   start.setUTCDate(start.getUTCDate() - dayIndex(date));
@@ -99,7 +99,7 @@ export function weeklyVolume(state, date) {
   const dates = weekDates(date);
   return MUSCLES.map(muscle => ({
     muscle, target: state.targets[muscle],
-    planned: dates.flatMap((day,index)=>state.routine[index].map(ex=>sessionExercise(state,ex,day))).filter(ex => ex.muscle === muscle).reduce((sum, ex) => sum + ex.sets, 0),
+    planned: dates.flatMap(day=>dayContext(state,day).exercises.map(ex=>sessionExercise(state,ex,day))).filter(ex => ex.muscle === muscle).reduce((sum, ex) => sum + ex.sets, 0),
     done: state.logs.filter(log => log.muscle === muscle && log.kind === 'effective' && dates.includes(log.date)).length,
   }));
 }

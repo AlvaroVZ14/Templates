@@ -55,6 +55,16 @@ test('el SW precachea fuentes y configuración bajo el scope de la PWA', () => {
   assert.match(source, /new URL\(path, self\.registration\.scope\)/);
 });
 
+test('la actualización espera un mensaje explícito; instalar no activa ni borra datos',async()=>{
+  const handlers=new Map(),events=[];
+  runInNewContext(generatedWorker(),{URL,Headers,Response,Request,self:{registration:{scope},addEventListener:(type,fn)=>handlers.set(type,fn),skipWaiting:async()=>events.push('activate'),clients:{matchAll:async()=>[{url:scope},{url:scope}],claim:async()=>events.push('claim')}},caches:{open:async()=>({addAll:async requests=>{assert.ok(requests.every(request=>request.cache==='reload'));events.push('cache');}}),keys:async()=>{events.push('keys');return [];}}});
+  let pending;const event={waitUntil:value=>{pending=value;}};
+  handlers.get('install')(event);await pending;assert.deepEqual(events,['cache']);
+  handlers.get('message')({...event,data:{type:'IGNORED'}});assert.deepEqual(events,['cache']);
+  handlers.get('message')({...event,data:{type:'SKIP_WAITING'}});await pending;assert.deepEqual(events,['cache','activate']);
+  handlers.get('activate')(event);await pending;assert.deepEqual(events,['cache','activate','claim']);
+});
+
 test('el vídeo completo permanece disponible sin Range ni conexión', async () => {
   const worker = offlineRuntime();
   const response = await worker.get();
@@ -183,13 +193,13 @@ test('hero.jpg presente se precachea bajo /Templates/ y cambia de versión al ed
   assert.match(first, /"hero\.jpg"/);
   const listeners = new Map(), cachedURLs = [];
   runInNewContext(first, {
-    URL, Headers, Response,
+    URL, Headers, Response, Request,
     self: {
       registration: { scope },
       addEventListener(type, listener) { listeners.set(type, listener); },
       async skipWaiting() {},
     },
-    caches: { async open() { return { async addAll(urls) { cachedURLs.push(...urls); } }; } },
+    caches: { async open() { return { async addAll(requests) { cachedURLs.push(...requests.map(request=>request.url)); } }; } },
   });
   let installed;
   listeners.get('install')({ waitUntil(promise) { installed = promise; } });

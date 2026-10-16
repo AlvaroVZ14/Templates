@@ -1124,3 +1124,27 @@ offline; no hay cambio de versión de IndexedDB ni borrado automático.
 5. Registra dos días seguidos con fatiga alta o sueño bajo: la siguiente tarjeta
    debe indicar la mitad y explicar por qué. Mueve la sesión desde el calendario
    y revisa el cardio asignado; modifica días/minutos desde Ajustes.
+## Auditoría y actualización de la PWA (Prompt 21)
+
+Informe: [hallazgos, correcciones, pruebas y pendientes](docs/audit/p21-report.md).
+Incluye la [tabla de ejercicios auditados](docs/audit/routine.md).
+
+Al instalarse una nueva versión aparece **«Hay una versión nueva, tocar para
+actualizar»**. Tocar guarda borradores y recarga; conserva IndexedDB y el historial.
+La versión actual continúa funcionando hasta que elijas actualizar. Si otra
+pestaña actualiza, esta no se recarga sola mientras registras datos.
+
+La primera vez desde una versión antigua sin este aviso, cierra todas las
+ventanas de la PWA y pestañas de la app y vuelve a abrir con conexión. No borres
+los datos del sitio. Para comparar, revisa antes/después el conteo y rango de
+Historial y exporta un respaldo desde Ajustes.
+
+La fecha actual se calcula en `America/Santiago`; las semanas empiezan el lunes.
+Si llega medianoche con una sesión abierta, se conserva y aparece **«Ir a hoy»**.
+Los borradores de Rutina sobreviven a la recarga, sin aplicarse hasta confirmar.
+
+Se conserva por decisión explícita la precarga corporal solicitada del Prompt
+3B: sigue siendo pública en el código y el README, además de los commits antiguos.
+La app publicada está en **https://alvarovz14.github.io/Templates/**. Los cambios
+de esta etapa llegan allí después de aprobar y fusionar su PR a `main` y completar
+GitHub Actions.

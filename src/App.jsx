@@ -1,3 +1,6 @@
+import usePwa from './usePwa.js';
+import {parseRoutineDraft} from './routineDraft.js';
+import {shiftDate} from './wellness.js';
 import BackupPanel from './BackupPanel.jsx';
 import {AppearanceSettings, ShadowBackground, appearanceFor} from './Appearance.jsx';
 import {MotivationHeading, MotivationSettings} from './Motivation.jsx';
@@ -12,14 +15,14 @@ import GymPanel,{GymSummary} from './GymPanel.jsx';
 import {finishGymSession,openGymSession,startGymSession} from './gym.js';
 import useWakeLock from './useWakeLock.js';
 import useRestAudio from './useRestAudio.js';
-import {restMessage} from './calendarText.js';
+import {restMessage,sessionTitle} from './calendarText.js';
 import {LOAD_TYPES,PATTERNS,classifyExercise} from './classification.js';
 import Progress from './Progress.jsx';
 import {captureMonthlyReviews} from './progress.js';
 import { useEffect, useRef, useState } from 'react';
-import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, TITLES, dayIndex, formatSeconds, initialState, migrateState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
+import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, dayIndex, formatSeconds, initialState, migrateState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
 import { updateState } from './db.js';
-import {DraftProvider,useDrafts} from './drafts.jsx';
+import {DraftProvider,useDrafts,useFormDraft} from './drafts.jsx';
 import {incompleteSession} from './navigation.js';
 import {Drawer,EdgeSwipe,NavigationSettings,Method} from './Navigation.jsx';
 import ExerciseCard from './ExerciseCard.jsx';
@@ -61,29 +64,6 @@ function Icon({ name, size = 22 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.bar}</svg>;
 }
 
-function usePwa() {
-  const [online, setOnline] = useState(navigator.onLine);
-  const [ready, setReady] = useState(false);
-  const [prompt, setPrompt] = useState(null);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    const update = () => setOnline(navigator.onLine);
-    const capture = event => { event.preventDefault(); setPrompt(event); };
-    const installed = () => setPrompt(null);
-    window.addEventListener('online', update); window.addEventListener('offline', update);
-    window.addEventListener('beforeinstallprompt', capture); window.addEventListener('appinstalled', installed);
-    if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then(() => navigator.serviceWorker.ready).then(() => setReady(true)).catch(() => setError('No se pudo preparar el modo offline. Recarga con conexión.'));
-    }
-    return () => {
-      window.removeEventListener('online', update); window.removeEventListener('offline', update);
-      window.removeEventListener('beforeinstallprompt', capture); window.removeEventListener('appinstalled', installed);
-    };
-  }, []);
-  async function install() { if (prompt) { await prompt.prompt(); await prompt.userChoice; setPrompt(null); } }
-  return { online, ready, prompt, error, install };
-}
-
 export default function App() {
   const [data, setData] = useState(null);
   const locked = useRef(false);
@@ -92,6 +72,7 @@ export default function App() {
   const [page, setPage] = useState('today');
   const [date, setDate] = useState(localDate());
   const pwa = usePwa();
+  const [clockDay,setClockDay]=useState(localDate());
   const [menuOpen,setMenuOpen]=useState(false);
   const [summaryOpen,setSummaryOpen]=useState(false);
   const drafts=useDrafts(data,setData,setError);
@@ -137,7 +118,7 @@ export default function App() {
     } catch { setError('No se pudo abrir IndexedDB. Permite el almacenamiento del navegador y vuelve a intentar.'); }
   }
   useEffect(() => { boot(); }, []);
-  useEffect(()=>{let day=localDate();const check=()=>{const next=localDate();if(next!==day)change(state=>state).then(saved=>{if(saved)day=next;});};const timer=setInterval(check,60000);document.addEventListener('visibilitychange',check);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',check);};},[]);
+  useEffect(()=>{let day=localDate();const check=()=>{const next=localDate();setClockDay(next);if(next!==day)change(state=>state).then(saved=>{if(saved)day=next;});};const timer=setInterval(check,60000);document.addEventListener('visibilitychange',check);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',check);};},[]);
   async function change(updater) {
     if (locked.current) return false;
     locked.current = true; setSaving(true); setError('');
@@ -155,7 +136,7 @@ export default function App() {
   }
   async function finishGym(){
     try{await drafts.flush();}catch{return;}
-    if(Object.entries(drafts.entries()).some(([key,draft])=>key!=='weights:setup'&&draft.date===date)&&!window.confirm('Hay campos sin registrar. Sus borradores están guardados, pero no cuentan como series. ¿Terminar la sesión?'))return;
+    if(Object.entries(drafts.entries()).some(([key,draft])=>key!=='weights:setup'&&key!=='routine:editor'&&draft.date===date)&&!window.confirm('Hay campos sin registrar. Sus borradores están guardados, pero no cuentan como series. ¿Terminar la sesión?'))return;
     if(await change(state=>finishGymSession(state)))setSummaryOpen(true);
   }
   async function gymSound(enabled){
@@ -175,10 +156,12 @@ export default function App() {
       <div className="header-actions"><button className="menu-button" aria-label="Abrir menú" aria-expanded={menuOpen} aria-haspopup="dialog" onClick={()=>setMenuOpen(true)}><Icon name="menu" size={22}/><span className="menu-word">Menú</span></button><span className={`connection ${!pwa.online ? 'offline' : ''}`}><i />{!pwa.online ? 'Sin conexión' : pwa.ready ? 'Offline listo' : 'Local · privado'}</span>
 </div>
     </header>
+    {pwa.available&&<aside className="notice pwa-update" role="status"><button className="primary" disabled={saving||pwa.updating||!data} onClick={()=>pwa.update(async()=>{if(locked.current)return false;await drafts.flush();return true;})}>{pwa.updating?'Guardando y actualizando…':'Hay una versión nueva, tocar para actualizar'}</button><p className="field-note">Conserva tus registros y borradores en este dispositivo.</p></aside>}
     {installHelp && <aside className="install-help"><strong>Instala {appearance.name}</strong><p>En Android o escritorio: menú del navegador → Instalar aplicación. En iPhone: Safari → Compartir → Añadir a pantalla de inicio.</p><p>{pwa.ready ? 'La app está preparada para abrir sin conexión.' : 'La instalación y el modo offline se preparan en la versión de producción, con HTTPS o localhost.'}</p><button className="quiet" onClick={() => setInstallHelp(false)}>Entendido</button></aside>}
     {(error || pwa.error) && <div className="error global-error" role="alert">{error || pwa.error}{!data && <button className="quiet" onClick={boot}>Reintentar</button>}</div>}
     {!data ? <main className="loading" aria-live="polite"><span className="loading-mark" aria-hidden="true">B&amp;G</span><strong>{appearance.name}</strong><span>{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</span></main> : <>
       <main id="main-content">
+        {page==='today'&&date!==clockDay&&<aside className="notice"><p>Estás viendo la sesión del {date}. Hoy en Chile: {clockDay}.</p><button className="secondary" onClick={()=>navigate('today',clockDay)}>Ir a hoy</button></aside>}
         {gymOpen&&!gymActive&&<aside className="notice gym-recovery"><p>Sesión abierta del {gymOpen.date}. Tus series están guardadas.</p><button className="secondary" onClick={()=>navigate('today',gymOpen.date)}>Volver a la sesión abierta</button></aside>}
         {page !== 'today' && page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
         {page === 'today' && <Today data={data} date={date} setDate={value=>navigate('today',value)} change={change} saving={saving} startTimer={startTimer} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} appearance={appearance} gymActive={gymActive} gymOpen={gymOpen} beginGym={beginGym} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} summaryOpen={summaryOpen} closeSummary={()=>setSummaryOpen(false)} />}
@@ -216,7 +199,7 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
     previousCompletion.current={date,done};
   },[date,done,planned]);
   useEffect(()=>()=>clearTimeout(completionTimer.current),[]);
-  const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+  const dateLabel = new Date(`${date}T12:00:00Z`).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
   const activeId = gymActive?(exercises.find(ex=>ex.id===gymOpen.currentExerciseId)?.id??exercises[0]?.id):open === null ? exercises[0]?.id : open;
   const currentIndex=Math.max(0,exercises.findIndex(ex=>ex.id===activeId));
   function selectExercise(id){if(gymActive)change(state=>({...state,gymSession:{...state.gymSession,currentExerciseId:id}}));else setOpen(activeId===id?'':id);}
@@ -226,7 +209,7 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
     <details className="today-extra"><summary>Fase y ajustes del día</summary><PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact /></details>
     <ShadowStage appearance={appearance} data={data} date={date} className={planned>0&&done>=planned?'session-complete':''}>
       <ShadowBackground appearance={appearance}/>
-      <div className="hero-copy"><span className="pill">{exercises.length ? appearanceFor(data).name : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? [2, 6].includes(day) ? 'Sesión personalizada' : TITLES[day] : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
+      <div className="hero-copy"><span className="pill">{exercises.length ? appearanceFor(data).name : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? sessionTitle(exercises) : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
       <div className={`progress-ring ${completeFlash?'completion-pop':''}`} style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
     </ShadowStage>
     <div className="training-note"><Icon name="leaf" size={18} /><span>{exercises.some(ex=>ex.deload)?'Descarga: ejecución controlada, sin fallo y sin técnicas.':'Natural. Ejecución controlada. Series efectivas al fallo técnico.'}</span></div>
@@ -249,10 +232,12 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
 }
 
 function Routine({ data, change, saving }) {
-  const [draft, setDraft] = useState(() => structuredClone(data.routine));
+  const recovery=useFormDraft('routine:editor',localDate());
+  const [draft, setDraft] = useState(() => parseRoutineDraft(recovery.initial.routine)??structuredClone(data.routine));
   const [day, setDay] = useState(dayIndex(localDate()));
   const [open, setOpen] = useState('');
-  const [dirty, setDirty] = useState(false);
+  const [dirty, setDirty] = useState(recovery.restored);
+  useEffect(()=>{if(dirty){recovery.touch();recovery.remember({routine:JSON.stringify(draft)});}},[draft,dirty]);
   const [message, setMessage] = useState('');
   const [deleteId, setDeleteId] = useState('');
   useEffect(()=>{if(!dirty)setDraft(structuredClone(data.routine));},[data.routine,dirty]);
@@ -261,7 +246,7 @@ function Routine({ data, change, saving }) {
     event.preventDefault();
     const invalid = validateRoutine(draft);
     if (invalid) { setMessage(invalid); return; }
-    if (await change(state => ({ ...state, routine: draft.map(list => list.map(ex => ({ ...ex, name: ex.name.trim() }))) }))) { setDirty(false); setMessage('Rutina guardada en este dispositivo.'); }
+    if (await change(state => ({ ...state, routine: draft.map(list => list.map(ex => ({ ...ex, name: ex.name.trim() }))) }))) { recovery.clear();setDirty(false); setMessage('Rutina guardada en este dispositivo.'); }
   }
   function move(index, delta) {
     setDraft(current => current.map((list, i) => { if (i !== day) return list; const moved = [...list]; [moved[index], moved[index + delta]] = [moved[index + delta], moved[index]]; return moved; })); setDirty(true);
@@ -307,8 +292,8 @@ function Volume({ data, date, setDate }) {
   const planned = rows.reduce((sum, row) => sum + row.planned, 0);
   const preparations = data.logs.filter(log => dates.includes(log.date) && ['warmup', 'approach'].includes(log.kind)).length;
   const extensions = data.logs.filter(log => dates.includes(log.date) && EXTENSIONS.includes(log.kind)).length;
-  const label = d => new Date(`${d}T12:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
-  function shift(delta) { const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate() + delta); setDate(localDate(d)); }
+  const label = d => new Date(`${d}T12:00:00Z`).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  function shift(delta) { setDate(shiftDate(date,delta)); }
   return <><div className="page-heading"><div><p className="eyebrow">CADA SERIE TIENE UN PROPÓSITO</p><h2>Tu volumen<span className="accent">.</span></h2></div><span className="outlined-tag">SEMANAL</span></div>
     <div className="week-selector"><button className="icon-button" aria-label="Semana anterior" onClick={() => shift(-7)}>←</button><span>{label(dates[0])} — {label(dates[6])} <small>{dates[0].slice(0, 4)}</small></span><button className="icon-button" aria-label="Semana siguiente" onClick={() => shift(7)}>→</button></div>
     <WaistNotice records={data.measurements} date={date} />

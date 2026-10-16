@@ -10,9 +10,9 @@ export function migrateDiary(original) {
 }
 
 export function shiftDate(date, days) {
-  const value = new Date(`${date}T12:00:00`);
-  value.setDate(value.getDate() + days);
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  const value = new Date(`${date}T12:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return Number.isFinite(value.getTime()) ? value.toISOString().slice(0, 10) : '';
 }
 export function validDate(date) { return /^\d{4}-\d{2}-\d{2}$/.test(date) && shiftDate(date, 0) === date; }
 export function optionalNumber(value) { return String(value).trim() === '' ? null : Number(value); }

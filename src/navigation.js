@@ -13,7 +13,7 @@ export function swipeDirection(start,end){
   return dx>0?'right':'left';
 }
 export function incompleteSession(data,date,drafts){
-  if(Object.entries(drafts).some(([key,draft])=>key!=='weights:setup'&&draft.date===date))return true;
+  if(Object.entries(drafts).some(([key,draft])=>key!=='weights:setup'&&key!=='routine:editor'&&draft.date===date))return true;
   const meta=data.sessionMeta?.[date];if(meta?.endedAt)return false;if(meta?.startedAt)return true;
   const exercises=dayContext(data,date).exercises.map(ex=>sessionExercise(data,ex,date));
   const logs=data.logs.filter(log=>log.date===date);

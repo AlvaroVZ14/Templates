@@ -18,7 +18,7 @@ export default function ExerciseHistory({ exercise, history, profile, change, sa
   const max = Math.max(1, ...points.map(point => point.weight));
   const x = index => points.length === 1 ? 170 : 35 + index / (points.length - 1) * 270;
   const y = weight => 125 - weight / max * 95;
-  const dateLabel = date => new Date(`${date}T12:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+  const dateLabel = date => new Date(`${date}T12:00:00Z`).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', timeZone: 'UTC' });
   return <div className="exercise-extras">
     <form onChangeCapture={draft.touch} className="exercise-notes" onSubmit={async event => {
       event.preventDefault(); setMessage('');

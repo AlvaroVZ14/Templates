@@ -26,7 +26,7 @@ export function saveCardioSettings(state,settings,date,at=new Date().toISOString
   const history=state.cardioSettingsHistory?.length?state.cardioSettingsHistory:[{id:crypto.randomUUID(),date:'0001-01-01',at,settings:structuredClone(cardioSettings(state,date))}];
   return {...state,cardioSettings:structuredClone(settings),cardioSettingsHistory:[...history,{id:crypto.randomUUID(),date,at,settings:structuredClone(settings)}]};
 }
-export function cardioWeekDates(date){const index=(new Date(`${date}T12:00:00`).getDay()+6)%7;return Array.from({length:7},(_,i)=>shiftDate(date,i-index));}
+export function cardioWeekDates(date){const index=(new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7;return Array.from({length:7},(_,i)=>shiftDate(date,i-index));}
 export function cardioSchedule(state,date,kind,settings=cardioSettings(state,date)){
   const available=state.routine.map((exercises,day)=>({exercises,day})).filter(row=>row.exercises.length&&!row.exercises.some(ex=>ex.muscle==='Cuádriceps')).map(row=>row.day);
   const automatic=kind==='maintain'?[...new Set([available[0],available[Math.floor(available.length/2)],available.at(-1)].filter(day=>day!==undefined))]:available.slice(0,4);
@@ -35,7 +35,7 @@ export function cardioSchedule(state,date,kind,settings=cardioSettings(state,dat
 }
 export function calculateCardio(state,date){
   const phase=phaseForDate(state,date),context=dayContext(state,date),kind=phase?.kind??'maintain',settings=cardioSettings(state,date),config=settings.phases[kind],schedule=cardioSchedule(state,date,kind,settings);
-  const index=(new Date(`${date}T12:00:00`).getDay()+6)%7,legs=context.type==='legs'||context.exercises.some(ex=>ex.muscle==='Cuádriceps'),rest=context.type==='rest';
+  const index=(new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7,legs=context.type==='legs'||context.exercises.some(ex=>ex.muscle==='Cuádriceps'),rest=context.type==='rest';
   const scheduled=!legs&&(rest?kind==='cut'&&schedule.restDays.includes(index):context.exercises.length>0&&schedule.days.includes(context.routineDay));
   const entries=[shiftDate(date,-1),date].map(day=>state.journal[day]),threshold=state.programSettings?.fatigueThreshold??8;
   const tired=row=>typeof row?.fatigue==='number'&&row.fatigue>=threshold,low=row=>typeof row?.sleepHours==='number'&&row.sleepHours<7;

@@ -10,7 +10,7 @@ const num=value=>value===null?'Sin datos':Number(value.toFixed(2)).toLocaleStrin
 export function InfoNotice({data,id,change,children}){return data.dismissedAlerts[id]?null:<aside className="notice program-notice"><div>{children}</div><button className="quiet" onClick={()=>change(state=>({...state,dismissedAlerts:{...state.dismissedAlerts,[id]:true}}))}>Entendido</button></aside>;}
 export default function PhasePanel({data,date,change,saving,compact=false}){
   const report=phaseReport(data,date),phase=report?.phase;
-  const [kind,setKind]=useState(phase?.kind??'bulk'),[start,setStart]=useState(date),[end,setEnd]=useState(phase?.deadline??''),[windowStart,setWindowStart]=useState(phase?.windowStart??'2027-03-15'),[target,setTarget]=useState(phase?.targetWeight??'');
+  const [kind,setKind]=useState(phase?.kind??'bulk'),[start,setStart]=useState(date),[end,setEnd]=useState(phase?.deadline??''),[windowStart,setWindowStart]=useState(phase?.windowStart??shiftDate(date,68)),[target,setTarget]=useState(phase?.targetWeight??'');
   const [message,setMessage]=useState(''),[error,setError]=useState('');
   const advice=trendAdvice(data,date,adherence(data,date));
   const futureDays=phase?.deadline?Math.max(0,daysBetween(date,phase.deadline)):0;
@@ -18,7 +18,14 @@ export default function PhasePanel({data,date,change,saving,compact=false}){
   const days=[...Array.from({length:14},(_,i)=>shiftDate(date,i-13)),...horizon],weights=weightWeek(data.journal,days);
   async function save(event){event.preventDefault();setError('');setMessage('');if(!validDate(start)||kind!=='maintain'&&(!validDate(end)||end<=start)||!(Number(target)>0)||Number(target)>500||kind==='cut'&&(!validDate(windowStart)||windowStart>end)){setError('Revisa fechas, ventana del mini cut y peso objetivo.');return;}
     if(await change(state=>activatePhase(state,{kind,deadline:kind==='maintain'?(end||null):end,windowStart:kind==='cut'?windowStart:null,targetWeight:Number(target)},start)))setMessage(start>chileDate()?'Fase programada. La actual se conserva hasta esa fecha.':'Fase confirmada. La anterior se conserva en el historial.');}
-  function choose(value){setKind(value);if(value==='bulk'){setEnd('2026-12-31');setTarget(74);}else if(value==='cut'){setStart('2027-01-01');setWindowStart('2027-03-15');setEnd('2027-03-31');setTarget(71);}else{setEnd('');setTarget(report?.current?.value??'');}}
+  function choose(value){
+    setKind(value);
+    const configured=data.phases.filter(item=>item.kind===value&&!item.cancelled&&(!item.deadline||item.deadline>=date)).at(-1);
+    const begin=configured?.startDate>date?configured.startDate:date;
+    const deadline=configured?.deadline??shiftDate(begin,84);
+    setStart(begin);setEnd(value==='maintain'?'':deadline);setWindowStart(configured?.windowStart??shiftDate(deadline,-16));
+    setTarget(configured?.targetWeight??(value==='maintain'?report?.current?.value??'':''));
+  }
   return <section className="wellness-card phase-panel"><div className="section-heading"><h2>Fase actual · {phase?PHASE_NAMES[phase.kind]:'Sin fase para esta fecha'}</h2><span>{report?.remainingDays===null?'Sin fecha final':report?.remainingDays<0?'Fecha vencida':`${report?.remainingDays??'—'} días restantes`}</span></div>
     {phase&&<><div className="program-stats"><div><span>Último peso</span><strong>{num(report.current?.value??null)}<small> kg</small></strong></div><div><span>Promedio 7 días ({report.averageCount}/7)</span><strong>{num(report.average)}<small> kg</small></strong></div><div><span>Objetivo</span><strong>{phase.targetWeight}<small> kg</small></strong></div><div><span>Kg hasta el objetivo (con signo)</span><strong>{num(report.remaining)}</strong></div><div><span>Cambio semanal observado</span><strong>{num(report.weekly)}<small> kg/sem</small></strong></div><div><span>Ritmo necesario desde hoy</span><strong>{num(report.needed)}<small> kg/sem</small></strong></div></div><p className="phase-state">{report.status} · Rango: {report.range.join(' a ')} kg/semana{phase.windowStart?` · Ventana objetivo ${phase.windowStart} — ${phase.deadline}`:''}</p>
       {report.incompatible&&<InfoNotice data={data} change={change} id={`incompatible-${phase.id}-${phase.deadline}`}><strong>Objetivo y fecha fuera del rango de ritmo.</strong><p>Ritmo necesario: {num(report.needed)} kg/semana. Los objetivos se mantienen hasta que tú los edites y confirmes.</p></InfoNotice>}
