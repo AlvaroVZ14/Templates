@@ -46,7 +46,7 @@ test('registro manual tampoco introduce dos técnicas nuevas en la misma sesión
 });
 test('descarga mantiene carga y preparaciones, limita volumen y esfuerzo y conserva historial',()=>{
  let {state,ex}=fixture();ex.sets=3;ex.technique='drop';ex.forced=true;
- const normal=preparationSuggestions(ex,100),normalVolume=weeklyVolume(state,'2026-10-15')[0].planned;state=startDeload(state,'2026-10-15');const plan=sessionExercise(state,ex,'2026-10-15');assert.equal(plan.sets,2);assert.equal(plan.technique,'');assert.equal(plan.forced,false);assert.deepEqual(preparationSuggestions(plan,100),normal);assert.equal(progression(state,ex,'2026-10-15').type,'deload');assert.ok(weeklyVolume(state,'2026-10-15')[0].planned<normalVolume);
+ const normal=preparationSuggestions(sessionExercise(state,ex,'2026-10-15'),100),normalVolume=weeklyVolume(state,'2026-10-15')[0].planned;state=startDeload(state,'2026-10-15');const plan=sessionExercise(state,ex,'2026-10-15');assert.equal(plan.sets,2);assert.equal(plan.technique,'');assert.equal(plan.forced,false);assert.deepEqual(preparationSuggestions(plan,100),normal);assert.equal(progression(state,ex,'2026-10-15').type,'deload');assert.ok(weeklyVolume(state,'2026-10-15')[0].planned<normalVolume);
  assert.match(trainingLogError(state,ex,log(ex,'2026-10-15')),/sin fallo/);assert.match(trainingLogError(state,ex,log(ex,'2026-10-15',80,5,{kind:'drop'})),/sin técnicas/);
  for(let i=0;i<2;i++)state=recordSet(state,ex,log(ex,'2026-10-15',90,8,{failure:false,rpe:6}));
  assert.equal(state.profiles[ex.profileId].workWeight,100);assert.equal(state.logs[0].deload,true);assert.throws(()=>recordSet(state,ex,log(ex,'2026-10-15',100,8,{failure:false,rpe:6})),/50%/);assert.equal(state.timer.duration,ex.rests.effective);

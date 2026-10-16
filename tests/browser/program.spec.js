@@ -28,7 +28,7 @@ test('cuatro comidas, consumo único, edición histórica de alimentos y recarga
   await page.getByLabel('Comida 1 realizada',{exact:true}).check();
   let state=await stored(page);expect(state.foodLogs).toHaveLength(1);const old=state.foodLogs[0].macros.kcal,oldPlan=state.mealPlans['2026-10-15'].total.kcal;
   await go(page,'Comida');
-  await page.locator('summary').filter({hasText:'Base de alimentos editable (7)'}).click();
+  await page.locator('summary').filter({hasText:'Base de alimentos editable (8)'}).click();
   await page.locator('summary').filter({hasText:/^Pan$/}).click();
   await page.getByLabel('bread kcal',{exact:true}).fill('200');
   await page.getByRole('button',{name:'Guardar Pan',exact:true}).click();

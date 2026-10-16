@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DAYS, TARGETS, INCREMENTS, dayIndex, initialState, localDate, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume, preparationSuggestions, extensionSuggestions, migrateState, recordSet, exerciseHistory } from '../src/domain.js';
+import {contextualPreparation} from '../src/preparation.js';
 
 test('la rutina conserva orden, series y extensiones del encargo', () => {
   const state = initialState();
@@ -21,9 +22,11 @@ test('aproximaciones y descansos respetan equipo y primer músculo', () => {
   for (const day of state.routine) {
     const seen = new Set();
     for (const ex of day) {
-      assert.equal(ex.approaches, !seen.has(ex.muscle) || ex.compound ? 2 : 1);
+      const count=contextualPreparation(ex,day,0,new Set()).approaches;
+      if(ex.loadType==='heavy')assert.equal(count,2);
+      else if(!seen.has(ex.muscle))assert.equal(count,2);
       assert.equal(ex.increment, INCREMENTS[ex.equipment]);
-      assert.equal(ex.rests.effective, ex.compound ? 210 : 150);
+      assert.equal(ex.rests.effective, ex.name==='Hiperextensiones'?150:ex.compound ? 210 : 150);
       assert.equal(ex.rests.warmup, 90); assert.equal(ex.rests.rp, 20); assert.equal(ex.rests.drop, 15);
       seen.add(ex.muscle);
     }

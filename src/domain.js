@@ -3,6 +3,8 @@ import { migrateMeasurements } from './measurements.js';
 import { chileDate, migrateProgram } from './program/state.js';
 import { migrateTraining, sessionExercise, trainingLogError } from './training.js';
 import { migratePreparation, PREPARATION_STEPS } from './preparation.js';
+import {classifyExercise,migrateClassification} from './classification.js';
+import {migrateFruit} from './program/fruit.js';
 
 export const MUSCLES = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Aductor', 'Gemelo'];
 export const TARGETS = { Pecho: 8, Espalda: 9, Hombro: 8, Bíceps: 8, Tríceps: 6, Cuádriceps: 6, Femoral: 4, Aductor: 1, Gemelo: 1 };
@@ -39,7 +41,7 @@ export function exerciseHistory(state, exercise) {
   return state.logs.filter(log => (log.profileId ?? log.exerciseId) === exercise.profileId).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 }
 export function migrateState(original) {
-  if (original.schemaVersion >= 2) return migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(original)))));
+  if (original.schemaVersion >= 2) return migrateFruit(migrateClassification(migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(original)))))));
   const state = structuredClone(original);
   state.profiles ??= {}; state.cardio ??= []; state.dailySteps ??= {};
   for (const day of state.routine) {
@@ -60,7 +62,7 @@ export function migrateState(original) {
     if (last && profile.workWeight === null) profile.workWeight = last.weight;
   }
   state.schemaVersion = 2;
-  return migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(state)))));
+  return migrateFruit(migrateClassification(migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(state)))))));
 }
 
 export function localDate(date = new Date()) {
@@ -74,7 +76,7 @@ export function weekDates(date) {
 }
 export function makeExercise(name = 'Nuevo ejercicio', muscle = 'Pecho', sets = 1, technique = '', equipment = 'barbell', compound = false, approaches = 1) {
   const id = crypto.randomUUID();
-  return { id, profileId: id, name, muscle, sets, technique, equipment, compound, approaches, preparationOverride:null, preparationJoint:'', increment: INCREMENTS[equipment] ?? 2.5, dropCount: 1, rpCount: 2, forced: false, negative: false, rests: { warmup: 90, effective: compound ? 210 : 150, rp: 20, drop: 15 } };
+  return { id, profileId: id, name, muscle, sets, technique, equipment, compound, ...classifyExercise({name,compound}), approaches, preparationOverride:null, preparationJoint:'', increment: INCREMENTS[equipment] ?? 2.5, dropCount: 1, rpCount: 2, forced: false, negative: false, rests: { warmup: 90, effective: compound ? 210 : 150, rp: 20, drop: 15 } };
 }
 export function initialState() {
   const ex = (name, muscle, sets = 1, technique = '', equipment = 'free', compound = false, approaches = 1) => makeExercise(name, muscle, sets, technique, equipment, compound, approaches);

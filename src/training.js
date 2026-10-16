@@ -16,7 +16,8 @@ export function sessionExercise(state,exercise,date){
   const deload=activeDeload(state,date);
   const session=dayContext(state,date).exercises;
   const list=session.some(item=>item.id===base.id)?session:state.routine.find(list=>list.some(item=>item.id===base.id))??[base];
-  return {...base,...contextualPreparation(base,list,state.preparationSettings?.minimum??0),normalSets:base.sets,sets:deload?Math.ceil(base.sets/2):base.sets,technique:deload?'':trial?.kind??base.technique,forced:!deload&&base.forced,negative:!deload&&base.negative,deload:!!deload};
+  const completed=new Set(state.logs.filter(log=>log.date===date&&log.kind==='effective').map(log=>log.exerciseId));
+  return {...base,...contextualPreparation(base,list,state.preparationSettings?.minimum??0,completed),normalSets:base.sets,sets:deload?Math.ceil(base.sets/2):base.sets,technique:deload?'':trial?.kind??base.technique,forced:!deload&&base.forced,negative:!deload&&base.negative,deload:!!deload};
 }
 export function sessions(state,ex,date){
   const grouped=new Map();

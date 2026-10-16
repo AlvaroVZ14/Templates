@@ -11,9 +11,9 @@ async function editCount(page,name,value){
 }
 
 test('previas visibles según orden, carga calculada y nuevo músculo independiente',async({page})=>{
- await monday(page);await expect(page.locator('.session-list .preparation-line strong')).toHaveText([2,1,1,1,0,2,2,0].map(n=>`PREVIAS · ${n}`));
+ await monday(page);await expect(page.locator('.session-list .preparation-line strong')).toHaveText([2,2,2,1,0,2,2,0].map(n=>`PREVIAS · ${n}`));
  await reference(page,'Press banca').fill('100');await expect(page.getByLabel('Peso de Aproximación 2',{exact:true})).toHaveValue('75');await expect(page.getByLabel('Reps de Aproximación 2',{exact:true})).toHaveValue('8');
- await open(page,'Press declinado');await reference(page,'Press declinado').fill('100');await expect(page.getByLabel('Peso de Aproximación 1',{exact:true})).toHaveValue('60');await expect(page.getByLabel('Reps de Aproximación 1',{exact:true})).toHaveValue('8');
+ await page.locator('.set-form').getByRole('button',{name:'Guardar serie'}).click();await open(page,'Press declinado');await reference(page,'Press declinado').fill('100');await expect(page.getByLabel('Peso de Aproximación 1',{exact:true})).toHaveValue('60');await expect(page.getByLabel('Reps de Aproximación 1',{exact:true})).toHaveValue('6');
  await open(page,'Aperturas mancuernas');await reference(page,'Aperturas mancuernas').fill('100');await expect(page.getByLabel('Peso de Aproximación 1',{exact:true})).toHaveValue('45');await expect(page.getByLabel('Reps de Aproximación 1',{exact:true})).toHaveValue('10');
  await open(page,'Aperturas máquina');await reference(page,'Aperturas máquina').fill('100');await expect(page.locator('.suggested-set')).toHaveCount(0);await expect(page.locator('.exercise-card.expanded .preparation-line strong')).toHaveText('PREVIAS · 0');await expect(page.locator('.exercise-card.expanded .preparation-none')).toBeVisible();
  await open(page,'Elevaciones laterales');await reference(page,'Elevaciones laterales').fill('20');await expect(page.getByLabel('Peso de Aproximación 1',{exact:true})).toHaveValue('10');
@@ -22,7 +22,7 @@ test('previas visibles según orden, carga calculada y nuevo músculo independie
 test('un toque guarda 0–3, mínimo global y registro previo sobreviven offline',async({page,context})=>{
  await monday(page);await reference(page,'Press banca').fill('100');await page.getByRole('button',{name:'Guardar Aproximación 1',exact:true}).click();await expect(page.locator('.log-row')).toHaveCount(1);
  await editCount(page,'Press banca',0);await expect(page.locator('.exercise-card.expanded .preparation-line strong')).toHaveText('PREVIAS · 0');await expect(page.locator('.suggested-set')).toHaveCount(0);await expect(page.locator('.log-row')).toHaveCount(1);
- await page.locator('summary').filter({hasText:'Preparación: ajustes globales'}).click();await page.getByRole('combobox',{name:'Mínimo de previas',exact:true}).selectOption('1');await expect(page.locator('.exercise-card.expanded .preparation-line strong')).toHaveText('PREVIAS · 1');
+ await page.locator('summary').filter({hasText:'Preparación: ajustes globales'}).click();await page.getByRole('combobox',{name:'Mínimo de previas',exact:true}).selectOption('1');await expect(page.locator('.exercise-card.expanded .preparation-line strong')).toHaveText('PREVIAS · 0');
  await editCount(page,'Press banca',3);await expect(page.locator('.suggested-set')).toHaveCount(3);await expect(page.getByLabel('Reps de Aproximación 2',{exact:true})).toHaveValue('6');
  await go(page,'Rutina');await page.locator('.editor-card').first().getByRole('button').first().click();await expect(page.getByLabel('Series de preparación',{exact:true})).toHaveValue('3');await page.getByLabel('Nombre del ejercicio',{exact:true}).fill('Press banca propio');await page.getByRole('button',{name:'Guardar cambios',exact:true}).click();await expect(page.getByText('Rutina guardada en este dispositivo.',{exact:true}).last()).toBeVisible();
  await go(page,'Hoy');await expect(page.getByRole('button',{name:'Configurar previas de Press banca propio',exact:true})).toContainText('Manual');
@@ -32,7 +32,7 @@ test('un toque guarda 0–3, mínimo global y registro previo sobreviven offline
 test('reordenar la rutina recalcula Auto y el registro rechaza más de 80%',async({page})=>{
  await monday(page);await reference(page,'Press banca').fill('100');await page.getByLabel('Peso de Aproximación 1',{exact:true}).fill('81');await page.getByRole('button',{name:'Guardar Aproximación 1',exact:true}).click();await expect(page.getByRole('alert')).toContainText('80%');await expect(page.locator('.log-row')).toHaveCount(0);
  await go(page,'Rutina');await page.locator('.editor-card').filter({hasText:'Aperturas mancuernas'}).getByRole('button').first().click();for(let i=0;i<3;i++)await page.getByRole('button',{name:'Subir Aperturas mancuernas',exact:true}).click();await page.getByRole('button',{name:'Guardar cambios',exact:true}).click();await expect(page.getByText('Rutina guardada en este dispositivo.',{exact:true}).last()).toBeVisible();await go(page,'Hoy');
- await expect(page.locator('.session-list .exercise-card').first()).toContainText('Aperturas mancuernas');await expect(page.locator('.session-list .exercise-card').first().locator('.preparation-line strong')).toHaveText('PREVIAS · 2');await expect(page.locator('.session-list .exercise-card').nth(1).locator('.preparation-line strong')).toHaveText('PREVIAS · 1');
+ await expect(page.locator('.session-list .exercise-card').first()).toContainText('Aperturas mancuernas');await expect(page.locator('.session-list .exercise-card').first().locator('.preparation-line strong')).toHaveText('PREVIAS · 2');await expect(page.locator('.session-list .exercise-card').nth(1).locator('.preparation-line strong')).toHaveText('PREVIAS · 2');
  for(const width of [320,390,768]){await page.setViewportSize({width,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
  await page.setViewportSize({width:390,height:844});await page.locator('.exercise-card.expanded').screenshot({path:'test-results/context-preparation-mobile.png'});
 });
@@ -66,11 +66,11 @@ test('hoja de previas pide referencia, previsualiza sin guardar y recupera el Au
  await expect(card.locator('.preparation-choices')).toHaveCount(0);
  await card.getByRole('button',{name:'Ingresa tu peso de trabajo'}).click();
  const sheet=page.getByRole('dialog',{name:'Previas · Press declinado',exact:true});
- await expect(sheet).toBeVisible();await expect(sheet.locator('.preparation-auto-reason')).toContainText('compuesto posterior');
+ await expect(sheet).toBeVisible();await expect(sheet.locator('.preparation-auto-reason')).toContainText('Compuesto pesado: mínimo 2');
  await sheet.getByLabel('Peso de trabajo para previas de Press declinado',{exact:true}).fill('100');
  await sheet.getByRole('button',{name:'Previas 3 de Press declinado',exact:true}).click();
  await expect(sheet.locator('.preparation-live-preview li strong')).toHaveText(['40 kg × 10','60 kg × 6','80 kg × 3']);
- await expect(card.locator('.preparation-line strong')).toHaveText('PREVIAS · 1');
+ await expect(card.locator('.preparation-line strong')).toHaveText('PREVIAS · 2');
  for(const width of [320,390]){await page.setViewportSize({width,height:844});expect(await sheet.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);}
  await sheet.locator('.preparation-live-preview').scrollIntoViewIfNeeded();await page.screenshot({path:'test-results/p15-preparation-sheet.png',fullPage:false});
  await sheet.getByRole('button',{name:'Guardar previas',exact:true}).click();await expect(sheet).not.toBeVisible();
@@ -79,11 +79,11 @@ test('hoja de previas pide referencia, previsualiza sin guardar y recupera el Au
  await page.reload();await expect(page.getByRole('button',{name:'Configurar previas de Press declinado',exact:true})).toContainText('Manual');
  await page.getByRole('button',{name:'Configurar previas de Press declinado',exact:true}).click();
  const reopened=page.getByRole('dialog',{name:'Previas · Press declinado',exact:true});
- await expect(reopened.locator('.preparation-auto-reason')).toContainText('propone 1');
+ await expect(reopened.locator('.preparation-auto-reason')).toContainText('propone 2');
  await expect(reopened.locator('.preparation-auto-reason')).not.toContainText('Tu ajuste guardado');
  await reopened.getByRole('button',{name:'Volver a Auto',exact:true}).click();await reopened.getByRole('button',{name:'Guardar previas',exact:true}).click();
  await expect(page.getByRole('button',{name:'Configurar previas de Press declinado',exact:true})).toContainText('Auto');
- await expect(page.locator('.exercise-card').nth(1).locator('.preparation-line strong')).toHaveText('PREVIAS · 1');
+ await expect(page.locator('.exercise-card').nth(1).locator('.preparation-line strong')).toHaveText('PREVIAS · 2');
  await page.getByRole('button',{name:'Configurar previas de Press declinado',exact:true}).click();await page.keyboard.press('Escape');await expect(reopened).not.toBeVisible();
 });
 
@@ -93,7 +93,7 @@ test('volver a Auto desde la línea compacta no exige peso ni abre la hoja',asyn
  await expect(card.locator('.preparation-mode')).toHaveText('(Manual)');
  await card.getByRole('button',{name:'Volver a Auto de Press declinado',exact:true}).click();
  await expect(card.locator('.preparation-mode')).toHaveText('(Auto)');
- await expect(card.locator('.preparation-line strong')).toHaveText('PREVIAS · 1');
+ await expect(card.locator('.preparation-line strong')).toHaveText('PREVIAS · 2');
  await expect(card.getByRole('button',{name:'Ingresa tu peso de trabajo'})).toBeVisible();
  await expect(page.getByRole('dialog',{name:'Previas · Press declinado',exact:true})).not.toBeVisible();
 });

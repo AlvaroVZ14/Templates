@@ -1,0 +1,20 @@
+.preparation-context{font-size:11px;line-height:1.6;color:var(--steel);margin:4px 0 10px;max-width:76ch;overflow-wrap:anywhere}
+.daily-fruit{border-block:1px solid #63303B;padding:18px 0;margin-bottom:20px}
+.daily-fiber{grid-column:1/-1;color:var(--bone);font-size:14px;line-height:1.6;border-top:1px solid #453139;padding-top:14px}
+.side-decor{position:fixed;inset:0;pointer-events:none!important;z-index:-1;contain:strict;--edge-x:0;--edge-y:0}
+.side-column{position:absolute;top:0;bottom:0;width:max(0px,calc((100vw - 1240px)/2 - 16px));max-width:260px;overflow:hidden;opacity:.8;pointer-events:none;transition:opacity .3s}
+.side-left{left:0;border-right:1px solid #C8102E19;background:linear-gradient(90deg,#C8102E0F,transparent)}
+.side-right{right:0;border-left:1px solid #C8102E19;background:linear-gradient(270deg,#C8102E0F,transparent)}
+.side-word{position:absolute;top:8vh;left:50%;writing-mode:vertical-rl;font-family:Anton,Impact,sans-serif;font-size:clamp(38px,5vw,84px);line-height:1;letter-spacing:6px;white-space:nowrap;color:#D6C9CD13;transform:translateX(-50%) rotate(180deg);user-select:none}
+.side-right .side-word{top:auto;bottom:6vh;transform:translateX(-50%)}
+.side-iron{position:absolute;left:0;top:28vh;width:100%;height:65vh;color:#A78B9635;transform:translate3d(calc(var(--edge-x)*7px),calc(var(--edge-y)*10px),0) rotate(-12deg)}
+.side-smoke{position:absolute;inset:0 -35%;background:radial-gradient(ellipse at 50% 75%,#C8102E45,transparent 55%),radial-gradient(ellipse at 40% 50%,#B4A8B41A,transparent 45%);translate:calc(var(--edge-x)*-8px) calc(var(--edge-y)*-12px);animation:side-haze 22s ease-in-out infinite alternate}
+.side-scratches{position:absolute;inset:0;opacity:.65;background:repeating-linear-gradient(133deg,transparent 0 8px,#C8102E60 9px 11px,transparent 12px 20px) 50% 20%/70% 70px no-repeat,repeating-linear-gradient(133deg,transparent 0 10px,#C8102E55 11px 13px,transparent 14px 25px) 50% 85%/75% 100px no-repeat;animation:side-pulse 11s ease-in-out infinite alternate}
+.side-right .side-scratches{scale:-1 1}
+.side-decor.is-paused *{animation-play-state:paused!important;translate:none!important;transform:none!important}
+.side-decor.is-paused .side-word{transform:translateX(-50%)!important}
+.app-shell[data-effects=reduced] .side-decor *{animation:none!important}
+@keyframes side-haze{from{transform:translate3d(0,3%,0);opacity:.4}to{transform:translate3d(0,-6%,0);opacity:.8}}
+@keyframes side-pulse{from{opacity:.2}to{opacity:.65}}
+@media(max-width:1320px){.side-column{display:none}.side-decor{box-shadow:inset 2px 0 10px #C8102E33,inset -2px 0 10px #C8102E33}}
+@media(prefers-reduced-motion:reduce){.side-decor *{animation:none!important;translate:none!important;transform:none!important}.side-decor .side-word{transform:translateX(-50%)!important}}
