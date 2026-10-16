@@ -5,5 +5,6 @@ import './styles.css';
 import './wellness.css';
 import './program/program.css';
 import './training.css';
+import './history.css';
 
 createRoot(document.getElementById('root')).render(<App />);

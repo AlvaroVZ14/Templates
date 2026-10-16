@@ -102,6 +102,7 @@ export function weeklyVolume(state, date) {
   }));
 }
 export function validateLog(log, exercise, logs) {
+  if(log.restRealSeconds!=null&&(!Number.isInteger(log.restRealSeconds)||log.restRealSeconds<0||log.restRealSeconds>86400))return 'El descanso real debe ser de 0 a 86400 segundos, o quedar sin dato.';
   if (!Number.isFinite(log.weight) || log.weight < 0 || log.weight > 1500) return 'Ingresa una carga entre 0 y 1500 kg.';
   if (!Number.isInteger(log.reps) || log.reps < 1 || log.reps > 200) return 'Ingresa entre 1 y 200 repeticiones completas.';
   if (log.rpe !== undefined && (!Number.isFinite(log.rpe) || log.rpe < 0 || log.rpe > 10)) return 'El RPE debe estar entre 0 y 10.';
@@ -134,7 +135,7 @@ export function recordSet(state, exercise, log) {
   if (invalid) throw new Error(invalid);
   const trainingError = trainingLogError(state,exercise,log);
   if (trainingError) throw new Error(trainingError);
-  log = {...log,...(['warmup','approach'].includes(log.kind)?{referenceWeight:state.profiles[exercise.profileId]?.workWeight}:{}),deload:exercise.deload,techniqueIntroduced:['drop','rp'].includes(log.kind)&&exercise.technique!==log.kind,performedAt:log.date===chileDate()?new Date().toISOString():null};
+  log = {...log,exerciseNotes:log.exerciseNotes??state.profiles[exercise.profileId]?.notes??'',...(['warmup','approach'].includes(log.kind)?{referenceWeight:state.profiles[exercise.profileId]?.workWeight}:{}),deload:exercise.deload,techniqueIntroduced:['drop','rp'].includes(log.kind)&&exercise.technique!==log.kind,performedAt:log.date===chileDate()?new Date().toISOString():null};
   const next = { ...state, logs: [...state.logs, log] };
   if (log.kind === 'effective' && !exercise.deload) next.profiles = { ...state.profiles, [exercise.profileId]: { workWeight: null, targetReps: 8, notes: '', ...state.profiles[exercise.profileId], workWeight: log.weight } };
   const prepared = next.logs.filter(item => item.exerciseId === exercise.id && item.date === log.date && item.kind === 'approach').length;

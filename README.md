@@ -98,6 +98,9 @@ actualiza `base`, la URL del README y la ruta de las pruebas de navegador.
   seguimiento de cintura también aparece en Volumen.
 - **Comida:** fases, metas confirmadas, base editable de siete alimentos, registro
   rápido de consumo y gráficos diarios de kcal/proteína contra sus metas.
+- **Historial:** navegación año → mes → sesión, detalle completo y comparación
+  con la sesión anterior del mismo día de rutina. Filtro por ejercicio y equipo,
+  con evolución de 3, 6, 12 meses o todo el historial.
 
 ### Fases, alimentación y recuperación
 
@@ -495,7 +498,7 @@ y consulta el octavo día para verificar el regreso de la rutina normal.
 
 ## Datos locales
 
-IndexedDB (`heavy-duty-personal`, versión 1) guarda rutina, metas, registros y
+IndexedDB (`heavy-duty-personal`, versión 2) guarda rutina, metas, registros y
 temporizador, además de referencias, notas, cardio, pasos, diario, comidas y medidas.
 El estado interno se migra a esquema 7 en una transacción, sin borrar series ni cambiar IDs,
 volumen o descansos personalizados. Las cantidades predeterminadas antiguas pasan
@@ -503,6 +506,105 @@ a Auto; las personalizadas que se pueden identificar por diferir del valor
 predeterminado anterior se conservan como elección personal. Los datos antiguos
 no distinguían una elección igual al valor predeterminado. La referencia se
 recupera de la última efectiva registrada cuando existe.
+
+### Base histórica y migración de IndexedDB 1 a 2
+
+La versión de la base (2) y el esquema del estado de la app (7) son independientes.
+Al abrir una base de versión 1, una única transacción de actualización crea:
+
+| Colección | Contenido e índices |
+| --- | --- |
+| `sessions` | Sesiones con ejercicios y series anidadas; fecha, mes, año, ejercicio/equipo y día de rutina |
+| `cardio` | Sesiones de cardio separadas; fecha y mes |
+| `journal` | Diario por fecha; fecha y mes |
+| `measurements` | Mediciones originales; fecha y mes |
+| `phases` | Fases, cierres históricos y revisiones nutricionales confirmadas; fecha y mes |
+| `sessionRevisions` | Versiones anteriores de sesiones editadas; sesión, fecha y mes |
+| `migrationBackups` | Copia íntegra del estado anterior e informe de verificación |
+
+`app` conserva configuración y una caché de compatibilidad para las pantallas
+existentes. Al leer, las colecciones históricas son la fuente de los registros;
+al guardar, todas las colecciones y la caché cambian en la misma transacción.
+Las consultas de Historial usan los índices de año, mes o ejercicio. No hay
+depuración por antigüedad ni límite de meses/años; «3 meses» solo filtra la vista.
+
+Cada fecha agrupa los registros antiguos en una sesión, acorde al modelo previo
+de una sesión diaria. Conserva todas las series y sus datos originales, incluso
+preparaciones y técnicas. La migración comprueba que se puede reconstruir el
+contenido anterior sin pérdidas ni duplicados; claves de colección duplicadas
+impiden completar la actualización. Si hay un fallo o falta espacio, IndexedDB
+revierte la transacción y mantiene la base anterior. No se borra ni sustituye
+manualmente la base. Si otra pestaña impide actualizarla, ciérrala y reintenta.
+
+La copia `migrationBackups/v1-original` permanece intacta dentro del mismo
+navegador. El informe guarda los recuentos de antes/después. No existe ese informe
+en una instalación nueva que empieza directamente con versión 2.
+
+La sesión conserva su día de rutina y fase al crearse, para que editar una fase
+o el calendario después no reescriba el pasado. Las series antiguas sin duración,
+descanso real, RPE o fase identificable muestran **Sin dato**; no se deducen esos
+valores de pausas entre guardados ni de los descansos planeados. Las notas por
+ejercicio de las nuevas series se guardan como instantánea.
+
+En Hoy o en el detalle del Historial, **Sesión: duración y notas** permite guardar
+minutos reales y notas. En la fecha actual también puedes **Iniciar sesión** y
+**Finalizar sesión** para medir la duración real. Cada formulario de serie permite
+introducir **Descanso real antes (s, opcional)**; vacío significa desconocido y 0
+es válido. El cronómetro de descanso planeado sigue funcionando por separado.
+
+Eliminar series explícitamente desde Hoy conserva una versión anterior de la
+sesión, accesible en **Versiones anteriores**; tampoco desaparece la sesión si
+queda sin series actuales. Las versiones no se purgan automáticamente. La
+comparación usa la sesión anterior con el mismo día de rutina, aunque esté en
+otro mes/año, y compara la mayor efectiva con sus reps dentro del mismo equipo.
+
+La app solicita `navigator.storage.persist()` y consulta `persisted()`. Si el
+navegador deniega, no admite o no puede completar la petición, muestra un aviso
+con reintento. La denegación no bloquea la app. El permiso reduce la posibilidad
+de limpieza automática; no impide borrar manualmente el sitio, desinstalar el
+perfil o perder el dispositivo. La copia de migración también es local y no es
+una copia remota ni una garantía frente al borrado de todo el navegador.
+
+En Edge/Chrome el navegador puede aprobar o denegar sin abrir un diálogo. Al
+pulsar **Solicitar almacenamiento persistente**, el botón muestra **Solicitando…**
+y después un resultado numerado, aunque vuelva a denegarlo. La app no puede
+forzar esa autorización. Véanse las referencias de
+[persistencia de MDN](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist)
+y [criterios de almacenamiento del navegador](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
+
+**Descargar copia de seguridad**, disponible en el aviso y en Historial, genera
+un JSON con todas las colecciones, configuración, versiones anteriores y copia
+de migración, leído en una sola transacción. Guarda ese archivo fuera del
+navegador. No modifica los registros ni envía datos a un servidor. La confirmación
+indica que se inició la descarga; comprueba el archivo en Descargas. Esta etapa
+incluye exportación; todavía no hay un importador de copias en la interfaz.
+
+**Cómo comprobar que conservó tus datos:**
+
+1. Abre la app actualizada en el mismo navegador, perfil y URL donde entrenabas.
+   No borres los datos del sitio ni cambies de origen para actualizarla.
+2. En **Historial**, abre **Comprobación de la migración v1 → v2**. Debe indicar
+   **Migración verificada**, con los mismos recuentos antes/después para series,
+   sesiones, cardio, diario, medidas, fases y su historial.
+3. Comprueba el total de entrenamientos y el rango de fechas. Elige un año y mes
+   antiguos, abre una sesión y revisa pesos, reps, RPE, fallo y técnicas. Contrasta
+   también un registro conocido en Diario, Medidas y Cardio.
+4. Elige un ejercicio y **Todo**: deben aparecer también las fechas anteriores
+   a los últimos 12 meses. Los otros filtros solo cambian la vista.
+5. Espera **Offline listo**, desconecta y recarga: las sesiones y las versiones
+   anteriores deben seguir disponibles.
+
+Si estás usando el servidor de desarrollo en `localhost:5173`, ese modo no instala
+service worker. Para comprobar offline con tus mismos datos locales, detén Vite,
+ejecuta `npm run build` y sirve `npm run preview -- --port 5173` en ese mismo
+origen. Cambiar a 4173 o a GitHub Pages muestra un almacenamiento distinto;
+eso no significa que la migración haya borrado el de 5173.
+
+Verificación técnica opcional: DevTools → Application → IndexedDB →
+`heavy-duty-personal` debe mostrar versión 2, las colecciones anteriores y
+`migrationBackups/v1-original`. El estado original no se envía a GitHub ni a un
+servidor. Las pruebas crean una base v1 aislada, comprueban la copia exacta y sus
+índices, y fuerzan un fallo para demostrar la reversión a v1 sin cambios.
 Las modificaciones se confirman después de completar la transacción;
 si el navegador rechaza el almacenamiento se muestra un error, sin fingir un guardado.
 Las actualizaciones usan transacciones de lectura/escritura para conservar registros

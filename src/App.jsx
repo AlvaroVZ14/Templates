@@ -16,6 +16,8 @@ import { sessionExercise } from './training.js';
 import { TrainingRecovery } from './TrainingPanels.jsx';
 import PreparationSettings from './PreparationControls.jsx';
 import { contextualPreparation } from './preparation.js';
+import History from './History.jsx';
+import {SessionEditor,StorageNotice,requestPersistentStorage} from './SessionRecord.jsx';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -68,6 +70,10 @@ export default function App() {
   const [page, setPage] = useState('today');
   const [date, setDate] = useState(localDate());
   const pwa = usePwa();
+  const [storage,setStorage]=useState(null);
+  const [storageBusy,setStorageBusy]=useState(false),storageRequest=useRef(false);
+  const requestStorage=async(manual=false)=>{if(storageRequest.current)return;storageRequest.current=true;setStorageBusy(true);try{const result=await requestPersistentStorage();setStorage(previous=>({...result,attempt:(previous?.attempt??0)+(manual?1:0)}));}finally{storageRequest.current=false;setStorageBusy(false);}};
+  useEffect(()=>{requestStorage();},[]);
   async function boot() {
     setError('');
     try {
@@ -101,6 +107,7 @@ export default function App() {
     {(error || pwa.error) && <div className="error global-error" role="alert">{error || pwa.error}{!data && <button className="quiet" onClick={boot}>Reintentar</button>}</div>}
     {!data ? <main className="loading" aria-live="polite">{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</main> : <>
       <main id="main-content">
+        <StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/>
         {page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { setDate(localDate()); setPage('measurements'); }}>Ir a Medidas</button></aside>}
         {page === 'today' && <Today data={data} date={date} setDate={setDate} change={change} saving={saving} startTimer={startTimer} onFood={()=>setPage('food')} onDiary={()=>setPage('diary')} onMeasures={()=>setPage('measurements')} />}
         <div hidden={page !== 'routine'}><Routine data={data} change={change} saving={saving} /></div>
@@ -108,11 +115,12 @@ export default function App() {
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>setPage('diary')} />}
+        {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
       </main>
       {data.timer && <Timer timer={data.timer} onClose={() => change(state => ({ ...state, timer: null }))} />}
     </>}
     <nav className="bottom-nav" aria-label="Navegación principal">
-      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario'], ['measurements', 'ruler', 'Medidas'], ['food', 'food', 'Comida']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
+      {[['today', 'today', 'Hoy'], ['routine', 'edit', 'Rutina'], ['volume', 'chart', 'Volumen'], ['diary', 'diary', 'Diario'], ['measurements', 'ruler', 'Medidas'], ['food', 'food', 'Comida'],['history','clock','Historial']].map(([id, icon, label]) => <button key={id} className={page === id ? 'active' : ''} aria-current={page === id ? 'page' : undefined} onClick={() => setPage(id)}><Icon name={icon} /><span>{label}</span>{page === id && <i />}</button>)}
     </nav>
   </div>;
 }
@@ -141,6 +149,7 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
     </section>
     <div className="training-note"><Icon name="leaf" size={18} /><span>{exercises.some(ex=>ex.deload)?'Descarga: ejecución controlada, sin fallo y sin técnicas.':'Natural. Ejecución controlada. Series efectivas al fallo técnico.'}</span></div>
     <PreparationSettings data={data} date={date} exercises={exercises} change={change} saving={saving} />
+    <SessionEditor key={`session-${date}`} data={data} date={date} change={change} saving={saving}/>
     <TrainingRecovery key={`recovery-${date}`} data={data} date={date} exercises={exercises} change={change} saving={saving} />
     <section className="session-list"><div className="section-heading"><h2>{exercises.length ? 'Tu sesión' : 'Recupera para la próxima'}</h2><span>{exercises.length ? `${done} de ${planned} efectivas` : DAYS[day]}</span></div>
       {exercises.length === 0 ? <div className="rest-card"><Icon name="leaf" size={42} /><h3>Hoy toca descansar.</h3><p>Tu rutina vuelve {day === 2 ? 'el jueves' : 'el lunes'}. Puedes consultar otro día en la semana de arriba.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} data={data} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => setOpen(activeId === exercise.id ? '' : exercise.id)} change={change} saving={saving} startTimer={startTimer} />)}

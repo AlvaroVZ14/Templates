@@ -13,6 +13,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   const [weight, setWeight] = useState(profile.workWeight === null ? '' : String(profile.workWeight));
   const [reps, setReps] = useState(String(profile.targetReps));
   const [rpe, setRpe] = useState('10');
+  const [restReal,setRestReal]=useState('');
   const [failure, setFailure] = useState(true);
   const [parent, setParent] = useState('');
   const [message, setMessage] = useState('');
@@ -60,7 +61,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   }
   async function saveSet(values) {
     setError(''); setMessage('');
-    const log = { id: crypto.randomUUID(), exerciseId: ex.id, profileId: ex.profileId, equipment: ex.equipment, exerciseName: ex.name, muscle: ex.muscle, date, kind: values.kind, weight: Number(values.weight), reps: Number(values.reps), rpe: Number(values.rpe), failure: ['warmup', 'approach'].includes(values.kind) ? false : values.failure, step: values.step ?? null, parentId: EXTENSIONS.includes(values.kind) ? selectedParent?.id ?? null : null, createdAt: new Date().toISOString() };
+    const log = { id: crypto.randomUUID(), exerciseId: ex.id, profileId: ex.profileId, equipment: ex.equipment, exerciseName: ex.name, muscle: ex.muscle, date, kind: values.kind, weight: Number(values.weight), reps: Number(values.reps), rpe: Number(values.rpe), failure: ['warmup', 'approach'].includes(values.kind) ? false : values.failure, restRealSeconds:values.restReal==null||values.restReal===''?null:Number(values.restReal),step: values.step ?? null, parentId: EXTENSIONS.includes(values.kind) ? selectedParent?.id ?? null : null, createdAt: new Date().toISOString() };
     if ([values.weight, values.reps, values.rpe].some(value => String(value).trim() === '')) { setError('Completa el peso, las repeticiones y el RPE.'); return false; }
     const invalid = validateLog(log, ex, data.logs); if (invalid) { setError(invalid); return false; }
     const validationState=referenceError()||ex.deload?data:{...data,profiles:{...data.profiles,[ex.profileId]:{...profile,workWeight:currentWeight}}};
@@ -98,12 +99,13 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
       <div className="previous-set" aria-label="Serie anterior"><span>SERIE ANTERIOR · MISMO EJERCICIO</span>{previous ? <p>{previous.date} · {KINDS[previous.kind]} · <strong>{previous.weight} {previous.equipment === 'dumbbell' ? 'kg por mano' : 'kg'} × {previous.reps}</strong> · RPE {previous.rpe ?? 'sin dato'} · {previous.failure ? 'al fallo' : 'sin fallo'}</p> : <p>Aún sin historial. Tu primera serie quedará aquí.</p>}</div>
       {rows(logs.filter(log => ['warmup', 'approach'].includes(log.kind)), 'Preparación · no suma volumen')}{rows(effective, 'Series efectivas')}{rows(logs.filter(log => EXTENSIONS.includes(log.kind)), 'Extensiones · no suman otra efectiva')}
       {deleting && <div className="delete-confirm" role="alert"><p>¿Eliminar esta serie{effective.some(log => log.id === deleting) ? ' y sus extensiones' : ''}?</p><button className="danger" disabled={saving} onClick={async () => { if (await change(state => ({ ...state, logs: removeLog(state.logs, deleting) }))) setDeleting(null); }}>Eliminar</button><button className="quiet" onClick={() => setDeleting(null)}>Cancelar</button></div>}
-      <form className="set-form" onSubmit={event => { event.preventDefault(); saveSet({ kind, weight, reps, rpe, failure }); }}>
+      <form className="set-form" onSubmit={event => { event.preventDefault(); saveSet({ kind, weight, reps, rpe, failure,restReal }); }}>
         <div className="section-heading small"><h3>Registrar serie</h3><span>Datos reales de la serie</span></div>
         <label>Tipo de serie<select value={kind} onChange={event => chooseKind(event.target.value)}>{allowed.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         {EXTENSIONS.includes(kind) && <label>Vinculada a<select value={selectedParent?.id ?? ''} onChange={event => setParent(event.target.value)} required><option value="">Selecciona una efectiva</option>{effective.map((log, i) => <option key={log.id} value={log.id}>E{i + 1} · {log.weight} kg × {log.reps}</option>)}</select></label>}
         <div className="input-pair"><label>Carga ({unit})<input aria-label={`Carga de ${ex.name}`} type="number" min="0" max="1500" step="0.5" inputMode="decimal" value={weight} onChange={event => setWeight(event.target.value)} required /></label><label>Repeticiones<input aria-label={`Repeticiones de ${ex.name}`} type="number" min="1" max="200" value={reps} onChange={event => setReps(event.target.value)} required /></label></div>
         <div className="input-pair"><label>RPE (0–10)<input aria-label={`RPE de ${ex.name}`} type="number" min="0" max="10" step="0.5" inputMode="decimal" value={rpe} onChange={event => setRpe(event.target.value)} required /></label><label className="check-label"><input type="checkbox" checked={failure} disabled={['warmup', 'approach'].includes(kind)} onChange={event => setFailure(event.target.checked)} /><span>Llegué al fallo<small>Con ejecución controlada</small></span></label></div>
+        <label>Descanso real antes (s, opcional)<input aria-label={`Descanso real de ${ex.name}`} type="number" min="0" max="86400" value={restReal} onChange={event=>setRestReal(event.target.value)}/></label>
         <button className="primary full" type="submit" disabled={saving}>Guardar serie<span>+ descanso</span></button>
       </form>
       {error && <p className="error" role="alert">{error}</p>}{message && <p className="success" role="status">{message}</p>}
@@ -119,13 +121,15 @@ function SuggestedSet({ suggestion: step, unit, saved, saving, blocked, onSave }
   const [weight, setWeight] = useState(String(step.weight));
   const [reps, setReps] = useState(step.reps === null ? '' : String(step.reps));
   const [rpe, setRpe] = useState(prep ? '6' : '10');
+  const [restReal,setRestReal]=useState('');
   const [failure, setFailure] = useState(!prep);
   useEffect(() => { setWeight(String(step.weight)); }, [step.weight]);
   useEffect(() => { setReps(step.reps===null?'':String(step.reps)); }, [step.reps]);
   const title = prep ? `Aproximación ${step.step}` : step.kind === 'drop' ? `Caída ${step.step}` : `Mini-serie ${step.step}`;
-  return <form className={`suggested-set ${saved ? 'saved' : ''}`} aria-label={title} onSubmit={event => { event.preventDefault(); onSave({ ...step, weight, reps, rpe, failure }); }}>
+  return <form className={`suggested-set ${saved ? 'saved' : ''}`} aria-label={title} onSubmit={event => { event.preventDefault(); onSave({ ...step, weight, reps, rpe, failure,restReal }); }}>
     <div className="suggested-heading"><strong>{title}</strong><span>{prep ? `${step.percent}%${step.repRange?` × ${step.repRange}`:''} · sin fallo` : step.kind === 'drop' ? '−20% · a fallo' : 'Mismo peso · a fallo'}</span></div>
     <div className="suggested-inputs"><label>Peso sugerido ({unit})<input aria-label={`Peso de ${title}`} type="number" min="0" max="1500" step="0.5" inputMode="decimal" value={saved ? saved.weight : weight} onChange={event => setWeight(event.target.value)} disabled={!!saved} required /></label><label>Reps<input aria-label={`Reps de ${title}`} type="number" min="1" max="200" placeholder={prep ? '' : step.kind === 'rp' ? '3–5' : 'Reales'} value={saved ? saved.reps : reps} onChange={event => setReps(event.target.value)} disabled={!!saved} required /></label><label>RPE<input aria-label={`RPE de ${title}`} type="number" min="0" max="10" step="0.5" inputMode="decimal" value={saved ? saved.rpe ?? '' : rpe} onChange={event => setRpe(event.target.value)} disabled={!!saved} required /></label></div>
     <div className="suggested-footer"><label className="check-label"><input type="checkbox" checked={saved ? saved.failure : failure} disabled={prep || !!saved} onChange={event => setFailure(event.target.checked)} /><span>{prep ? 'Sin fallo' : 'Llegué al fallo'}</span></label><button className={saved ? 'secondary' : 'primary'} type="submit" disabled={saving || blocked || !!saved} aria-label={`Guardar ${title}`}>{saved ? '✓ Guardada' : blocked ? 'Falta efectiva' : '✓ Guardar'}</button></div>
+    <label>Descanso real antes (s, opcional)<input aria-label={`Descanso real de ${title}`} type="number" min="0" max="86400" value={saved?saved.restRealSeconds??'':restReal} disabled={!!saved} onChange={event=>setRestReal(event.target.value)}/></label>
   </form>;
 }

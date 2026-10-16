@@ -4,15 +4,15 @@ async function boot(page,date='2026-11-02'){
  await page.clock.install({time:new Date(`${date}T18:00:00Z`)});await page.goto('./');await page.getByLabel('Fecha de entrenamiento',{exact:true}).fill('2026-11-02');await expect(page.getByLabel('Peso de trabajo de Press banca',{exact:true})).toBeVisible();
 }
 async function seed(page,scenario){await page.evaluate(async scenario=>{
- const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal',1);req.onsuccess=()=>resolve(req.result);});
+ const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});
  await new Promise(resolve=>{const tx=db.transaction('app','readwrite'),store=tx.objectStore('app'),req=store.get('state');req.onsuccess=()=>{const state=req.result,ex=state.routine[0][0];state.trainingStarted='2026-10-01';for(const p of Object.values(state.profiles))p.workWeight=100;
  const make=(exercise,date,reps=10,extra={})=>({id:crypto.randomUUID(),date,kind:'effective',exerciseId:exercise.id,profileId:exercise.profileId,equipment:exercise.equipment,muscle:exercise.muscle,exerciseName:exercise.name,weight:100,reps,rpe:10,failure:true,createdAt:`${date}T18:00:00Z`,...extra});
  if(scenario==='drop')ex.technique='drop';
  if(scenario==='stalled')state.logs=['2026-10-01','2026-10-08','2026-10-15','2026-10-22'].map(date=>make(ex,date));
  if(scenario==='recovery')state.logs=[make(ex,'2026-11-01',10,{performedAt:'2026-11-01T18:00:00Z'})];
  if(scenario==='advanced'){for(const [index,kind]of [[0,'forced'],[1,'negative'],[2,'forced']]){const item=state.routine[0][index];item[kind]=true;if(index<2){const parent=make(item,'2026-11-02');state.logs.push(parent,make(item,'2026-11-02',3,{kind,parentId:parent.id}));}}}
- store.put(state,'state');};tx.oncomplete=resolve;});db.close();},scenario);await page.reload();}
-async function state(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal',1);req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
+ state.storageFormat=1; store.put(state,'state');};tx.oncomplete=resolve;});db.close();},scenario);await page.reload();}
+async function state(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
 
 test('confirmar progresión cambia la referencia, preparaciones y futuras extensiones offline',async({page,context})=>{
  await boot(page);await seed(page,'drop');await page.getByLabel('Repeticiones de Press banca',{exact:true}).fill('12');await page.getByRole('button',{name:/^Guardar serie/}).click();
