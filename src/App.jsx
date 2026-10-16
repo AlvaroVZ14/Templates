@@ -1,3 +1,4 @@
+import BackupPanel from './BackupPanel.jsx';
 import Progress from './Progress.jsx';
 import {captureMonthlyReviews} from './progress.js';
 import { useEffect, useRef, useState } from 'react';
@@ -77,6 +78,7 @@ export default function App() {
   const pwa = usePwa();
   const [menuOpen,setMenuOpen]=useState(false);
   const drafts=useDrafts(data,setData,setError);
+  useEffect(()=>{const exported=event=>setData(current=>current?{...current,backupSettings:event.detail}:current);window.addEventListener('heavy-duty-backup-exported',exported);return()=>window.removeEventListener('heavy-duty-backup-exported',exported);},[]);
   const navigating=useRef(false);
   async function navigate(target,nextDate=target==='today'?(data?.navigationSettings?.lastSession??date):date){
     if(navigating.current)return;
@@ -137,7 +139,7 @@ export default function App() {
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} />}
-        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
+        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
         {page==='method'&&<Method/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
       </main>
