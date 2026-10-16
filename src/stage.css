@@ -1,0 +1,63 @@
+/* The stage is purely decorative; training data and layout remain in the DOM. */
+.app-shell {position:relative;isolation:isolate}
+.app-shell::before {content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:linear-gradient(90deg,#C8102E0C,transparent 12%,transparent 88%,#C8102E0C),linear-gradient(0deg,#C8102E08,transparent 24%);box-shadow:inset 0 0 80px #0009}
+.app-shell::after {content:"";position:fixed;inset:0;pointer-events:none;z-index:32;opacity:.028;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23g)' d='M0 0h128v128H0z'/%3E%3C/svg%3E")}
+.ambient-scene.shadow-scene {position:fixed;inset:0;z-index:-2;opacity:.08;contain:paint}
+.ambient-scene .shadow-media {object-position:65% 35%;opacity:.7}
+.ambient-scene .shadow-athlete {right:5%;height:100%;top:0}
+.ambient-scene .shadow-veil {background:linear-gradient(90deg,#0A0A0A99,transparent 45%,#0A0A0A66),linear-gradient(0deg,#0A0A0A,transparent 65%)}
+.ambient-scene .stage-smoke {opacity:.15}
+.stage-beams {position:absolute;inset:0;opacity:.6;background:conic-gradient(from -27deg at 22% 110%,transparent 0deg 4deg,#E2E3E414 7deg 10deg,transparent 13deg 40deg),conic-gradient(from -15deg at 86% 115%,transparent 0deg 2deg,#E2E3E411 5deg 8deg,transparent 11deg 40deg);animation:stage-lights 14s ease-in-out infinite alternate}
+.stage-smoke {position:absolute;inset:-20%;background:radial-gradient(ellipse at 70% 70%,#B5B7BC33,transparent 38%),radial-gradient(ellipse at 40% 45%,#B5B7BC26,transparent 35%),radial-gradient(ellipse at 85% 20%,#D2D2D22B,transparent 38%);opacity:.5;animation:smoke-near 26s ease-in-out infinite alternate;pointer-events:none}
+.smoke-far {background:radial-gradient(ellipse at 60% 50%,#D1D2D42B,transparent 40%),radial-gradient(ellipse at 85% 65%,#B5B7BC26,transparent 30%);opacity:.35;animation-name:smoke-far;animation-duration:34s}
+.shadow-media {object-position:64% center;opacity:.7}
+.session-hero .shadow-veil {background:linear-gradient(90deg,#0A0A0AFA,#0A0A0ABD 42%,#0A0A0A22 75%),linear-gradient(0deg,#0A0A0ACC,transparent 45%,transparent 80%,#0A0A0A88)}
+.session-hero .shadow-glow {right:-90px;top:-70px;background:radial-gradient(ellipse,#C8102E88,transparent 64%);z-index:1;mix-blend-mode:screen}
+.masthead {border-bottom-color:#762335;box-shadow:0 1px 0 #FF1A1A12}
+.page-heading {position:relative;isolation:isolate;overflow:hidden;padding:8px 0}
+.page-heading::after {content:var(--section-index,"01");position:absolute;right:0;top:-38px;z-index:-1;font-family:'Anton',Impact,sans-serif;font-size:180px;line-height:1;color:#F1EDE40B;pointer-events:none;letter-spacing:-8px}
+.page-heading h1 {position:relative;padding-left:17px}
+.page-heading h1::before {content:"";position:absolute;left:3px;top:8%;bottom:7%;width:5px;background:var(--blood);transform:skewX(-13deg);box-shadow:3px 0 14px #C8102E3D}
+.section-heading h2 {position:relative;padding-left:12px}
+.section-heading h2::before {content:"";position:absolute;left:0;top:18%;height:65%;width:3px;background:var(--blood);transform:skewX(-14deg)}
+:is(.wellness-card,.progress-card,.exercise-card,.method-section,.cardio-section,.session-navigation,.weekly-volume-details,.preparation-settings) {background-image:linear-gradient(var(--blood),var(--blood)),linear-gradient(var(--blood),var(--blood)),linear-gradient(var(--blood),var(--blood)),linear-gradient(var(--blood),var(--blood));background-position:left top,left top,right bottom,right bottom;background-size:18px 2px,2px 18px,18px 2px,2px 18px;background-repeat:no-repeat;box-shadow:0 0 0 1px #C8102E05}
+.exercise-card {border-left-color:#632331}
+.exercise-card.expanded {border-left:2px solid var(--blood)}
+.session-hero {min-height:340px;border:2px solid #8A263C;border-left:5px solid var(--blood);box-shadow:0 0 28px #C8102E0C}
+.session-hero::after {content:"";position:absolute;inset:7px;pointer-events:none;z-index:3;background:linear-gradient(var(--active),var(--active)) left top/24px 2px no-repeat,linear-gradient(var(--active),var(--active)) left top/2px 24px no-repeat,linear-gradient(var(--active),var(--active)) right bottom/24px 2px no-repeat,linear-gradient(var(--active),var(--active)) right bottom/2px 24px no-repeat}
+.progress-ring {border-radius:0;clip-path:polygon(13% 0,100% 0,100% 87%,87% 100%,0 100%,0 13%);width:132px;height:132px;padding:4px;filter:drop-shadow(0 0 8px #C8102E20)}
+.progress-ring>div {border-radius:0;clip-path:polygon(12% 0,100% 0,100% 88%,88% 100%,0 100%,0 12%);background:#101010;gap:8px}
+.progress-ring strong {font-size:44px}
+.progress-ring span {font-size:10px;letter-spacing:.5px}
+.session-complete .progress-ring {background:var(--active)}
+.completion-pop {animation:score-complete 900ms ease-out}
+.progress-cards {counter-reset:scorecard}
+.progress-card {counter-increment:scorecard;isolation:isolate}
+.progress-card::after {content:counter(scorecard,decimal-leading-zero);position:absolute;right:15px;bottom:4px;font-family:'Anton',Impact,sans-serif;font-size:130px;color:#F1EDE408;line-height:1;z-index:-1;pointer-events:none}
+.method-section[open] {box-shadow:inset 2px 0 0 var(--blood),0 0 22px #C8102E08}
+.nav-drawer {border-top:3px solid var(--blood)}
+.drawer-heading {border-bottom:1px solid #772137;padding-bottom:20px}
+.screen-impact>.masthead,.screen-impact>#main-content {animation:screen-hit 180ms ease-out}
+@keyframes screen-hit {0%,100%{transform:translate3d(0,0,0)}25%{transform:translate3d(-1.5px,0,0)}55%{transform:translate3d(1.5px,1px,0)}80%{transform:translate3d(-1px,0,0)}}
+@keyframes score-complete {0%{filter:brightness(1)}25%{filter:brightness(2.2) drop-shadow(0 0 18px #FF1A1A99)}100%{filter:brightness(1)}}
+@keyframes stage-lights {from{opacity:.35}to{opacity:.7}}
+@keyframes smoke-near {from{transform:translate3d(-3%,2%,0) scale(1)}to{transform:translate3d(5%,-3%,0) scale(1.08)}}
+@keyframes smoke-far {from{transform:translate3d(4%,0,0) scale(1.02)}to{transform:translate3d(-4%,4%,0) scale(1.1)}}
+@media(max-width:600px) {
+  .app-shell::before {box-shadow:inset 0 0 38px #0008;background:linear-gradient(90deg,#C8102E0D,transparent 8%,transparent 92%,#C8102E0D)}
+  .page-heading::after {font-size:125px;right:0;top:-15px;letter-spacing:-5px}
+  .page-heading h1 {padding-left:13px}
+  .page-heading h1::before {left:2px;width:4px}
+  .session-hero {min-height:370px;padding:24px 19px;border-left-width:4px}
+  .hero-copy {padding-bottom:105px}
+  .session-hero .shadow-media {object-position:64% center}
+  .session-hero .shadow-veil {background:linear-gradient(90deg,#0A0A0AEF,#0A0A0AAA 45%,#0A0A0A11),linear-gradient(0deg,#0A0A0AAA,transparent 50%)}
+  .progress-ring {width:108px;height:108px;right:18px;bottom:22px;padding:3px}
+  .progress-ring strong {font-size:35px}
+  .progress-ring span {font-size:9px}
+  .progress-card::after {font-size:105px}
+  .stage-smoke {inset:-10%}
+}
+@media(prefers-reduced-motion:reduce) {
+  .stage-smoke,.stage-beams,.completion-pop,.screen-impact>.masthead,.screen-impact>#main-content {animation:none!important;transform:none!important;filter:none!important}
+}

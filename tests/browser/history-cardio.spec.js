@@ -100,5 +100,5 @@ test('temporizador automático termina y solicita vibración', async ({ page }) 
   await expect(page.getByRole('timer')).toContainText('3:');
   await page.clock.fastForward(211000);
   await expect(page.getByText('Descanso terminado', { exact: true })).toBeVisible();
-  expect(await page.evaluate(() => window.vibrations)).toEqual([[150, 80, 150]]);
+  expect(await page.evaluate(() => window.vibrations)).toEqual([[120]]);
 });

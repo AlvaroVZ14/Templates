@@ -1,4 +1,4 @@
-# Heavy Duty · Registro personal
+# BLOOD & GUTS · Registro personal
 
 PWA mobile-first de fisicoculturismo natural, inspirada en Heavy Duty / Blood and
 Guts: poco volumen, series efectivas al fallo técnico y ejecución controlada.
@@ -36,7 +36,7 @@ npm run preview -- --port 4173
 ```
 
 1. Abre `http://localhost:4173/Templates/` con conexión y espera **Offline listo**.
-2. Instala desde el botón de descarga de la cabecera o el menú del navegador.
+2. Instala desde **Menú → Ajustes → Instalar app** o el menú del navegador.
    En iPhone: Safari → Compartir → Añadir a pantalla de inicio.
 3. En DevTools → Network, activa **Offline** y recarga. Navega por las
    pantallas y guarda una serie; seguirá disponible después de otra recarga.
@@ -852,3 +852,53 @@ comprueba el historial y los ajustes. Usa **Reemplazar** cuando quieras restaura
 todo el estado de ese archivo. Las pruebas automatizadas verifican ambos modos,
 la repetición sin duplicados, importación offline, preservación de campos y
 reversión ante una escritura fallida; usan bases aisladas con datos ficticios.
+# Diseño BLOOD & GUTS
+
+La interfaz usa fondo `#0A0A0A`, paneles `#161616`, rojo sangre `#C8102E`, activo `#FF1A1A`, texto hueso y gris acero. Anton para títulos/números y Barlow para el cuerpo se sirven desde la propia app; sus licencias OFL están en `src/assets/fonts/`. No depende de Google Fonts ni de fotos externas. Las señales de Progreso conservan sus colores e iconos y sus reglas originales.
+
+En **Menú → Ajustes → Tu identidad** puedes cambiar el nombre BLOOD & GUTS y el lema, pausar el fondo o desactivar tu medio propio. El nombre personalizado se guarda localmente y se incluye en el respaldo; el nombre instalado que muestra el sistema parte del manifest. Los cálculos, datos históricos y reglas de entrenamiento conservan su funcionamiento.
+
+El inicio contiene una silueta SVG original, grano suave y un resplandor rojo lento. Se detienen al ocultar la pestaña o activar movimiento reducido. Guardar una efectiva produce un destello rojo; marcar fallo, una sacudida breve. Las previas se distinguen en gris y las efectivas en rojo. El descanso muestra un anillo que se vacía y termina con una vibración de 120 ms en dispositivos compatibles. `prefers-reduced-motion` desactiva las animaciones, transiciones y la reproducción del video.
+
+## Tu propia imagen o video
+
+1. Coloca un archivo propio en `public/`, por ejemplo `mi-fondo.webp` o `mi-fondo.mp4`. Para video usa un bucle corto, comprimido y sin audio; la reproducción también se fuerza a silenciado. Se admiten MP4/WebM e imágenes WebP/AVIF/PNG/JPG/GIF/SVG.
+2. Edita `public/appearance.json`:
+
+   ```json
+   {"media":{"type":"video","src":"mi-fondo.mp4"},"poster":"mi-fondo.webp"}
+   ```
+
+   Para una imagen: `{"media":{"type":"image","src":"mi-fondo.webp"},"poster":null}`. Para volver a la silueta: `{"media":null,"poster":null}`. El póster es opcional y sirve como fondo estático mientras el video está pausado.
+3. Usa rutas relativas a `public/`, sin `/` inicial ni direcciones externas. La compilación comprueba formatos, existencia y que los archivos permanezcan dentro de esa carpeta. El límite conjunto de medio y póster es **8 MiB**; se incluyen en la caché offline y en la versión del service worker.
+4. Ejecuta `npm run build`, comprueba `npm run preview -- --port 4175` y publica los archivos mediante commit/PR. No añadas claves ni `.env`.
+
+## Comprobar y publicar este diseño
+
+- URL final: **https://alvarovz14.github.io/Templates/** (respeta la mayúscula de la ruta).
+- En GitHub, **Settings → Pages → Build and deployment → Source: GitHub Actions**. Ya configurado en este repositorio; el workflow publica cada cambio que llega a `main`. Si el cambio está en una rama personal, primero debe aprobarse e integrarse su PR.
+- Tras un despliegue correcto de **Publicar PWA en GitHub Pages**, abre la URL con conexión y recarga. Si ya estaba instalada, ciérrala y ábrela otra vez para que tome el nuevo service worker. No borres los datos del sitio. El icono del sistema puede tardar en actualizarse aunque el diseño ya esté actualizado.
+- Prueba Hoy, el cajón de ambos lados, Historial, Progreso y Método en móvil; edita nombre/lema en Ajustes y recarga. Ingresa un peso, guarda una previa y una efectiva y marca fallo para ver las diferencias. Activa movimiento reducido para comprobar que se detienen las animaciones. Después de la primera carga, activa modo avión y vuelve a abrirla: fuentes, iconos y fondo configurado siguen disponibles.
+
+## Escenario y previas compactas · Prompt 15
+
+La portada predeterminada está en **`public/hero.jpg`**. La incluida es una ilustración original generada con IA, inspirada en la silueta y el escenario de la referencia aportada por el usuario: no es una fotografía documental de Dorian Yates. Se optimizó a JPEG de 1536 × 1024 px y unos 115 KB. El [prompt de generación](docs/design/p15-image-prompt.md) queda documentado. Puedes reemplazar ese archivo por tu propia imagen en grises y conservar el nombre. Si no existe o no puede abrirse, aparece la silueta SVG original. `appearance.json` sigue permitiendo escoger otro medio para Hoy; el resto de pantallas usa la portada fija de forma muy sutil, sin duplicar reproducción de video.
+
+La compilación añade `hero.jpg` al precaché solo si está presente y renueva la versión al cambiar sus bytes. Se recomienda menos de 2 MiB; el límite combinado de portada, medio propio y póster es 8 MiB. Humo, luz roja y haces suaves se mueven lentamente; se pausan al ocultar la pestaña. Movimiento reducido también detiene el destello del marcador y la pequeña sacudida al marcar fallo. Las imágenes animadas muestran un fotograma estático cuando están pausadas.
+
+Las tarjetas usan corchetes rojos, cortes diagonales decorativos, números de sección y líneas finas; el cajón sigue siendo la única navegación. No cambian las fórmulas de cargas, redondeo, volumen, recuperación ni el formato del historial.
+
+### Probar las series previas
+
+1. En Hoy, toca **PREVIAS · N (Auto)** bajo cualquier ejercicio. La hoja inferior explica el motivo automático y permite elegir 0–3 o Auto.
+2. Si falta referencia, escribe ahí el peso de trabajo. Cambia el número y comprueba la vista previa en vivo; guarda para recordar el ajuste. La etiqueta Manual y **Volver a Auto** permiten recuperarlo sin borrar series registradas.
+3. Con la tarjeta del ejercicio cerrada, toca una ficha gris con porcentaje, peso y repeticiones. Queda marcada, inicia su descanso y se registra aparte, sin sumar volumen. Un doble toque no crea duplicados.
+4. Si necesitas corregir peso, reps, RPE o descanso antes de registrar, abre el ejercicio y usa el formulario de la previa correspondiente, que se conserva.
+
+### Frases del día
+
+Hoy sustituye «A entrenar» por una frase grande. El banco inicial contiene 30 textos originales sin atribuciones. La selección es estable para la fecha de sesión mostrada: en descanso usa el banco de recuperación; entrenando alterna contexto muscular y fase (volumen, mini cut o mantención), con frases generales como alternativa. No cambia mientras registras series.
+
+En **Menú → Ajustes → Frases del día** puedes editar, añadir, eliminar o restaurar los originales; pulsa **Guardar frases** para aplicar. El banco se conserva localmente y viaja en el respaldo JSON. No se consultan APIs externas para elegir frases. El nombre y el lema siguen editándose en Tu identidad.
+
+Para publicar, integra el PR en `main` y espera el workflow de GitHub Pages. La URL continúa siendo **https://alvarovz14.github.io/Templates/**. Con conexión, recarga y vuelve a abrir la PWA para recibir el nuevo service worker, conservando los datos del sitio.

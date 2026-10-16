@@ -1,0 +1,32 @@
+.motivation-heading {margin-top:34px;margin-bottom:28px}
+.motivation-heading>div {width:100%;min-width:0}
+.motivation-motto {font-size:12px;letter-spacing:1px;line-height:1.6;color:var(--steel);margin-top:17px;text-transform:uppercase}
+.motivation-context {color:var(--steel,#A6ABB1);font-size:12px;line-height:1.7;letter-spacing:1.2px;overflow-wrap:anywhere}
+.motivation-heading .motivation-phrase {max-width:25ch;font-family:'Anton',Impact,sans-serif;font-size:clamp(36px,5.2vw,64px);line-height:1.2;letter-spacing:.7px;color:var(--bone,#F1EDE4);overflow-wrap:anywhere;text-wrap:balance;margin-top:14px}
+.motivation-settings>details>summary {cursor:pointer;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:14px;list-style:none}
+.motivation-settings>details>summary::-webkit-details-marker {display:none}
+.motivation-settings>details>summary>span {font-family:'Anton',Impact,sans-serif;font-size:25px;text-transform:uppercase;letter-spacing:.5px}
+.motivation-settings>details>summary>small {font-size:13px;color:var(--steel,#A6ABB1);text-align:right}
+.motivation-settings>details[open]>summary {border-bottom:1px solid var(--border,#383838);padding-bottom:14px;margin-bottom:20px}
+.motivation-settings form {margin-top:20px}
+.motivation-editor {display:grid;gap:18px}
+.motivation-editor-row {display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,180px) auto;gap:14px;align-items:end;padding:18px 0;border-bottom:1px solid var(--border,#383838)}
+.motivation-editor-row textarea,.motivation-new textarea {min-height:90px;line-height:1.6;font-size:16px}
+.motivation-editor-row label,.motivation-new label {min-width:0}
+.motivation-editor-row button,.motivation-new button {min-height:56px}
+.motivation-new {display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,180px);gap:16px;border:1px solid var(--border,#383838);min-width:0;margin:24px 0;padding:20px}
+.motivation-new legend {padding:0 8px;font-size:16px;font-weight:600;color:var(--bone,#F1EDE4)}
+.motivation-new>button {grid-column:1/-1;justify-self:start}
+.motivation-editor-actions {display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
+.motivation-settings .success,.motivation-settings .error {margin-top:16px}
+@media(max-width:600px) {
+  .motivation-heading {margin-top:28px}
+  .motivation-heading .motivation-phrase {font-size:clamp(34px,9vw,44px);line-height:1.25;letter-spacing:.3px}
+  .motivation-context {font-size:11px}
+  .motivation-settings>details>summary {align-items:flex-start;flex-direction:column;gap:8px}
+  .motivation-settings>details>summary>small {text-align:left}
+  .motivation-editor-row {grid-template-columns:minmax(0,1fr);gap:14px;padding:18px 0}
+  .motivation-editor-row button {justify-self:start}
+  .motivation-new {grid-template-columns:minmax(0,1fr);padding:16px 12px}
+  .motivation-editor-actions>button {width:100%}
+}

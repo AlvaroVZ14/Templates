@@ -1,4 +1,6 @@
 import BackupPanel from './BackupPanel.jsx';
+import {AppearanceSettings, ShadowBackground, appearanceFor} from './Appearance.jsx';
+import {MotivationHeading, MotivationSettings} from './Motivation.jsx';
 import Progress from './Progress.jsx';
 import {captureMonthlyReviews} from './progress.js';
 import { useEffect, useRef, useState } from 'react';
@@ -94,6 +96,15 @@ export default function App() {
     finally{navigating.current=false;}
   }
   const drawerSide=data?.navigationSettings?.drawerSide??'right';
+  const appearance=appearanceFor(data);
+  useEffect(()=>{document.title=appearance.name;},[appearance.name]);
+  const [impact,setImpact]=useState(false),impactTimer=useRef(null);
+  useEffect(()=>()=>clearTimeout(impactTimer.current),[]);
+  function failureImpact(event){
+    if(event.target.matches('input[type="checkbox"]')&&event.target.checked&&event.target.closest('label')?.textContent.includes('Llegué al fallo')){
+      clearTimeout(impactTimer.current);setImpact(true);impactTimer.current=setTimeout(()=>setImpact(false),190);
+    }
+  }
   const [storage,setStorage]=useState(null);
   const [storageBusy,setStorageBusy]=useState(false),storageRequest=useRef(false);
   const requestStorage=async(manual=false)=>{if(storageRequest.current)return;storageRequest.current=true;setStorageBusy(true);try{const result=await requestPersistentStorage();setStorage(previous=>({...result,attempt:(previous?.attempt??0)+(manual?1:0)}));}finally{storageRequest.current=false;setStorageBusy(false);}};
@@ -120,17 +131,18 @@ export default function App() {
   async function startTimer(seconds, label) { return change(state => ({ ...state, timer: { end: Date.now() + seconds * 1000, duration: seconds, label } })); }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
-  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer?'timer-visible':''}`}>
+  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer?'timer-visible':''} ${impact?'screen-impact':''}`} data-page={page} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09'})[page]}"`}} onChangeCapture={failureImpact}>
+    <ShadowBackground appearance={appearance} ambient/>
     <header className="masthead">
-      <div className="brand" aria-label="Heavy Duty">
-        <span className="brand-symbol"><Icon name="bar" size={29} /></span><span>HEAVY<span className="brand-light">DUTY</span><small>PERSONAL TRAINING LOG</small></span>
+      <div className="brand" aria-label={appearance.name}>
+        <span className="brand-symbol"><Icon name="bar" size={29} /></span><span className="brand-name">{appearance.name}<small>DIARIO DE ENTRENAMIENTO · NATURAL</small></span>
       </div>
       <div className="header-actions"><button className="menu-button" aria-label="Abrir menú" aria-expanded={menuOpen} aria-haspopup="dialog" onClick={()=>setMenuOpen(true)}><span aria-hidden="true">☰</span><span className="menu-word">Menú</span></button><span className={`connection ${!pwa.online ? 'offline' : ''}`}><i />{!pwa.online ? 'Sin conexión' : pwa.ready ? 'Offline listo' : 'Local · privado'}</span>
 </div>
     </header>
-    {installHelp && <aside className="install-help"><strong>Instala Heavy Duty</strong><p>En Android o escritorio: menú del navegador → Instalar aplicación. En iPhone: Safari → Compartir → Añadir a pantalla de inicio.</p><p>{pwa.ready ? 'La app está preparada para abrir sin conexión.' : 'La instalación y el modo offline se preparan en la versión de producción, con HTTPS o localhost.'}</p><button className="quiet" onClick={() => setInstallHelp(false)}>Entendido</button></aside>}
+    {installHelp && <aside className="install-help"><strong>Instala {appearance.name}</strong><p>En Android o escritorio: menú del navegador → Instalar aplicación. En iPhone: Safari → Compartir → Añadir a pantalla de inicio.</p><p>{pwa.ready ? 'La app está preparada para abrir sin conexión.' : 'La instalación y el modo offline se preparan en la versión de producción, con HTTPS o localhost.'}</p><button className="quiet" onClick={() => setInstallHelp(false)}>Entendido</button></aside>}
     {(error || pwa.error) && <div className="error global-error" role="alert">{error || pwa.error}{!data && <button className="quiet" onClick={boot}>Reintentar</button>}</div>}
-    {!data ? <main className="loading" aria-live="polite">{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</main> : <>
+    {!data ? <main className="loading" aria-live="polite"><span className="loading-mark" aria-hidden="true">B&amp;G</span><strong>{appearance.name}</strong><span>{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</span></main> : <>
       <main id="main-content">
         {page !== 'today' && page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
         {page === 'today' && <Today data={data} date={date} setDate={value=>navigate('today',value)} change={change} saving={saving} startTimer={startTimer} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} />}
@@ -139,7 +151,7 @@ export default function App() {
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} />}
-        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
+        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
         {page==='method'&&<Method/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
       </main>
@@ -157,15 +169,23 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
   const logs = data.logs.filter(log => log.date === date);
   const planned = exercises.reduce((sum, ex) => sum + ex.sets, 0);
   const done = logs.filter(log => log.kind === 'effective').length;
+  const [completeFlash,setCompleteFlash]=useState(false),previousCompletion=useRef({date,done}),completionTimer=useRef(null);
+  useEffect(()=>{
+    const previous=previousCompletion.current;
+    if(previous.date!==date){setCompleteFlash(false);clearTimeout(completionTimer.current);}
+    else if(planned>0&&done>=planned&&previous.done<planned){setCompleteFlash(true);clearTimeout(completionTimer.current);completionTimer.current=setTimeout(()=>setCompleteFlash(false),900);}
+    previousCompletion.current={date,done};
+  },[date,done,planned]);
+  useEffect(()=>()=>clearTimeout(completionTimer.current),[]);
   const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
   const activeId = open === null ? exercises[0]?.id : open;
   return <>
-    <div className="page-heading"><div><p className="eyebrow">TU ÚNICA COMPETENCIA ERES TÚ</p><h1>A entrenar<span className="accent">.</span></h1></div></div>
+    <MotivationHeading data={data} date={date} motto={appearanceFor(data).motto}/>
     <details className="today-extra"><summary>Fase y ajustes del día</summary><PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact /></details>
-    <section className="session-hero">
-      <div className="hero-copy"><span className="pill">{exercises.length ? 'HEAVY DUTY / BLOOD & GUTS' : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? [2, 6].includes(day) ? 'Sesión personalizada' : TITLES[day] : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
-      <div className="progress-ring" style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
-      <span className="hero-watermark" aria-hidden="true">HD</span>
+    <section className={`session-hero ${planned>0&&done>=planned?'session-complete':''}`}>
+      <ShadowBackground appearance={appearanceFor(data)}/>
+      <div className="hero-copy"><span className="pill">{exercises.length ? appearanceFor(data).name : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p><h2>{exercises.length ? [2, 6].includes(day) ? 'Sesión personalizada' : TITLES[day] : 'Día de descanso'}</h2><p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
+      <div className={`progress-ring ${completeFlash?'completion-pop':''}`} style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
     </section>
     <div className="training-note"><Icon name="leaf" size={18} /><span>{exercises.some(ex=>ex.deload)?'Descarga: ejecución controlada, sin fallo y sin técnicas.':'Natural. Ejecución controlada. Series efectivas al fallo técnico.'}</span></div>
     <PreparationSettings data={data} date={date} exercises={exercises} change={change} saving={saving} />
@@ -255,6 +275,7 @@ function Timer({ timer, onClose }) {
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(id); }, []);
   const remaining = Math.max(0, Math.ceil((timer.end - now) / 1000));
   const notified = useRef(null);
-  useEffect(() => { if (remaining === 0 && notified.current !== timer.end) { notified.current = timer.end; navigator.vibrate?.([150, 80, 150]); } }, [remaining, timer.end]);
-  return <aside className={`timer-bar ${remaining === 0 ? 'finished' : ''}`} aria-label="Temporizador de descanso"><Icon name="clock" /><div><strong>{remaining > 0 ? 'Recupera. La siguiente cuenta.' : 'Descanso terminado'}</strong><span>{timer.label}</span></div><b role="timer" aria-label={`${remaining} segundos restantes`}>{formatSeconds(remaining)}</b><button className="icon-button" aria-label="Cerrar temporizador" onClick={onClose}><Icon name="close" size={20} /></button></aside>;
+  useEffect(() => { if (remaining === 0 && notified.current !== timer.end) { notified.current = timer.end; navigator.vibrate?.([120]); } }, [remaining, timer.end]);
+  const fraction=Math.min(1,Math.max(0,(timer.end-now)/(Math.max(1,timer.duration)*1000)));
+  return <aside className={`timer-bar ${remaining === 0 ? 'finished' : ''}`} aria-label="Temporizador de descanso"><div className="rest-ring" aria-hidden="true"><svg viewBox="0 0 48 48"><circle className="rest-track" cx="24" cy="24" r="20"/><circle className="rest-countdown" cx="24" cy="24" r="20" pathLength="1" strokeDasharray="1" strokeDashoffset={1-fraction}/></svg><Icon name="clock" size={18}/></div><div><strong>{remaining > 0 ? 'Recupera. La siguiente cuenta.' : 'Descanso terminado'}</strong><span>{timer.label}</span></div><b role="timer" aria-label={`${remaining} segundos restantes`}>{formatSeconds(remaining)}</b><button className="icon-button" aria-label="Cerrar temporizador" onClick={onClose}><Icon name="close" size={20} /></button></aside>;
 }

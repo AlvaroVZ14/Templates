@@ -1,0 +1,39 @@
+.exercise-card {
+  position: relative;
+}
+
+.effective-save-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border: 2px solid var(--blood, #c8102e);
+  border-radius: inherit;
+  background: rgb(200 16 46 / 10%);
+  box-shadow: inset 0 0 36px rgb(200 16 46 / 28%);
+  opacity: 0;
+  animation: effective-saved 480ms ease-out both;
+}
+
+.failure-shake {
+  display: inline-block;
+  animation: failure-confirmed 220ms ease-out;
+}
+
+@keyframes effective-saved {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes failure-confirmed {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  50% { transform: translateX(2px); }
+  75% { transform: translateX(-1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .effective-save-flash { display: none; animation: none; }
+  .failure-shake { animation: none; }
+}

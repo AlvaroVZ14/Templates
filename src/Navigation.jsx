@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {DAYS,TITLES,localDate,weekDates} from './domain.js';
 import {dayContext} from './program/nutrition.js';
 import {sessionNeighbors,shiftWeek,swipeDirection} from './navigation.js';
+import {appearanceFor} from './Appearance.jsx';
 
 function useSwipe(action){
   const start=useRef(null);
@@ -33,7 +34,7 @@ export function Drawer({open,onClose,side,data,date,page,navigate}){
   },[open]);
   const closeGesture=useSwipe(direction=>{if(direction===side)onClose();});
   return <dialog ref={dialog} className={`nav-drawer ${side}`} aria-label="Menú de navegación" onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right)onClose();}}}>
-    <div className="drawer-heading" {...closeGesture}><div><p className="eyebrow">HEAVY DUTY</p><h2>Tu semana</h2></div><button className="icon-button" aria-label="Cerrar menú" onClick={onClose}>×</button></div>
+    <div className="drawer-heading" {...closeGesture}><div><p className="eyebrow">{appearanceFor(data).name}</p><h2>Tu semana</h2></div><button className="icon-button" aria-label="Cerrar menú" onClick={onClose}>×</button></div>
     <p className="drawer-week">Semana del {weekDates(date)[0].split('-').reverse().join('/')} <span>Desliza el encabezado para cerrar</span></p>
     <nav aria-label="Sesiones de la semana" className="drawer-sessions">{weekDates(date).map((value,index)=>{
       const context=dayContext(data,value),rest=!context.exercises.length,today=value===localDate();
