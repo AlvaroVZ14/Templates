@@ -17,11 +17,12 @@ export function ExercisePainNotice({data,exercise,date}){
   const alerts=exercisePain(data,exercise,date);if(!alerts.length)return null;
   return <aside className="pain-notice" role="alert" aria-label={`Molestias al cargar ${exercise.name}`}><strong>⚠ Revisa la carga antes de continuar</strong>{alerts.map(status=><p key={status.zone}><b>{PAIN_ZONES[status.zone]}</b>: {reasons(status)}. Último registro: {status.latest.date}.{status.stale?' No confirma tu estado actual: actualiza el Diario.':''}{status.professional?' Consulta a un profesional de la salud.':''}</p>)}<p>Considera bajar la carga, omitir drop set, rest-pause, forzadas y negativas, o sustituir el ejercicio desde Rutina. Si aparece dolor, detén la serie; no fuerces el fallo.</p><small>Mapa de carga orientativo; no cambia tus pesos ni técnicas automáticamente. No es un diagnóstico.</small></aside>;
 }
-export function FailureSafety({data,exercise,enabled,change,saving}){
+export function FailureSafety({data,exercise,enabled,change,saving,compact=false}){
   if(!enabled||!needsFailureSafety(exercise))return null;
   const hidden=data.safetySettings?.hidden?.[exercise.id]===true;
   const toggle=()=>change(state=>({...state,safetySettings:{...state.safetySettings,hidden:{...state.safetySettings?.hidden,[exercise.id]:!hidden}}}));
-  return hidden?<button type="button" className="quiet safety-restore" disabled={saving} onClick={toggle}>Mostrar seguridad de {exercise.name}</button>:<aside className="failure-safety" aria-label={`Seguridad de ${exercise.name}`}><strong>⚠ Fallo técnico, con protección</strong><p>Usa seguros correctamente ajustados o un compañero. Detente en el fallo técnico sin sacrificar la forma. Si hay dolor, detén la serie.</p><button type="button" className="quiet" disabled={saving} onClick={toggle}>Ocultar seguridad de {exercise.name}</button></aside>;
+  const content=<><p>Usa seguros correctamente ajustados o un compañero. Detente en el fallo técnico sin sacrificar la forma. Si hay dolor, detén la serie.</p><button type="button" className="quiet" disabled={saving} onClick={toggle}>Ocultar seguridad de {exercise.name}</button></>;
+  return hidden?<button type="button" className="quiet safety-restore" disabled={saving} onClick={toggle}>Mostrar seguridad de {exercise.name}</button>:<aside className="failure-safety" aria-label={`Seguridad de ${exercise.name}`}>{compact?<details><summary>⚠ Fallo técnico · usa seguros o compañero</summary>{content}</details>:<><strong>⚠ Fallo técnico, con protección</strong>{content}</>}</aside>;
 }
 export function PainOverview({data,date,onOpen}){
   const statuses=painStatuses(data,date).filter(status=>status.professional);

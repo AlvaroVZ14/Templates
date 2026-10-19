@@ -1,3 +1,4 @@
+import {quickTab} from './quick-helpers.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
@@ -86,7 +87,7 @@ test('todas las pantallas caben a 320 y 390 px; fases nuevas no recuperan fechas
 test('respaldo descargado hace ida y vuelta por la importación real y recupera datos originales',async({page})=>{
   await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});await page.goto('./');
   await page.getByLabel('Peso de trabajo de Press banca',{exact:true}).fill('100');
-  await page.getByLabel('Tipo de serie').selectOption('effective');
+  await quickTab(page,'Otras');await page.getByLabel('Tipo de serie').selectOption('effective');
   await page.getByLabel('Carga de Press banca',{exact:true}).fill('100');
   await page.getByLabel('Repeticiones de Press banca',{exact:true}).fill('8');
   await page.getByRole('button',{name:/^Guardar serie/}).click();

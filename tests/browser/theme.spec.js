@@ -1,3 +1,4 @@
+import {quickTab} from './quick-helpers.js';
 import {test,expect} from './fixtures.js';
 import {go,chooseDate} from './navigation-helpers.js';
 import {readFile} from 'node:fs/promises';
@@ -31,10 +32,10 @@ test('identidad editable, fuentes locales offline y pantallas sin desbordamiento
 
 test('destello solo al guardar efectiva, fallo y anillo decreciente; movimiento reducido',async({page})=>{
   await page.clock.install();await page.goto('./');await chooseDate(page,'2026-10-12');
-  await page.getByLabel('Peso de trabajo de Press banca',{exact:true}).fill('100');await page.getByRole('button',{name:'Guardar Aproximación 1',exact:true}).click();
+  await page.getByLabel('Peso de trabajo de Press banca',{exact:true}).fill('100');await quickTab(page,'Previas');await page.getByRole('button',{name:'Guardar Aproximación 1',exact:true}).click();
   await expect(page.locator('.log-row[data-kind=approach]')).toHaveCount(1);await expect(page.locator('.effective-save-flash')).toHaveCount(0);
-  const failure=page.locator('.set-form').getByLabel('Llegué al fallo');await failure.uncheck();await failure.check();await expect(page.locator('.set-form .failure-shake')).toHaveCount(1);
-  await page.locator('.set-form').getByRole('button',{name:'Guardar serie'}).click();await expect(page.locator('.log-row[data-kind=effective]')).toHaveCount(1);await expect(page.locator('.effective-save-flash')).toHaveCount(1);
+  await quickTab(page,'Efectiva');const failure=page.locator('.set-form').getByLabel('Llegué al fallo');await failure.uncheck();await failure.check();await expect(page.locator('.set-form .failure-shake')).toHaveCount(1);
+  await quickTab(page,'Efectiva');await page.locator('.set-form').getByRole('button',{name:'Guardar serie'}).click();await expect(page.locator('.log-row[data-kind=effective]')).toHaveCount(1);await expect(page.locator('.effective-save-flash')).toHaveCount(1);
   const ring=page.locator('.rest-countdown');const before=Number(await ring.getAttribute('stroke-dashoffset'));await page.clock.fastForward(30000);await expect.poll(async()=>Number(await ring.getAttribute('stroke-dashoffset'))).toBeGreaterThan(before);
   await page.emulateMedia({reducedMotion:'reduce'});await expect(page.getByTestId('shadow-scene')).toHaveClass(/is-paused/);
   expect(await page.getByTestId('shadow-scene').locator('.shadow-glow').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');

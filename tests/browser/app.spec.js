@@ -1,3 +1,4 @@
+import {quickTab,quickDetails} from './quick-helpers.js';
 import {go,chooseDate} from './fixtures.js';
 import { test, expect } from './fixtures.js';
 
@@ -8,7 +9,7 @@ async function monday(page) {
 }
 async function log(page, kind = 'Efectiva', weight = '60', reps = '8') {
   const card = page.locator('.exercise-card.expanded');
-  await card.getByLabel('Tipo de serie').selectOption({ label: kind });
+  await quickTab(page,'Otras');await card.getByLabel('Tipo de serie').selectOption({ label: kind });
   await card.getByLabel('Carga de Press banca', { exact: true }).fill(weight);
   await card.getByLabel('Repeticiones de Press banca').fill(reps);
   await card.getByRole('button', { name: 'Guardar serie' }).click();
@@ -22,7 +23,7 @@ test('registro, persistencia IndexedDB, volumen, preparación y extensiones', as
   await page.getByLabel('Peso de trabajo de Press banca', { exact: true }).fill('100');
   await expect(page.getByLabel('Peso de Aproximación 1', { exact: true })).toHaveValue('50');
   await expect(page.getByLabel('Reps de Aproximación 1', { exact: true })).toHaveValue('10');
-  await page.getByRole('button', { name: 'Guardar Aproximación 1', exact: true }).click();
+  await quickTab(page,'Previas');await page.getByRole('button', { name: 'Guardar Aproximación 1', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Aproximación guardada');
   await log(page);
   await log(page, 'Drop set', '40', '6');
@@ -32,7 +33,7 @@ test('registro, persistencia IndexedDB, volumen, preparación y extensiones', as
   await page.reload();
   await chooseDate(page,'2026-10-12');
   await expect(page.locator('.log-row')).toHaveCount(3);
-  await page.getByRole('button', { name: 'Eliminar Efectiva de Press banca', exact: true }).click();
+  await quickDetails(page,'.quick-records');await page.getByRole('button', { name: 'Eliminar Efectiva de Press banca', exact: true }).click();
   await page.locator('.delete-confirm').getByRole('button', { name: 'Eliminar', exact: true }).click();
   await expect(page.locator('.log-row')).toHaveCount(1);
   await expect(page.locator('.log-row')).toContainText('Aproximación');
@@ -57,7 +58,7 @@ test('editor guarda técnicas, descansos, series, nombre y preserva borradores e
   await chooseDate(page,'2026-10-12');
   await expect(page.locator('.exercise-card').first()).toContainText('Press banca controlado');
   await expect(page.getByLabel('Tipo de serie').locator('option')).toHaveCount(6);
-  await page.getByLabel('Tipo de serie').selectOption('forced');
+  await quickTab(page,'Otras');await page.getByLabel('Tipo de serie').selectOption('forced');
   await page.getByLabel('Carga de Press banca controlado', { exact: true }).fill('60');
   await page.getByLabel('Repeticiones de Press banca controlado').fill('3');
   await page.getByRole('button', { name: 'Guardar serie' }).click();
