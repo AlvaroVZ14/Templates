@@ -1,3 +1,4 @@
+import {quickTab} from './quick-helpers.js';
 import {test as base} from '@playwright/test';
 import {test,expect,go,chooseDate} from './fixtures.js';
 
@@ -50,7 +51,7 @@ test('afiche, collage, grietas y todas las pantallas: legibles en móvil y sin a
 test('transición y registro animados; efectos reducidos, apagados y gimnasio quietos',async({page})=>{
   await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});await page.goto('./');await chooseDate(page,'2026-10-12');
   await page.getByRole('button',{name:'Abrir menú',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Diario',exact:true}).click();await expect(page.locator('.grunge-cut')).toHaveCount(1);await page.clock.runFor(400);await expect(page.locator('.grunge-cut')).toHaveCount(0);
-  await go(page,'Hoy');await page.getByLabel('Tipo de serie').selectOption('effective');await page.getByLabel('Carga de Press banca',{exact:true}).fill('60');await page.getByLabel('Repeticiones de Press banca',{exact:true}).fill('8');await page.getByRole('button',{name:/^Guardar serie/}).click();
+  await go(page,'Hoy');await quickTab(page,'Otras');await page.getByLabel('Tipo de serie').selectOption('effective');await page.getByLabel('Carga de Press banca',{exact:true}).fill('60');await page.getByLabel('Repeticiones de Press banca',{exact:true}).fill('8');await page.getByRole('button',{name:/^Guardar serie/}).click();
   await expect(page.locator('.log-row .grunge-stamp')).toHaveText('FALLO');
   await go(page,'Ajustes');await page.getByLabel('Efectos visuales',{exact:true}).selectOption('reduced');await page.getByRole('button',{name:'Guardar apariencia',exact:true}).click();
   await expect(page.locator('.app-shell')).toHaveAttribute('data-grunge','reduced');expect(await page.locator('.film-dust').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');

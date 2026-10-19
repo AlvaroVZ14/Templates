@@ -1,3 +1,4 @@
+import {quickTab} from './quick-helpers.js';
 import {onboardingTest as test,expect} from './fixtures.js';
 import {go,chooseDate} from './navigation-helpers.js';
 
@@ -27,7 +28,7 @@ test('brasas retina, ondas, pausa oculta y modos persistentes sin interferir con
   await page.evaluate(()=>{window.testHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await expect(canvas).toHaveAttribute('data-running','true');await expect.poll(()=>page.evaluate(()=>window.effectDraws)).toBeGreaterThan(paused);
   const weight=page.getByLabel('Peso de trabajo de Press banca',{exact:true});await weight.fill('100');await expect(canvas).toHaveClass(/is-registering/);
   await weight.blur();await expect(canvas).not.toHaveClass(/is-registering/);
-  await page.getByRole('button',{name:'Guardar Aproximación 1',exact:true}).click();await expect(page.locator('.log-row[data-kind=approach]')).toHaveCount(1);
+  await quickTab(page,'Previas');await page.getByRole('button',{name:'Guardar Aproximación 1',exact:true}).click();await expect(page.locator('.log-row[data-kind=approach]')).toHaveCount(1);
   await mode(page,'reduced');await expect(canvas).toHaveAttribute('data-running','true');await expect(canvas).toHaveAttribute('data-particles','100');await expect(canvas).toHaveAttribute('data-bursts','0');const before=await page.evaluate(()=>window.effectDraws);await expect.poll(()=>page.evaluate(()=>window.effectDraws)).toBeGreaterThan(before);
   await page.reload();await expect(stage(page)).toHaveAttribute('data-effects','reduced');await expect(stage(page)).not.toHaveClass(/shadow-enabled/);
   await mode(page,'off');await expect(canvas).toHaveCount(0);await go(page,'Hoy');await expect(stage(page)).not.toHaveClass(/shadow-enabled/);

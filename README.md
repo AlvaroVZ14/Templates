@@ -1167,3 +1167,27 @@ La actualización llega a [la PWA](https://alvarovz14.github.io/Templates/) desp
 del merge a `main` y GitHub Actions; usa el aviso de versión nueva para recargar
 conservando tus registros. Si aún tienes una versión antigua sin aviso, cierra
 todas las ventanas de la PWA y vuelve a abrir con conexión, sin borrar datos.
+
+## Registro compacto de ejercicios
+
+En **Hoy**, abre un ejercicio y elige **Previas**, **Efectiva**, **Drop set / Rest-pause**
+(cuando esté programada la técnica) u **Otras**. Las pestañas muestran sus pesos
+calculados antes de registrar. Carga, reps y RPE quedan juntos; el botón **✓**
+guarda cada previa, caída o mini-serie por separado e inicia el descanso habitual.
+Las mancuernas siguen registrándose por mano.
+
+Si falta la referencia, se abre **Ingresa tu peso de trabajo**. Después queda
+plegada en **Referencia → Editar**. **Otras** conserva el selector completo:
+calentamiento, aproximación, efectiva y técnicas permitidas. Forzadas y negativas
+siguen requiriendo activación en Rutina; la descarga conserva sus restricciones.
+
+**Descanso real** despliega el campo opcional de cada serie. **Series guardadas**
+conserva el detalle y la eliminación con confirmación; **Progresión, reglas y
+descansos** reúne las explicaciones, recomendaciones, rango de reps y botones del
+cronómetro. **Notas e historial** contiene las notas y el gráfico. El recordatorio
+de seguridad se puede desplegar u ocultar por ejercicio; los avisos de dolor siguen
+visibles. Los campos editados conservan sus borradores al cambiar de pestaña,
+cerrar el ejercicio o recargar, incluso sin conexión.
+
+No cambia el formato de IndexedDB, los cálculos, la rutina ni los registros.
+[Ver revisión y capturas del registro compacto](docs/design/quick-register-review.md).

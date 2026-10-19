@@ -1,3 +1,4 @@
+import {quickTab,quickDetails} from './quick-helpers.js';
 import {go,chooseDate} from './fixtures.js';
 import { test, expect } from './fixtures.js';
 
@@ -12,16 +13,16 @@ test('RPE, notas, historial gráfico y cardio sobreviven a una recarga offline',
   await page.getByLabel('RPE de Press banca', { exact: true }).fill('9');
   await page.getByRole('button', { name: 'Guardar serie', exact: false }).click();
   await expect(page.getByLabel('Serie anterior')).toContainText('RPE 9');
-  await page.getByLabel('Notas de Press banca').fill('Asiento 3. Bajada controlada.');
+  await quickDetails(page,'.quick-history');await page.getByLabel('Notas de Press banca').fill('Asiento 3. Bajada controlada.');
   await page.getByRole('button', { name: 'Guardar notas', exact: true }).click();
   await expect(page.getByText('Notas guardadas.', { exact: true })).toBeVisible();
-  await page.locator('.history-panel summary').click();
+  await quickDetails(page,'.quick-history');await page.locator('.history-panel summary').click();
   await expect(page.getByRole('img', { name: 'Evolución de carga de Press banca' })).toBeVisible();
   await chooseDate(page,'2026-10-19');
   await expect(page.getByLabel('Serie anterior')).toContainText('2026-10-12');
   await page.getByLabel('Carga de Press banca', { exact: true }).fill('102.5');
   await page.getByRole('button', { name: 'Guardar serie', exact: false }).click();
-  await page.locator('.history-panel summary').click();
+  await quickDetails(page,'.quick-history');await page.locator('.history-panel summary').click();
   await expect(page.locator('.history-chart circle')).toHaveCount(2);
   await page.getByLabel('Tipo de cardio').selectOption('Bici');
   await page.getByLabel('Minutos de cardio').fill('25');
@@ -58,10 +59,10 @@ test('editor permite 3 preparaciones, 3 caídas y redondeo personalizado', async
   await page.getByLabel('Peso de trabajo de Press banca', { exact: true }).fill('100');
   for (const [i, weight] of [[1, '40'], [2, '60'], [3, '80']]) await expect(page.getByLabel(`Peso de Aproximación ${i}`, { exact: true })).toHaveValue(weight);
   for (const [i, weight] of [[1, '80'], [2, '65'], [3, '50']]) await expect(page.getByLabel(`Peso de Caída ${i}`, { exact: true })).toHaveValue(weight);
-  await page.locator('.suggestions').screenshot({ path: 'test-results/mobile-suggestions.png' });
-  await page.getByLabel('Reps de Aproximación 1', { exact: true }).fill('9');
-  await page.getByLabel('RPE de Aproximación 1', { exact: true }).fill('5');
-  await page.getByRole('button', { name: 'Guardar Aproximación 1', exact: true }).click();
+  await quickTab(page,'Previas');await page.locator('.suggestions').screenshot({ path: 'test-results/mobile-suggestions.png' });
+  await quickTab(page,'Previas');await page.getByLabel('Reps de Aproximación 1', { exact: true }).fill('9');
+  await quickTab(page,'Previas');await page.getByLabel('RPE de Aproximación 1', { exact: true }).fill('5');
+  await quickTab(page,'Previas');await page.getByRole('button', { name: 'Guardar Aproximación 1', exact: true }).click();
   await expect(page.locator('.log-row')).toContainText('RPE 5');
   await expect(page.locator('.log-row')).toContainText('× 9');
 });

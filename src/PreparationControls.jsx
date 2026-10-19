@@ -4,7 +4,7 @@ import { preparationSuggestions } from './domain.js';
 import { dayContext } from './program/nutrition.js';
 import './preparation-ui.css';
 
-export function PreparationCount({exercise:ex,data,date,currentWeight,reference,target,preparations,logs,unit,onReferenceChange,onTargetChange,onSaveReference,onSave,change,saving}){
+export function PreparationCount({exercise:ex,data,date,currentWeight,reference,target,preparations,logs,unit,onReferenceChange,onTargetChange,onSaveReference,onSave,change,saving,expanded=false}){
   const dialog=useRef(null),id=useId(),busy=useRef(false);
   const [open,setOpen]=useState(false),[choice,setChoice]=useState(ex.preparationOverride??null),[feedback,setFeedback]=useState(''),[sheetError,setSheetError]=useState('');
   const base=data.routine.flat().find(item=>item.id===ex.id)??ex;
@@ -54,16 +54,16 @@ export function PreparationCount({exercise:ex,data,date,currentWeight,reference,
     <div className="preparation-line-row"><button className="preparation-line" type="button" onClick={show} aria-label={`Configurar previas de ${ex.name}`} aria-haspopup="dialog" aria-expanded={open} aria-controls={id}>
       <strong>PREVIAS · {ex.approaches}</strong><span className="preparation-mode">{manual?'(Manual)':'(Auto)'}</span><span className="preparation-help" aria-hidden="true">?</span>
     </button>{manual&&<button type="button" className="preparation-restore" aria-label={`Volver a Auto de ${ex.name}`} disabled={saving} onClick={restoreAutomatic}>Volver a Auto</button>}</div>
-    <p className="preparation-context">{ex.preparationReason}</p>
+    {!expanded&&<p className="preparation-context">{ex.preparationReason}</p>}
     {ex.preparationWarning&&<p className="error">{ex.preparationWarning}</p>}
-    <div className="preparation-chips" aria-label={`Previas calculadas de ${ex.name}`}>
+    {!expanded&&<div className="preparation-chips" aria-label={`Previas calculadas de ${ex.name}`}>
       {currentWeight===null?<button type="button" className="preparation-missing" onClick={show}>Ingresa tu peso de trabajo <span aria-hidden="true">＋</span></button>:preparations.length===0?<span className="preparation-none">Sin previas para este ejercicio.</span>:preparations.map(step=>{
         const saved=logs.find(log=>log.kind==='approach'&&log.step===step.step);
         return <button key={step.step} type="button" className={`preparation-chip ${saved?'is-complete':''}`} aria-label={`${saved?'Previa guardada':'Guardar previa'} ${step.step} de ${ex.name}`} disabled={saving||!!saved||currentWeight>1500} onClick={()=>saveChip(step)}>
           <span className="preparation-chip-mark" aria-hidden="true">{saved?'✓':String(step.step).padStart(2,'0')}</span><span><b>{saved?saved.weight:step.weight}<small> {unit}</small></b><span>{step.percent}% · × {saved?saved.reps:(step.repRange??step.reps)} reps · sin fallo</span></span>
         </button>;
       })}
-    </div>
+    </div>}
     {feedback&&<p className="preparation-feedback" role="status">{feedback}</p>}
     <dialog ref={dialog} id={id} className="preparation-sheet" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} onCancel={event=>{event.preventDefault();setOpen(false);}} onClose={()=>setOpen(false)} onClick={event=>{if(event.target!==event.currentTarget)return;const box=event.currentTarget.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)setOpen(false);}}>
       <div className="preparation-sheet-heading"><div><span className="eyebrow">PREPARACIÓN</span><h2 id={`${id}-title`}>Previas · {ex.name}</h2></div><button type="button" className="icon-button" aria-label={`Cerrar previas de ${ex.name}`} onClick={()=>setOpen(false)}>×</button></div>

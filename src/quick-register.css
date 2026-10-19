@@ -1,0 +1,73 @@
+/* Exercise registration: one task at a time; supplementary content stays available. */
+.quick-exercise [hidden]{display:none!important}
+.quick-exercise.expanded .compact-preparation{padding-bottom:4px}
+.quick-register.exercise-body{padding:12px 18px 16px}
+.quick-reference{border:1px solid #484848;margin-bottom:10px;background:#1C1C1C}
+.quick-reference>summary,.quick-details>summary{min-height:44px;padding:11px 12px;font-size:13px;line-height:1.5;cursor:pointer;color:var(--bone)}
+.quick-reference>summary>span,.quick-details>summary>span{float:right;margin-left:8px;font-size:12px;color:var(--steel)}
+.quick-reference .work-reference{border:0;border-top:1px solid #484848;margin:0;padding:12px;gap:10px}
+.quick-reference .work-reference h3{font-size:20px}
+.quick-reference .work-reference p{font-size:12px;line-height:1.5}
+.quick-reference .input-pair{gap:10px}
+.quick-reference label{gap:5px}
+.quick-reference input{min-height:48px;padding:9px 10px}
+.quick-reference .secondary{width:100%;min-height:44px}
+.quick-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;border-bottom:1px solid #555;padding-bottom:8px}
+.quick-tabs:has(>button:nth-child(3):last-child){grid-template-columns:repeat(3,minmax(0,1fr))}
+.quick-tabs>button{min-width:0;min-height:64px;text-align:left;background:#202020;border:1px solid #555;padding:7px 8px;color:var(--bone);overflow-wrap:anywhere}
+.quick-tabs>button[aria-selected=true]{border-color:var(--blood);background:#310B14;box-shadow:inset 0 -3px var(--blood)}
+.quick-tabs>button>span{display:flex;gap:4px;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;flex-wrap:wrap}
+.quick-tabs small{font-size:10px;color:#CACACA;font-weight:400}
+.quick-tabs b{display:block;font-size:12px;color:#CECECE;font-weight:400;margin-top:4px;line-height:1.4}
+.quick-unit,.quick-hint{font-size:12px;color:var(--steel);line-height:1.5;margin:8px 0}
+.quick-suggestions.suggestions{margin:0}
+.quick-panel-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:8px 0}
+.quick-panel-heading h3{font-size:20px;line-height:1.3}
+.quick-panel-heading>span{font-size:11px;color:var(--steel)}
+.quick-register .previous-set{margin:10px 0;padding:8px 10px}
+.quick-register .previous-set>span{font-size:10px;letter-spacing:.6px}
+.quick-register .previous-set p{font-size:12px;line-height:1.5;margin-top:3px}
+.quick-register .set-form{display:grid;gap:10px;margin:0;padding:0;border:0}
+.quick-register .quick-values,.quick-register .suggested-inputs{display:grid;grid-template-columns:1.3fr 1fr .85fr;gap:8px;align-items:end}
+.quick-register :is(.quick-values,.suggested-inputs) label{font-size:12px;gap:4px}
+.quick-register :is(.quick-values,.suggested-inputs) input{min-height:54px;font-family:'Anton',Impact,sans-serif;font-size:28px;font-weight:400;padding:9px 10px;letter-spacing:.3px;color:var(--bone)}
+.quick-register :is(.quick-values,.suggested-inputs) label:first-child input{font-size:30px}
+.quick-register input::placeholder{font:14px 'Barlow',sans-serif;letter-spacing:0;color:#AAA}
+.quick-set-footer{display:flex;align-items:start;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.quick-register .check-label{min-height:44px;gap:8px;flex-direction:row;align-items:center}
+.quick-register .check-label input{width:22px;min-width:22px;height:22px;min-height:22px;margin:0;padding:0}
+.quick-register .check-label>span{font-size:13px;color:var(--bone)}
+.quick-rest{font-size:12px;max-width:100%;min-width:0}
+.quick-rest>summary{min-height:44px;display:list-item;padding:12px 3px;cursor:pointer;color:var(--steel);line-height:1.5}
+.quick-rest label{font-size:12px;gap:4px;margin-bottom:6px}
+.quick-rest input{min-height:44px;font-size:18px;max-width:170px;padding:8px}
+.quick-register .failure-safety{padding:8px 10px;margin:0;border-width:1px}
+.quick-register .failure-safety strong{font-size:12px}
+.quick-register .failure-safety p{font-size:12px;line-height:1.5;margin:4px 0 0}
+.quick-register .failure-safety .quiet{font-size:11px;padding:7px 0;min-height:44px}
+.quick-register .failure-safety summary{min-height:36px;display:list-item;align-content:center;cursor:pointer;font-size:12px;line-height:1.5;color:#E1A0AA}
+.quick-register .primary.full{min-height:56px;font-size:16px}
+.quick-register .suggested-set{padding:10px;margin:8px 0}
+.quick-register .suggested-heading{gap:5px;margin-bottom:8px}
+.quick-register .suggested-heading strong{font-size:14px}
+.quick-register .suggested-heading>span{font-size:11px}
+.quick-register .suggested-inputs{grid-template-columns:1.3fr 1fr .8fr 44px}
+.quick-register .suggested-inputs button{min-width:44px;min-height:54px;padding:8px;font-size:22px}
+.quick-register .suggested-footer{gap:8px;margin-top:2px;flex-wrap:wrap}
+.quick-register .suggested-set .quick-rest>summary{min-height:44px;padding:10px 0}
+.quick-register .suggested-set.saved{opacity:.8}
+.quick-register .suggestion-empty{padding:10px;font-size:13px;line-height:1.5;margin:8px 0}
+.quick-details{border-top:1px solid #484848;margin-top:8px}
+.quick-details>summary{padding:12px 2px;color:var(--steel)}
+.quick-details[open]>summary{color:var(--bone)}
+.quick-details>p{margin:10px 0}
+.quick-register .quick-details .training-recommendation{margin:6px 0 12px}
+.quick-register .quick-next{margin-top:10px;min-height:44px}
+.quick-register .log-group h4{font-size:12px;margin:8px 0}
+.quick-register .log-row{min-height:56px;gap:6px;padding:8px 0}
+.quick-register .log-row strong{font-size:12px}
+.quick-register .log-row div small{font-size:11px}
+.gym-active .quick-register :is(.quick-values,.suggested-inputs) input{min-height:60px}
+.gym-active .quick-register .set-form button[type=submit]{min-height:64px}
+@media(max-width:400px){.quick-register.exercise-body{padding:10px 12px 14px}.quick-tabs>button{padding:6px}.quick-tabs>button>span{font-size:12px}.quick-tabs b{font-size:11px}.quick-register :is(.quick-values,.suggested-inputs) input{padding:8px;font-size:25px}.quick-register :is(.quick-values,.suggested-inputs) label:first-child input{font-size:28px}}
+@media(max-width:360px){.quick-register .suggested-inputs{gap:6px}.quick-register .suggested-inputs input{padding:8px 4px;font-size:20px}.quick-register .suggested-inputs label:first-child input{font-size:25px}}
