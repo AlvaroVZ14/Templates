@@ -112,4 +112,4 @@ self.addEventListener('fetch', event => {
   };
 }
 
-export default defineConfig({ base: '/Templates/', plugins: [react(), offlineWorker()] });
+export default defineConfig({ base: '/Templates/', define:{__APP_BUILD__:JSON.stringify(process.env.GITHUB_SHA?.slice(0,7)??`local-${new Date().toISOString()}`)}, plugins: [react(), offlineWorker()] });

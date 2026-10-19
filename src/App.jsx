@@ -1,6 +1,7 @@
 import GrungeAtmosphere,{Cracks,PosterTitle} from './Grunge.jsx';
 import {useVisualEnvironment} from './VisualEffects.jsx';
 import usePwa from './usePwa.js';
+import PwaSettings from './PwaSettings.jsx';
 import {parseRoutineDraft} from './routineDraft.js';
 import {shiftDate} from './wellness.js';
 import BackupPanel from './BackupPanel.jsx';
@@ -160,7 +161,7 @@ export default function App() {
       <div className="header-actions"><button className="menu-button" aria-label="Abrir menú" aria-expanded={menuOpen} aria-haspopup="dialog" onClick={()=>setMenuOpen(true)}><Icon name="menu" size={22}/><span className="menu-word">Menú</span></button><span className={`connection ${!pwa.online ? 'offline' : ''}`}><i />{!pwa.online ? 'Sin conexión' : pwa.ready ? 'Offline listo' : 'Local · privado'}</span>
 </div>
     </header>
-    {pwa.available&&<aside className="notice pwa-update" role="status"><button className="primary" disabled={saving||pwa.updating||!data} onClick={()=>pwa.update(async()=>{if(locked.current)return false;await drafts.flush();return true;})}>{pwa.updating?'Guardando y actualizando…':'Hay una versión nueva, tocar para actualizar'}</button><p className="field-note">Conserva tus registros y borradores en este dispositivo.</p></aside>}
+    {pwa.available&&<aside className="notice pwa-update" role="status"><button className="primary" disabled={saving||pwa.updating||pwa.checking||!data} onClick={()=>pwa.update(async()=>{if(locked.current)return false;await drafts.flush();return true;})}>{pwa.updating?'Guardando y actualizando…':'Hay una versión nueva, tocar para actualizar'}</button><p className="field-note">Conserva tus registros y borradores en este dispositivo.</p></aside>}
     {installHelp && <aside className="install-help"><strong>Instala {appearance.name}</strong><p>En Android o escritorio: menú del navegador → Instalar aplicación. En iPhone: Safari → Compartir → Añadir a pantalla de inicio.</p><p>{pwa.ready ? 'La app está preparada para abrir sin conexión.' : 'La instalación y el modo offline se preparan en la versión de producción, con HTTPS o localhost.'}</p><button className="quiet" onClick={() => setInstallHelp(false)}>Entendido</button></aside>}
     {(error || pwa.error) && <div className="error global-error" role="alert">{error || pwa.error}{!data && <button className="quiet" onClick={boot}>Reintentar</button>}</div>}
     {!data ? <main className="loading" aria-live="polite"><span className="loading-mark" aria-hidden="true">B&amp;G</span><strong>{appearance.name}</strong><span>{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</span></main> : <>
@@ -176,7 +177,7 @@ export default function App() {
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} />}
-        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><CardioSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
+        {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><PwaSettings pwa={pwa} saving={saving} onUpdate={()=>pwa.update(async()=>{if(locked.current)return false;await drafts.flush();return true;})}/><CardioSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
         {page==='method'&&<Method/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
       </main>

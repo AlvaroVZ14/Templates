@@ -1191,3 +1191,20 @@ cerrar el ejercicio o recargar, incluso sin conexión.
 
 No cambia el formato de IndexedDB, los cálculos, la rutina ni los registros.
 [Ver revisión y capturas del registro compacto](docs/design/quick-register-review.md).
+
+## Buscar actualizaciones desde el celular
+
+En **Menú → Ajustes → Actualizaciones**, toca **Buscar actualizaciones**. Muestra
+la versión instalada y distingue sin conexión, error de búsqueda, última versión
+publicada y actualización lista. La búsqueda manual se puede repetir sin esperar
+el intervalo automático. Si está descargando, espera a que aparezca **Actualizar
+ahora**; antes de recargar se guardan los borradores. No se borran IndexedDB ni
+los registros para actualizar.
+
+Una versión todavía sin publicar en GitHub Pages no aparecerá en el celular. Este
+botón llega con esta actualización: si la instalación antigua aún no lo muestra,
+abre la app con internet después del despliegue correcto y usa el aviso existente.
+También puedes cerrar todas sus ventanas y abrirla otra vez sin borrar sus datos.
+En `npm run dev`, el botón explica que Vite actualiza los cambios al guardar.
+
+[Revisión y pasos de prueba de actualizaciones](docs/design/pwa-manual-update-review.md).
