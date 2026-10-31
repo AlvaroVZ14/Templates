@@ -5,6 +5,9 @@ Guts: poco volumen, series efectivas al fallo técnico y ejecución controlada.
 Construida con React + Vite. Sin backend, cuentas, analítica ni servicios externos.
 El repositorio conserva el nombre **Templates**.
 
+La [revisión de arquitectura](docs/architecture/README.md) documenta la división
+frontend, persistencia local y testing, sus hallazgos y verificaciones.
+
 **URL final de publicación:** [https://alvarovz14.github.io/Templates/](https://alvarovz14.github.io/Templates/).
 GitHub Pages está configurado con **GitHub Actions**; cada integración en `main`
 publica si pasan las comprobaciones. La ruta `/Templates/` distingue mayúsculas.
