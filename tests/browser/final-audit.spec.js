@@ -13,7 +13,7 @@ async function boot(page){
 test('auditoría: los cinco días muestran7 ejercicios/17 filas, y13 músculos suman85',async({page})=>{
  await boot(page);
  for(const [date,name] of [['2026-11-03','PUSH'],['2026-11-04','PULL'],['2026-11-05','LEG A'],['2026-11-07','TORSO'],['2026-11-08','LEG B']]){
-  await chooseDate(page,date);await expect(page.locator('.fast-session-heading h1')).toHaveText(name);await expect(page.locator('.workout-exercise')).toHaveCount(7);await expect(page.locator('.fast-set-line')).toHaveCount(17);await expect(page.locator('.fast-session-count')).toHaveText('0/17');
+  await chooseDate(page,date);await expect(page.locator('.fast-session-heading h1')).toHaveText(name);await expect(page.locator('.workout-exercise')).toHaveCount(7);await expect(page.locator('.fast-set-line')).toHaveCount(17);await expect(page.getByRole('progressbar',{name:'Series completadas'})).toHaveAttribute('aria-valuenow','0');await expect(page.getByRole('progressbar',{name:'Series completadas'})).toHaveAttribute('aria-valuemax','17');
  }
  await go(page,'Progreso');await page.locator('.weekly-volume-details>summary').click();
  const actual=await page.locator('.volume-row-top').evaluateAll(rows=>Object.fromEntries(rows.map(row=>[row.querySelector('strong').textContent,Number(row.querySelectorAll('span')[1].textContent)]).filter(([,value])=>value>0)));

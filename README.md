@@ -1250,3 +1250,5 @@ En `npm run dev`, el botón explica que Vite actualiza los cambios al guardar.
 [Revisión y pasos de prueba de actualizaciones](docs/design/pwa-manual-update-review.md).
 
 [Rendimiento móvil: cambios, mediciones y pruebas](docs/rendimiento.md).
+
+[Pantalla de entrenamiento horizontal: diseño móvil y escritorio](docs/design/entrenamiento-horizontal.md).

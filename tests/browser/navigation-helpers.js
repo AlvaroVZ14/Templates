@@ -17,6 +17,7 @@ export async function openExercise(page,name){
  if(await page.locator('.app-shell').getAttribute('data-page')==='today')await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();
  if(await page.locator('.app-shell').getAttribute('data-page')!=='workout'){const drawer=await menu(page),group=drawer.locator('.drawer-group>summary').filter({hasText:'Ir a otra sesi\u00f3n'});if(!await group.locator('..').evaluate(el=>el.open))await group.click();await drawer.getByRole('button',{name:'Abrir sesi\u00f3n seleccionada',exact:true}).click();}
  await expect(page.locator('.app-shell')).toHaveAttribute('data-page','workout');await expect(page.locator('.fast-session-heading')).toBeVisible();
- const summary=page.locator('.workout-exercise>summary').filter({hasText:name}).first();
- await expect(summary).toBeVisible();if(!await summary.locator('..').evaluate(el=>el.open))await summary.click();await expect(summary.locator('..')).toHaveAttribute('open','');
+ const choice=page.getByRole('navigation',{name:'Elegir ejercicio',exact:true}).getByRole('button',{name:`Ir a ${name}`,exact:true});
+ await choice.click();await expect(choice).toHaveAttribute('aria-current','step');
+ await expect(page.getByRole('article',{name,exact:true})).toBeInViewport();
 }
