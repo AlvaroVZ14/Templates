@@ -5,6 +5,7 @@ import {dayContext} from './program/nutrition.js';
 import {sessionNeighbors,shiftWeek,swipeDirection} from './navigation.js';
 import {appearanceFor} from './Appearance.jsx';
 import {checkReminder} from './monthlyCheck.js';
+import Brand from './Brand.jsx';
 
 function useSwipe(action){
   const start=useRef(null);
@@ -36,7 +37,7 @@ export function Drawer({open,onClose,side,data,date,page,navigate}){
   },[open]);
   const closeGesture=useSwipe(direction=>{if(direction===side)onClose();});
   return <dialog ref={dialog} className={`nav-drawer ${side}`} aria-label="Menú de navegación" onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right)onClose();}}}>
-    <div className="drawer-heading" {...closeGesture}><div><p className="eyebrow">{appearanceFor(data).name}</p><h2>Menú</h2></div><button className="icon-button" aria-label="Cerrar menú" onClick={onClose}>×</button></div>
+    <div className="drawer-heading" {...closeGesture}><div><Brand name={appearanceFor(data).name}/><h2>Menú</h2></div><button className="icon-button" aria-label="Cerrar menú" onClick={onClose}>×</button></div>
     <DrawerSections data={data} page={page} navigate={navigate} sessions={<>    <nav aria-label="Sesiones de la semana" className="drawer-sessions">{weekDates(date).map((value,index)=>{
       const context=dayContext(data,value),rest=!context.exercises.length,today=value===localDate();
       return <button key={value} className={`${today?'today':''} ${date===value&&page==='workout'?'selected':''}`} aria-current={date===value&&page==='workout'?'date':undefined} onClick={()=>navigate('workout',value)}><span className="drawer-day">{DAYS[index].slice(0,3)}<b>{value.slice(-2)}</b></span><span><strong>{rest?'Descanso':sessionName(context.exercises)}</strong><small>{DAYS[index]}{today?' · Hoy':''}{rest?' · Recuperación':''}</small></span><span aria-hidden="true">{rest?'○':'›'}</span></button>;

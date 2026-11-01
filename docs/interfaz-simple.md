@@ -1,5 +1,8 @@
 # Inicio y entrenamiento simplificados
 
+La identidad Olympia añade el logo ornamental aprobado sobre el día; se mantienen
+los cuatro elementos funcionales y el menú lateral como única navegación.
+
 El inicio tiene cuatro elementos: día y sesión de hoy, minutos de cardio, botón
 **EMPEZAR ENTRENAMIENTO** y barra fina de sesiones semanales completadas/planeadas.
 Con la rutina PPL actual, el objetivo es cinco. Si cambias tu calendario, la barra
