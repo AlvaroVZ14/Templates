@@ -20,5 +20,6 @@ import './quick-register.css';
 import './simple-interface.css';
 import './performance.css';
 import './brand.css';
+import './workout-deck.css';
 
 createRoot(document.getElementById('root')).render(<App />);

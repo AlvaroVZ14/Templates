@@ -1,0 +1,71 @@
+.app-shell[data-page=workout]{max-width:1272px;padding-top:env(safe-area-inset-top);padding-bottom:0}
+.app-shell[data-page=workout] .fast-session{max-width:1200px}
+.app-shell[data-page=workout] .fast-session-heading{margin:0 0 12px;justify-content:flex-start}
+.app-shell[data-page=workout] .fast-session-heading>div{display:flex;align-items:center;gap:8px}
+.app-shell[data-page=workout] .fast-session-heading p{font-size:11px;color:var(--steel);text-transform:uppercase}
+.app-shell[data-page=workout] .fast-session-heading h1{font-family:inherit;font-size:12px;transform:none;text-shadow:none;letter-spacing:1px;padding:0;margin:0;line-height:1.3}
+.fast-session-heading h1::before{content:'·';margin-right:8px;color:var(--blood)}
+.session-segments{display:flex;gap:4px;width:100%;margin-bottom:22px;height:5px}
+.session-segments i{flex:1;min-width:0;background:#343438;border-radius:1px;position:relative;overflow:hidden}
+.session-segments i::after{content:'';position:absolute;inset:0;background:var(--blood);transform:scaleX(0);transform-origin:left;transition:transform 180ms ease}
+.session-segments i.complete::after{transform:scaleX(1)}
+.workout-layout{display:grid;grid-template-columns:210px minmax(0,1fr) 230px;gap:22px;align-items:start}
+.exercise-rail{min-width:0;padding:4px 0}
+.exercise-rail>p{font-size:11px;text-transform:uppercase;color:var(--bone);letter-spacing:1px;margin:0 0 18px}
+.exercise-rail>p>span{display:block;text-transform:none;color:var(--steel);letter-spacing:0;margin-top:6px}
+.exercise-rail button{display:flex;align-items:center;gap:10px;width:100%;min-height:68px;padding:12px 10px;text-align:left;clip-path:none;border:0;border-left:2px solid transparent;border-bottom:1px solid #29292E;background:transparent;color:var(--steel);font-size:12px;letter-spacing:0;text-transform:none;box-shadow:none}
+.exercise-rail button[aria-current=step]{border-left-color:var(--blood);background:#E106000F;color:var(--bone)}
+.exercise-rail button small{display:block;margin-top:5px;font-size:10px;color:var(--steel)}
+.rail-index{font-family:Anton,Impact,sans-serif;font-size:21px;min-width:24px;color:#68666A}
+.exercise-rail button[aria-current=step] .rail-index{color:var(--blood)}
+.exercise-rail .rail-index.done,.exercise-pills .done{color:#86A58C}
+.workout-focus{min-width:0;border:1px solid #3C3031;border-top:3px solid var(--blood);background:var(--panel);padding:22px 0 0;overflow:hidden}
+.exercise-focus-heading{padding:0 22px}
+.exercise-focus-heading>span{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--steel)}
+.exercise-focus-heading>div{display:flex;align-items:center;gap:8px;margin-top:10px;min-height:80px}
+.exercise-focus-heading h2{flex:1;font-family:Anton,Impact,sans-serif;text-transform:uppercase;font-size:clamp(26px,2.5vw,36px);font-weight:400;line-height:1.18;margin:0;letter-spacing:.4px;text-shadow:none;transform:none;padding:0;min-width:0}
+.exercise-focus-heading button{flex:none;width:28px;min-height:44px;padding:0;border:0;background:transparent;color:var(--steel);font-size:34px;clip-path:none;box-shadow:none}
+.exercise-focus-heading button:disabled{opacity:.2}
+.exercise-pills{display:flex;gap:6px;padding:16px 22px 22px;justify-content:center}
+.exercise-pills button{width:32px;min-height:30px;padding:0;background:transparent;border:1px solid #3A3A40;border-radius:18px;clip-path:none;color:var(--steel);font-size:10px;font-weight:700;letter-spacing:0;box-shadow:none}
+.exercise-pills button[aria-current=step]{background:var(--blood);border-color:var(--blood);color:var(--bone)}
+.app-shell[data-page=workout] .session-list.exercise-track{display:flex;gap:0;overflow-x:auto;overflow-y:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;min-height:350px;max-height:65dvh;margin:0;align-items:stretch}
+.exercise-track::-webkit-scrollbar{display:none}
+.exercise-track>.workout-exercise{flex:0 0 100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;border:0;background:transparent;min-width:0}
+.exercise-track>.workout-exercise>summary{display:none}
+.exercise-track .fast-exercise{padding:0 22px 26px}
+.exercise-track .fast-target{font-size:11px;margin-bottom:10px}
+.exercise-track .fast-warmup{white-space:normal!important;margin-bottom:8px!important}
+.exercise-track .fast-set-line{height:44px;grid-template-columns:minmax(64px,1fr) minmax(64px,1fr) minmax(44px,.8fr) 44px}
+.exercise-track .fast-series{margin-top:18px}
+.exercise-track .number-stepper{top:43px}
+.exercise-swipe-hint{color:#8E8885;text-align:center;font-size:10px;padding:12px;margin:0;border-top:1px solid #2D2D32}
+.workout-insights{display:grid;gap:14px;min-width:0}
+.workout-insights>section,.workout-rest{background:var(--panel);border:1px solid #303036;padding:20px}
+.workout-insights>section>span{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--steel);display:block;margin-bottom:14px}
+.workout-insights>section>strong{font-family:Anton,Impact,sans-serif;font-size:38px;line-height:1.2;font-weight:400;display:block;color:var(--bone)}
+.workout-insights>section>small{display:block;color:var(--steel);font-size:11px;margin-top:10px;line-height:1.5}
+.workout-prescription>strong{color:var(--blood)!important}
+.workout-prescription>strong small{font:12px sans-serif;color:var(--steel)}
+.workout-prescription p{font-size:12px;color:var(--bone)}
+.app-shell[data-page=workout] .workout-rest .timer-bar{position:relative;inset:auto;display:flex;flex-wrap:wrap;height:auto;min-height:120px;background:none;padding:0;border:0;max-width:none;gap:12px}
+.app-shell[data-page=workout] .workout-rest .timer-bar>div:not(.timer-strip){flex-basis:70%}
+.app-shell[data-page=workout] .workout-rest .timer-bar>b{font-family:Anton,Impact,sans-serif;font-size:42px;font-weight:400;order:2;flex-basis:100%}
+.app-shell[data-page=workout] .workout-rest .timer-strip{top:auto;bottom:0;height:3px}
+.app-shell[data-page=workout] .workout-rest .timer-bar>button{margin-left:auto}
+@media(min-width:1000px){.exercise-track>.workout-exercise[data-active=false]{display:none}.exercise-track>.workout-exercise[data-active=true]{display:block}.app-shell[data-page=workout] main{padding-bottom:24px}}
+@media(max-width:999px){
+ .app-shell[data-page=workout]{padding-inline:16px}
+ .workout-layout{display:block}.exercise-rail{display:none}.workout-insights{display:contents}.workout-insights>section{display:none}.workout-rest{padding:0;border:0}
+ .app-shell[data-page=workout] .workout-rest .timer-bar{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:20;display:flex;flex-wrap:nowrap;min-height:52px;height:calc(52px + env(safe-area-inset-bottom));padding:6px 16px calc(6px + env(safe-area-inset-bottom));background:#16161AF5;border-top:1px solid #333338;gap:10px}
+ .app-shell[data-page=workout] .workout-rest .timer-bar>b{order:0;flex-basis:auto;font-size:26px}
+ .app-shell[data-page=workout] .workout-rest .timer-bar>div:not(.timer-strip){flex:1}
+ .app-shell[data-page=workout] .workout-rest .timer-strip{top:0;bottom:auto}
+ .workout-focus{min-height:calc(100dvh - 172px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding-top:20px;display:flex;flex-direction:column}
+ .exercise-focus-heading{padding:0 14px}.exercise-focus-heading>div{min-height:72px}.exercise-focus-heading h2{font-size:30px}
+ .exercise-pills{padding:12px 14px 20px;gap:8px}.exercise-pills button{width:32px;min-height:28px}
+ .app-shell[data-page=workout] .session-list.exercise-track{min-height:270px;max-height:none;flex:1}
+ .exercise-track .fast-exercise{padding:0 14px 24px}.exercise-swipe-hint{padding:12px}
+ .session-segments{margin-bottom:16px;gap:3px}.app-shell[data-page=workout] .fast-session-heading{margin-bottom:10px}
+}
+@media(prefers-reduced-motion:reduce){.session-segments i::after{transition:none}}
