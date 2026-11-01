@@ -8,6 +8,13 @@ El repositorio conserva el nombre **Templates**.
 La [revisión de arquitectura](docs/architecture/README.md) documenta la división
 frontend, persistencia local y testing, sus hallazgos y verificaciones.
 
+**Registro actual de pesos:** [tarjetas rápidas y confirmación con ✓](docs/registro-rapido.md).
+Solo se registran efectivas, con peso y reps de la última sesión, steppers sin
+teclado automático y Drop/RP dentro de la última fila. El calentamiento es una
+indicación sin registro. Las descripciones de pestañas y formularios de preparación
+de etapas anteriores de este README quedan sustituidas por esta interfaz; sus
+datos históricos se conservan.
+
 La [rutina actual completa](docs/ppl-routine.md) contiene los 35 ejercicios, roles,
 rangos y volumen por músculo. Descanso lunes y viernes; PUSH martes, PULL miércoles,
 LEG A jueves, TORSO sábado y LEG B domingo. Cada sesión suma 17 efectivas.

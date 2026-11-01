@@ -103,7 +103,7 @@ export function validateLog(log, exercise, logs) {
   if(log.restRealSeconds!=null&&(!Number.isInteger(log.restRealSeconds)||log.restRealSeconds<0||log.restRealSeconds>86400))return 'El descanso real debe ser de 0 a 86400 segundos, o quedar sin dato.';
   if (!Number.isFinite(log.weight) || log.weight < 0 || log.weight > 1500) return 'Ingresa una carga entre 0 y 1500 kg.';
   if (!Number.isInteger(log.reps) || log.reps < 1 || log.reps > 200) return 'Ingresa entre 1 y 200 repeticiones completas.';
-  if (log.rpe !== undefined && (!Number.isFinite(log.rpe) || log.rpe < 0 || log.rpe > 10)) return 'El RPE debe estar entre 0 y 10.';
+  if (log.rpe != null && (!Number.isFinite(log.rpe) || log.rpe < 0 || log.rpe > 10)) return 'El RPE debe estar entre 0 y 10.';
   if (!Object.hasOwn(KINDS, log.kind)) return 'Tipo de serie no válido.';
   if (['forced', 'negative'].includes(log.kind) && !exercise[log.kind]) return 'Activa esta técnica en el editor del ejercicio.';
   if (EXTENSIONS.includes(log.kind) && !logs.some(parent => parent.id === log.parentId && parent.kind === 'effective' && parent.exerciseId === exercise.id && parent.date === log.date)) return 'Registra primero una serie efectiva para vincular la extensión.';

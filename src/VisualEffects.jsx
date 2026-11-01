@@ -47,7 +47,7 @@ export default function ParticleBackground({appearance,page}){
       width=Math.max(1,innerWidth);height=Math.max(1,innerHeight);budget=particleBudget(width,height,devicePixelRatio,coarse,mode==='reduced');lanes=fireLanes(width);density=budget.count;
       element.width=Math.floor(width*budget.ratio);element.height=Math.floor(height*budget.ratio);context.setTransform(budget.ratio,0,0,budget.ratio,0,0);particles=[];bursts=[];counts();draw(simulated);
     };
-    const focus=()=>{registering=Boolean(document.activeElement?.closest('.set-form,.suggested-set,.work-reference,.preparation-count,.preparation-sheet,.exercise-notes'));element.classList.toggle('is-registering',registering);if(registering){pointer.active=false;bursts=[];}counts();};
+    const focus=()=>{registering=Boolean(document.activeElement?.closest('.fast-exercise,.set-form,.suggested-set,.work-reference,.preparation-count,.preparation-sheet,.exercise-notes'));element.classList.toggle('is-registering',registering);if(registering){pointer.active=false;bursts=[];}counts();};
     const blur=()=>queueMicrotask(focus);
     const move=event=>{if(!event.isPrimary)return;if(registering||event.target.closest?.(excluded)){pointer.active=false;return;}Object.assign(pointer,{x:event.clientX,y:event.clientY,radius:coarse?55:100,active:true});};
     const burst=(x,y,count)=>{if(mode!=='full'||registering)return;bursts.push(...createBurst(x,y,width,height,count));if(!budget.mobile)for(const side of [0,1]){let excess=bursts.filter(p=>p.side===side).length-20;bursts=bursts.filter(p=>p.side!==side||excess--<=0);}if(bursts.length>budget.maxBursts)bursts.splice(0,bursts.length-budget.maxBursts);counts();};
