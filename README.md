@@ -1,5 +1,8 @@
 # BLOOD & GUTS · Registro personal
 
+**Interfaz actual:** [inicio de cuatro elementos y entrenamiento con un ejercicio abierto](docs/interfaz-simple.md).
+Todo lo secundario sigue accesible desde el menú lateral.
+
 PWA mobile-first de fisicoculturismo natural, con estética Blood and Guts y rutina
 **PPL + Torso + Leg**: 85 series efectivas semanales, 0–2 RIR y ejecución controlada.
 Construida con React + Vite. Sin backend, cuentas, analítica ni servicios externos.
