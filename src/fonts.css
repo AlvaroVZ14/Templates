@@ -4,7 +4,7 @@
   src: url('./assets/fonts/Anton-Regular.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -12,7 +12,7 @@
   src: url('./assets/fonts/Barlow-Regular.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -20,5 +20,5 @@
   src: url('./assets/fonts/Barlow-SemiBold.ttf') format('truetype');
   font-style: normal;
   font-weight: 600 900;
-  font-display: swap;
+  font-display: optional;
 }

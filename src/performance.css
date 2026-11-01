@@ -1,0 +1,10 @@
+/* Compositor-only interactions. Continuous decoration belongs to the capped canvas. */
+*,*::before,*::after{animation:none!important;transition-property:transform,opacity!important;transition-duration:160ms!important;transition-timing-function:ease-out!important}
+.nav-drawer[open]{animation:instant-drawer 160ms ease-out!important}
+@keyframes instant-drawer{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+.primary:active:not(:disabled),.fast-confirm:active:not(:disabled){transform:scale(.985)}
+.timer-strip i{width:100%;transform:scaleX(var(--rest-fraction,0));transform-origin:left center;transition:transform 160ms linear!important}
+.fast-set-line{min-height:44px}.workout-exercise>summary{font-variant-numeric:tabular-nums}
+.page-skeleton{min-height:60vh;display:grid;place-items:center;color:var(--steel)}
+.check-photo-inputs img,.check-photo-pair img{content-visibility:auto;contain-intrinsic-size:300px 400px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.nav-drawer[open]{animation:none!important}.primary:active:not(:disabled),.fast-confirm:active:not(:disabled){transform:none!important}}

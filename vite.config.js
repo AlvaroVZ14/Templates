@@ -99,7 +99,9 @@ self.addEventListener('fetch', event => {
   event.respondWith(caches.open(CACHE).then(async cache => {
     // Static public assets have no user-specific variants. Vite preview adds
     // Vary: Origin; module requests carry Origin whereas precache requests don't.
-    const cached = await cache.match(event.request, { ignoreVary: true });
+    const requestUrl = new URL(event.request.url);
+    const rootNavigation = event.request.mode === 'navigate' && requestUrl.pathname === new URL(self.registration.scope).pathname;
+    const cached = await cache.match(rootNavigation ? local('index.html') : event.request, { ignoreVary: true });
     if (cached) return cachedResponse(event.request, cached);
     try { return await fetch(event.request); }
     catch (error) {

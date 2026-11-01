@@ -39,7 +39,7 @@ function StillableImage({src,paused,onError}) {
       context.drawImage(source,0,0,target.width,target.height);setReady(true);
     }catch{onError();}
   }
-  return <><canvas ref={canvas} className="shadow-media" hidden={!paused||!ready}/>{(!paused||!ready)&&<img className="shadow-media" src={src} alt="" style={paused?{visibility:'hidden'}:undefined} onLoad={capture} onError={onError}/>}</>;
+  return <><canvas ref={canvas} className="shadow-media" hidden={!paused||!ready}/>{(!paused||!ready)&&<img loading="lazy" decoding="async" className="shadow-media" src={src} alt="" style={paused?{visibility:'hidden'}:undefined} onLoad={capture} onError={onError}/>}</>;
 }
 
 export function ShadowBackground({appearance,ambient=false}) {

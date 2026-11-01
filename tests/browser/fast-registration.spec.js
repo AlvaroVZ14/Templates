@@ -66,10 +66,47 @@ test('17 toques confirman la sesión; un solo botón termina y conserva históri
  const state=await stateOf(page);expect(state.logs.filter(log=>log.date===date&&log.kind==='effective')).toHaveLength(17);expect(state.logs.filter(log=>log.date==='2026-10-27')).toHaveLength(17);expect(state.sessionMeta[date].endedAt).toBeTruthy();expect(state.gymSession).toBeNull();
 });
 test('fallo transaccional no confirma en falso, conserva valores y permite reintentar',async({page})=>{
- await seed(page);await page.evaluate(()=>{const original=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.name==='sessions'){IDBObjectStore.prototype.put=original;throw new DOMException('Fictitious quota','QuotaExceededError');}return original.apply(this,args);};});
+ await seed(page);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
+ const worker=page.workers().find(item=>item.url().includes('series-persistence.worker'));
+ await worker.evaluate(()=>{const original=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.name==='sessions'){IDBObjectStore.prototype.put=original;throw new DOMException('Fictitious quota','QuotaExceededError');}return original.apply(this,args);};});
  const ex='Press inclinado mancuernas',c=card(page,ex);await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();await expect(c.locator('.fast-error')).toContainText('No se pudo guardar');await expect(c.locator('.confirmed')).toHaveCount(0);expect((await stateOf(page)).logs.filter(log=>log.date===date)).toHaveLength(0);await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(1);
 });
 test('Empezar activa gimnasio y Wake Lock, salir lo libera y volver recupera sin formularios',async({page})=>{
  await page.addInitScript(()=>{window.wakeRequests=0;window.wakeReleases=0;Object.defineProperty(navigator,'wakeLock',{configurable:true,value:{request:async()=>{window.wakeRequests++;return {released:false,addEventListener(){},removeEventListener(){},async release(){this.released=true;window.wakeReleases++;}};}}});});
  await seed(page);expect(await page.evaluate(()=>window.wakeRequests)).toBe(1);await card(page,'Press inclinado mancuernas').getByRole('button',{name:'Confirmar Press inclinado mancuernas, serie 1',exact:true}).click();await expect(page.locator('.app-shell')).toHaveClass(/gym-active/);await expect.poll(()=>page.evaluate(()=>window.wakeRequests)).toBe(1);await go(page,'Ajustes');await expect.poll(()=>page.evaluate(()=>window.wakeReleases)).toBe(1);await go(page,'Hoy');await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();await expect(card(page,'Press inclinado mancuernas').locator('.confirmed')).toHaveCount(1);await expect.poll(()=>page.evaluate(()=>window.wakeRequests)).toBe(2);
+});
+
+test('confirmación optimista offline, haptics y recarga antes del commit sin duplicados',async({page,context})=>{
+ await page.addInitScript(()=>{window.vibrations=[];navigator.vibrate=value=>{window.vibrations.push(value);return true;};});
+ await seed(page);await page.evaluate(()=>navigator.serviceWorker.ready);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
+ const worker=page.workers().find(item=>item.url().includes('series-persistence.worker'));
+ await worker.evaluate(()=>{const original=self.onmessage;self.onmessage=event=>setTimeout(()=>original(event),5000);});
+ await context.setOffline(true);const ex='Press inclinado mancuernas',c=card(page,ex);
+ await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(1);
+ expect((await stateOf(page)).logs.filter(log=>log.date===date)).toHaveLength(0);
+ await c.getByRole('button',{name:`Confirmar ${ex}, serie 2`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(2);
+ expect(await page.evaluate(()=>window.vibrations.filter(value=>value===20).length)).toBe(2);
+ await page.reload();await expect(card(page,ex).locator('.confirmed')).toHaveCount(2);
+ await expect.poll(async()=>(await stateOf(page)).logs.filter(log=>log.date===date&&log.kind==='effective').length).toBe(2);
+ await page.reload();await expect(card(page,ex).locator('.confirmed')).toHaveCount(2);expect((await stateOf(page)).logs.filter(log=>log.date===date&&log.kind==='effective')).toHaveLength(2);
+});
+
+test('solo se repintan la fila confirmada y la siguiente habilitada, sin toda la lista',async({page})=>{
+ await page.addInitScript(()=>{window.rowRenders=[];window.panelRenders=[];window.__BG_PERF__={rowRender:value=>window.rowRenders.push(value),panelRender:value=>window.panelRenders.push(value)};});
+ await seed(page);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
+ await page.evaluate(()=>{window.rowRenders=[];window.panelRenders=[];});
+ const ex='Press inclinado mancuernas';await card(page,ex).getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
+ const rows=await page.evaluate(()=>[...new Set(window.rowRenders)]);expect(rows.sort()).toEqual([`${ex}, serie 1`,`${ex}, serie 2`]);
+ expect(await page.evaluate(()=>new Set(window.panelRenders).size)).toBe(1);
+});
+
+test('sin Worker también confirma y persiste localmente sin bloquear el registro',async({page})=>{
+ await page.addInitScript(()=>Object.defineProperty(window,'Worker',{configurable:true,value:undefined}));
+ await seed(page);const ex='Press inclinado mancuernas';await card(page,ex).getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();
+ await expect(card(page,ex).locator('.confirmed')).toHaveCount(1);
+ await expect.poll(async()=>(await stateOf(page)).logs.filter(log=>log.date===date&&log.kind==='effective').length).toBe(1);
+ await page.reload();await expect(card(page,ex).locator('.confirmed')).toHaveCount(1);
+ await page.emulateMedia({reducedMotion:'reduce'});await page.getByRole('button',{name:'Abrir menú',exact:true}).click();
+ expect(await page.locator('.nav-drawer').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
 });

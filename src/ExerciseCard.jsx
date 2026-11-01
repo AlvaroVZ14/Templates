@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState} from 'react';
+import {memo,useCallback,useEffect,useRef,useState} from 'react';
 import {useFormDraft} from './drafts.jsx';
 import {localDate} from './domain.js';
 import {shiftDate} from './wellness.js';
@@ -28,29 +28,35 @@ function NumberControl({value,label,onChange,disabled=false,inherited=false,step
   </div>;
 }
 
-export default function ExerciseCard({exercise:ex,index,date,data,logs,change,saving}){
+function ExerciseCard({exercise:ex,index,date,data,logs,change,saving,onConfirm}){
   const draft=useFormDraft(`quick:${date}:${ex.id}`,date);
-  const [edits,setEdits]=useState(draft.initial),[error,setError]=useState(''),[busy,setBusy]=useState(false);
-  const inFlight=useRef(false),effective=logs.filter(log=>log.kind==='effective'),history=previousEffectiveSession(data,ex,date),previous=history[0];
+  const [edits,setEdits]=useState(draft.initial),[error,setError]=useState('');
+  const inFlight=useRef(new Set()),effective=logs.filter(log=>log.kind==='effective'),history=previousEffectiveSession(data,ex,date),previous=history[0];
   const finished=Boolean(data.sessionMeta?.[date]?.endedAt),unit=ex.equipment==='dumbbell'?'kg/mano':ex.weightMode==='added-load'?'kg lastre':'kg';
   const setEdit=(key,value)=>{draft.touch();setEdits(current=>{const next={...current,[key]:value};draft.remember(next);return next;});};
   const value=(key,fallback)=>Object.hasOwn(edits,key)?edits[key]:fallback;
   async function confirm(row,values){
-    if(inFlight.current)return;
-    inFlight.current=true;setBusy(true);setError('');let reason='';
+    if(inFlight.current.has(row))return;
+    inFlight.current.add(row);setError('');
     try{
-      const success=await change(state=>{try{return confirmQuickSet(state,ex,date,row,values);}catch(error){reason=error.message;throw error;}});
-      if(success){const remaining=Object.fromEntries(Object.entries(edits).filter(([key])=>!key.startsWith(`${row}:`)));setEdits(remaining);if(Object.keys(remaining).length)draft.remember(remaining);else draft.clear();}
-      else setError(reason||'No se pudo guardar. Tus valores siguen aquí; vuelve a tocar ✓.');
-    }catch{setError('No se pudo guardar. Tus valores siguen aquí; vuelve a tocar ✓.');}
-    finally{inFlight.current=false;setBusy(false);}
+      const pending=onConfirm?onConfirm(ex,date,row,values):change(state=>confirmQuickSet(state,ex,date,row,values));
+      try{navigator.vibrate?.(20);}catch{/* Optional haptic support. */}
+      if(await pending){setEdits(current=>{const remaining=Object.fromEntries(Object.entries(current).filter(([key])=>!key.startsWith(`${row}:`)));if(Object.keys(remaining).length)draft.remember(remaining);else draft.clear();return remaining;});}
+      else {
+        setError('No se pudo guardar. Tus valores siguen aqu\u00ed; vuelve a tocar \u2713.');
+        setEdits(current=>{const next={...current,[`${row}:weight`]:values.weight,[`${row}:reps`]:values.reps,[`${row}:technique`]:!!values.technique};for(const [part,item] of (values.extensions??[]).entries()){next[`${row}:drop:${part}:weight`]=item.weight;next[`${row}:extra:${part}:reps`]=item.reps;}draft.touch();draft.remember(next);return next;});
+      }
+    }catch(error){setError(error.message||'No se pudo guardar. Revisa los valores.');}
+    finally{inFlight.current.delete(row);}
   }
+  const handlers=useRef({confirm,setEdit});handlers.current={confirm,setEdit};
+  const confirmRow=useCallback((...args)=>handlers.current.confirm(...args),[]),editRow=useCallback((...args)=>handlers.current.setEdit(...args),[]);
   const firstPlan=quickSetValues(data,ex,date,0,logs);
   return <article className={`fast-exercise ${effective.length>=ex.sets?'fast-complete':''}`} aria-label={ex.name}>
     <header className="fast-exercise-heading"><span className="fast-index">{String(index+1).padStart(2,'0')}</span><h2>{ex.name}</h2><small>{effective.length}/{ex.sets}</small></header>
     {ex.loadType==='heavy'&&<p className="fast-warmup">Calentamiento: 1–2 progresivas + 1 de ajuste (no se registra)</p>}
     <p className="fast-target">{firstPlan.repMin}–{firstPlan.repMax} reps · {ex.deload?'descarga, lejos del fallo':'0–2 RIR'} · {previous?`${previousLabel(previous.date,localDate())} ${display(previous.weight)}×${previous.reps}`:'Sin historial: toca el peso'}<span> · {unit}</span></p>
-    <ProgressionControl data={data} ex={ex} date={date} change={change} saving={saving||busy} complete={effective.length===ex.sets}/>
+    <ProgressionControl hideFeedback data={data} ex={ex} date={date} change={change} saving={saving} complete={effective.length===ex.sets}/>
     <ExercisePainNotice data={data} exercise={ex} date={date}/>
     <div className="fast-series" role="group" aria-label={`Series de ${ex.name}`}>
       {Array.from({length:ex.sets},(_,row)=>{
@@ -60,15 +66,28 @@ export default function ExerciseCard({exercise:ex,index,date,data,logs,change,sa
         const selected=stored?extensions.length>0:Boolean(value(`${row}:technique`,false)),count=kind==='drop'?(ex.dropCount??1):(ex.rpCount??2);
         const past=history[row],previousExtensions=past?data.logs.filter(log=>log.parentId===past.id&&log.kind===kind):[];
         const techniqueValues=Array.from({length:count},(_,part)=>({weight:kind==='rp'?weight:value(`${row}:drop:${part}:weight`,dropWeight(ex,weight,part)),reps:value(`${row}:extra:${part}:reps`,previousExtensions[part]?.reps??(kind==='rp'?4:null))}));
-        const disabled=saving||busy||finished||!!stored,rowLabel=`${ex.name}, serie ${row+1}`;
-        return <div className={`fast-set ${stored?'confirmed':''}`} key={row} data-series={row+1}>
+        const disabled=saving||finished||!!stored,rowLabel=`${ex.name}, serie ${row+1}`;
+        const model={row,rowLabel,kind,selected,disabled,stored:!!stored,role:suggestion.role,weight,reps,count,canConfirm:row===effective.length,extensions:extensions.map(log=>({weight:log.weight,reps:log.reps})),techniqueValues,inheritedWeight:!Object.hasOwn(edits,`${row}:weight`),inheritedReps:!Object.hasOwn(edits,`${row}:reps`)};
+        return <SeriesRow key={row} model={model} confirm={confirmRow} setEdit={editRow}/>;
+      })}
+    </div>
+    <ProgressionControl feedbackOnly data={data} ex={ex} date={date} change={change} saving={saving} complete={effective.length===ex.sets}/>
+    {error&&<p className="fast-error" role="alert">{error}</p>}
+    <FailureSafety data={data} exercise={ex} enabled={ex.loadType==='heavy'} change={change} saving={saving} compact/>
+  </article>;
+}
+
+const SeriesRow=memo(function SeriesRow({model,confirm,setEdit}){
+  const {row,rowLabel,kind,selected,disabled,stored,role,weight,reps,count,canConfirm,extensions,techniqueValues,inheritedWeight,inheritedReps}=model;
+  globalThis.__BG_PERF__?.rowRender?.(rowLabel);
+  return <div className={`fast-set ${stored?'confirmed':''}`} data-series={row+1}>
           <div className="fast-set-line">
-            <div className="fast-role">{kind?<button type="button" className="technique-toggle" aria-label={`${kind==='drop'?'Drop':'RP'} en ${rowLabel}`} aria-pressed={selected} disabled={disabled} onClick={()=>setEdit(`${row}:technique`,!selected)}>{kind==='drop'?'Drop':'RP'} <span>{selected?'●':'○'}</span></button>:<span>{roles[suggestion.role]??'Efectiva'}</span>}</div>
-            <NumberControl label={`Peso de ${rowLabel}`} value={weight} step={2.5} inherited={!stored&&!Object.hasOwn(edits,`${row}:weight`)} disabled={disabled} onChange={next=>setEdit(`${row}:weight`,next)}/>
-            <NumberControl label={`Reps de ${rowLabel}`} value={reps} step={1} min={1} max={200} inherited={!stored&&!Object.hasOwn(edits,`${row}:reps`)} disabled={disabled} onChange={next=>setEdit(`${row}:reps`,next)}/>
-            <button type="button" className="fast-confirm" aria-label={`${stored?'Guardada':'Confirmar'} ${rowLabel}`} disabled={disabled||row!==effective.length} onClick={()=>confirm(row,{weight,reps,technique:selected?kind:null,extensions:techniqueValues})}>{stored?'✓':busy&&row===effective.length?'…':'✓'}</button>
+            <div className="fast-role">{kind?<button type="button" className="technique-toggle" aria-label={`${kind==='drop'?'Drop':'RP'} en ${rowLabel}`} aria-pressed={selected} disabled={disabled} onClick={()=>setEdit(`${row}:technique`,!selected)}>{kind==='drop'?'Drop':'RP'} <span>{selected?'●':'○'}</span></button>:<span>{roles[role]??'Efectiva'}</span>}</div>
+            <NumberControl label={`Peso de ${rowLabel}`} value={weight} step={2.5} inherited={!stored&&inheritedWeight} disabled={disabled} onChange={next=>setEdit(`${row}:weight`,next)}/>
+            <NumberControl label={`Reps de ${rowLabel}`} value={reps} step={1} min={1} max={200} inherited={!stored&&inheritedReps} disabled={disabled} onChange={next=>setEdit(`${row}:reps`,next)}/>
+            <button type="button" className="fast-confirm" aria-label={`${stored?'Guardada':'Confirmar'} ${rowLabel}`} disabled={disabled||!canConfirm} onClick={()=>confirm(row,{weight,reps,technique:selected?kind:null,extensions:techniqueValues})}>{stored?'✓':'✓'}</button>
           </div>
-          {suggestion.role==='light'&&!stored&&<small className="fast-row-hint">Ligera · 12–15 reps{weight==null?' · elige carga':''}</small>}
+          {role==='light'&&!stored&&<small className="fast-row-hint">Ligera · 12–15 reps{weight==null?' · elige carga':''}</small>}
           {selected&&kind&&<div className="fast-technique" aria-label={`Detalle ${kind} de ${rowLabel}`}>
             <small>{kind==='drop'?'−30% · caída':'RP · 15–20 s'}</small>
             {Array.from({length:count},(_,part)=><div className="fast-mini" key={part}>
@@ -77,9 +96,17 @@ export default function ExerciseCard({exercise:ex,index,date,data,logs,change,sa
             </div>)}
           </div>}
         </div>;
-      })}
-    </div>
-    {error&&<p className="fast-error" role="alert">{error}</p>}
-    <FailureSafety data={data} exercise={ex} enabled={ex.loadType==='heavy'} change={change} saving={saving} compact/>
-  </article>;
+},(previous,next)=>JSON.stringify(previous.model)===JSON.stringify(next.model));
+const same=(a,b)=>a===b||JSON.stringify(a)===JSON.stringify(b);
+const visibleExercise=({approaches,preparationSteps,preparationReason,automaticApproaches,preparationWarning,...exercise})=>exercise;
+export function equalExerciseView(a,b){
+  const ex=a.exercise;if(a.date!==b.date||a.index!==b.index||a.saving!==b.saving||!same(visibleExercise(ex),visibleExercise(b.exercise))||!same(a.logs,b.logs))return false;
+  const before=a.data,after=b.data;
+  if(before.sessionMeta?.[a.date]?.endedAt!==after.sessionMeta?.[b.date]?.endedAt)return false;
+  if(!same(before.profiles[ex.profileId],after.profiles[ex.profileId]))return false;
+  for(const key of ['journal','safetySettings','deloads'])if(!same(before[key],after[key]))return false;
+  for(const key of ['exerciseFeedback','progressionDecisions'])if(!same((before[key]??[]).filter(row=>row.exerciseId===ex.id),(after[key]??[]).filter(row=>row.exerciseId===ex.id)))return false;
+  const past=before.logs.filter(row=>row.date<a.date&&row.profileId===ex.profileId),nextPast=after.logs.filter(row=>row.date<b.date&&row.profileId===ex.profileId);
+  return past.length===nextPast.length&&past.every((row,index)=>same(row,nextPast[index]));
 }
+export default memo(ExerciseCard,equalExerciseView);
