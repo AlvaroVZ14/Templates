@@ -1,0 +1,41 @@
+.exercise-track .fast-series{display:grid;grid-template-columns:repeat(var(--series-count),minmax(0,1fr));gap:10px;margin-top:16px;align-items:start}
+.exercise-track .series-card{border:1px solid #3C3C42;background:#1B1B20;padding:10px 8px 12px;min-width:0;border-radius:4px;isolation:isolate}
+.exercise-track .series-card.active{border-color:var(--blood);box-shadow:0 0 16px #E1060024}
+.exercise-track .series-card.confirmed{background:#151519;border-color:#303435}
+.exercise-track .series-card.confirmed .series-metric{opacity:.6}
+.exercise-track .series-card .fast-set-line{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-content:start;gap:6px 4px;height:auto;min-height:160px;position:static}
+.exercise-track .series-card .fast-role{grid-column:1/-1;width:100%;display:flex;align-items:center;justify-content:space-between;gap:3px;min-height:24px;font-size:8px;color:var(--steel)}
+.series-card .fast-role>small{font-size:10px;letter-spacing:1px}
+.exercise-track .series-card .technique-toggle{font-size:9px;min-height:30px;height:30px}
+.series-metric{width:100%;text-align:center;min-width:0}
+.series-metric>small{display:block;font-size:9px;letter-spacing:1px;color:var(--steel);margin-top:-2px}
+.app-shell[data-page=workout] .series-metric .number-value{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:clamp(24px,2vw,30px);height:42px;min-height:42px;line-height:1;padding:0;width:100%;text-shadow:none}
+.app-shell[data-page=workout] .series-card .fast-confirm{position:relative;grid-column:1/-1;justify-self:center;width:48px;height:48px;min-height:48px;border-radius:50%!important;font-size:24px;margin-top:10px;background:#202024;border:1px solid #48484E;box-shadow:none;clip-path:none;flex:none;overflow:visible}
+.app-shell[data-page=workout] .series-card.active .fast-confirm{border-color:var(--blood);background:#E106001C;color:var(--bone)}
+.app-shell[data-page=workout] .series-card.confirmed .fast-confirm{color:#86A58C;border-color:#45624B;background:#202A23}
+.app-shell[data-page=workout] .series-card .fast-confirm::after{content:'';position:absolute;inset:-2px;border:2px solid var(--blood);border-radius:50%;opacity:0;pointer-events:none}
+.app-shell[data-page=workout] .series-card.check-pulse .fast-confirm::after{animation:series-check-ring 200ms ease-out!important}
+.app-shell[data-page=workout] .series-card.check-pulse .fast-confirm{animation:series-check-tap 200ms ease-out!important}
+@keyframes series-check-ring{from{opacity:.9;transform:scale(.85)}to{opacity:0;transform:scale(1.4)}}
+@keyframes series-check-tap{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.exercise-track .series-card:focus-within{z-index:8}
+.exercise-track .series-card .number-stepper{top:48px;left:4px;right:4px;padding:6px;gap:4px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));box-shadow:0 6px 18px #000B;min-width:0}
+.exercise-track .series-card .number-stepper button{min-width:0;min-height:44px;padding:0 2px;font-size:11px;letter-spacing:0}
+.series-card .number-stepper strong{text-align:center;font-size:12px;align-self:center}
+.series-card .number-stepper .stepper-keyboard{grid-column:1/3}
+.series-card .number-stepper input{grid-column:1/-1;min-width:0;width:100%}
+.exercise-track .series-card .fast-technique{border:0;border-top:1px solid #44444A;margin-top:6px;padding:8px 0 0;display:flex;gap:6px;flex-direction:column;align-items:center}
+.exercise-track .series-card .fast-mini{position:relative;flex-wrap:wrap;justify-content:center}
+.series-card .fast-mini .number-stepper{top:30px;left:-10px;right:-10px}
+.series-guidance{display:flex;align-items:start;gap:4px;margin-top:14px;position:relative}
+.series-guidance>.fast-progression{flex:1;min-width:0;font-size:clamp(8px,2.25vw,10px)}
+.series-guidance .fast-progression>p{padding-right:26px;margin:0;line-height:1.6;white-space:nowrap}
+.series-guidance .fast-progression details[open]{padding-top:6px}
+.series-guidance .failure-safety{flex:none;margin:0!important}
+.series-guidance .safety-info{min-width:28px;min-height:28px;padding:0;display:grid;place-items:center;background:transparent;border:0;color:var(--steel);font-size:17px;clip-path:none;box-shadow:none}
+.safety-tooltip [popover]{width:min(330px,calc(100vw - 32px));padding:20px;border:1px solid var(--blood);background:#16161A;color:var(--bone);box-shadow:0 12px 60px #000B;line-height:1.6;font-size:13px}
+.safety-tooltip [popover]::backdrop{background:#0005}
+.safety-tooltip [popover] p{font-size:13px!important}
+.safety-tooltip [popover] button{min-height:44px;font-size:12px;white-space:normal}
+@media(max-width:999px){.exercise-track>.workout-exercise[data-active=false]{height:0;overflow:hidden}.exercise-track .fast-series{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.app-shell[data-page=workout] .series-metric .number-value{font-size:34px}.exercise-track .series-card .fast-role{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.app-shell[data-page=workout] .series-card.check-pulse .fast-confirm,.app-shell[data-page=workout] .series-card.check-pulse .fast-confirm::after{animation:none!important}}

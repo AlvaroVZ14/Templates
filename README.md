@@ -1252,3 +1252,5 @@ En `npm run dev`, el botón explica que Vite actualiza los cambios al guardar.
 [Rendimiento móvil: cambios, mediciones y pruebas](docs/rendimiento.md).
 
 [Pantalla de entrenamiento horizontal: diseño móvil y escritorio](docs/design/entrenamiento-horizontal.md).
+
+[Tarjetas de series: controles, estados y seguridad](docs/design/series-tarjetas.md).
