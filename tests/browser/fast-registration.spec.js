@@ -5,7 +5,7 @@ import {go,openExercise} from './navigation-helpers.js';
 
 const date='2026-11-03',now='2026-11-03T18:00:00Z';
 const card=(page,name)=>page.getByRole('article',{name,exact:true});
-async function stateOf(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});try{return await new Promise(resolve=>{const req=db.transaction('app').objectStore('app').get('state');req.onsuccess=()=>resolve(req.result);});}finally{db.close();}});}
+async function stateOf(page,committed=true){if(committed)await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});try{return await new Promise(resolve=>{const req=db.transaction('app').objectStore('app').get('state');req.onsuccess=()=>resolve(req.result);});}finally{db.close();}});}
 async function seed(page,{history=true,qualified=false}={}){
  await page.clock.install({time:new Date(now)});page.on('dialog',dialog=>dialog.accept());
  let state=initialState();state.weightSetup={reviewedAt:now};state.navigationSettings={drawerSide:'right',lastSession:date};state.appearanceSettings={...state.appearanceSettings,effects:'off'};
@@ -83,7 +83,7 @@ test('confirmación optimista offline, haptics y recarga antes del commit sin du
  await worker.evaluate(()=>{const original=self.onmessage;self.onmessage=event=>setTimeout(()=>original(event),5000);});
  await context.setOffline(true);const ex='Press inclinado mancuernas',c=card(page,ex);
  await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(1);
- expect((await stateOf(page)).logs.filter(log=>log.date===date)).toHaveLength(0);
+ expect((await stateOf(page,false)).logs.filter(log=>log.date===date)).toHaveLength(0);
  await c.getByRole('button',{name:`Confirmar ${ex}, serie 2`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(2);
  expect(await page.evaluate(()=>window.vibrations.filter(value=>value===20).length)).toBe(2);
  await page.reload();await expect(card(page,ex).locator('.confirmed')).toHaveCount(2);
