@@ -24,13 +24,13 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
   try{
     await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});
     await seedLegacyOrigin(page,`http://127.0.0.1:${server.address().port}/Templates/`);await page.goto(`http://127.0.0.1:${server.address().port}/Templates/`);
-    await expect(page.locator('.fast-session-heading h1')).toContainText('Pecho');
+    await expect(page.locator('.simple-home h1')).toContainText('Pecho');
     await page.evaluate(async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));});
     await editNumber(page,'Press banca',100);
     await editNumber(page,'Press banca',9,{field:'Reps'});
     await go(page,'Rutina');await page.getByRole('button',{name:'Lun',exact:true}).click();await page.locator('.editor-card').first().getByRole('button').first().click();
     await page.getByLabel('Nombre del ejercicio',{exact:true}).fill('Press de prueba ficticio');
-    const peer=await context.newPage();await peer.goto(page.url());await peer.evaluate(()=>{window.auditMarker='formulario abierto';});
+    const peer=await context.newPage();peer.on('dialog',dialog=>dialog.accept());await peer.goto(page.url());await go(peer,'Ajustes');await peer.evaluate(()=>{window.auditMarker='formulario abierto';});
     version=2;await page.evaluate(async()=>{const reg=await navigator.serviceWorker.ready;await reg.update();});
     const update=page.getByRole('button',{name:'Hay una versión nueva, tocar para actualizar',exact:true});await expect(update).toBeVisible();
     expect(await page.evaluate(async()=>Boolean((await navigator.serviceWorker.getRegistration()).waiting))).toBe(true);
@@ -52,12 +52,12 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
 
 test('medianoche chilena actualiza hoy sin mover ni perder la sesión abierta',async({page})=>{
   await page.clock.install({time:new Date('2026-10-16T02:59:30Z')});await page.goto('./');
-  await expect(page.getByRole('heading',{name:'Hombro + Brazo',exact:true})).toBeVisible();
+  await expect(page.locator('.simple-home h1')).toContainText('Hombro + Brazo');
   await editNumber(page,'Press militar mancuernas',20);
   await page.clock.fastForward(65000);
   await expect(page.getByText('Estás viendo la sesión del 2026-10-15. Hoy en Chile: 2026-10-16.',{exact:true})).toBeVisible();
   await expectNumber(page,'Press militar mancuernas',20);
-  await page.getByRole('button',{name:'Ir a hoy',exact:true}).click();await expect(page.getByRole('heading',{name:'Pierna',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Ir a hoy',exact:true}).click();await expect(page.locator('.simple-home h1')).toContainText('Pierna');
 });
 
 test('sin historial, pesos, alimentos ni rutina: todas las secciones abren sin errores y conservan vacíos',async({page})=>{
@@ -65,7 +65,7 @@ test('sin historial, pesos, alimentos ni rutina: todas las secciones abren sin e
   // Start from a real initialized database, then clear only this isolated test profile.
   await chooseDate(page,'2026-10-12');
   await page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction([...db.objectStoreNames],'readwrite'),app=tx.objectStore('app'),req=app.get('state');req.onsuccess=()=>{const state=req.result;state.routine=Array.from({length:7},()=>[]);state.profiles={};state.logs=[];state.foods=[];state.phases=[];state.journal={};state.measurements=[];state.cardio=[];state.trainingDrafts={};app.put(state,'state');for(const name of ['sessions','cardio','journal','measurements','phases'])tx.objectStore(name).clear();};tx.oncomplete=()=>{db.close();resolve();};});});
-  await page.reload();await expect(page.getByRole('heading',{name:'Descanso',exact:true})).toBeVisible();
+  await page.reload();await expect(page.locator('.simple-home h1')).toContainText('Descanso');
   for(const section of ['Historial','Medidas','Diario','Comida','Progreso','Método','Ajustes','Configurar pesos','Rutina','Hoy'])await go(page,section);
   await go(page,'Comida');await expect(page.getByText('No hay alimentos en la base.',{exact:false})).toBeVisible();
   expect(errors).toEqual([]);await page.screenshot({path:'test-results/audit-empty-mobile.png',fullPage:true});

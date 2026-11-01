@@ -1,0 +1,26 @@
+import {test,expect} from '@playwright/test';
+import {initialState} from '../../src/domain.js';
+import {go,menu,openExercise,chooseDate} from './navigation-helpers.js';
+async function boot(page,date='2026-11-03'){
+ await page.clock.install({time:new Date(`${date}T18:00:00Z`)});page.on('dialog',dialog=>dialog.accept());
+ const state=initialState();for(const ex of state.routine.flat())state.profiles[ex.profileId].workWeight=40;
+ await page.route('**/Templates/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Fictitious test</title>'}));await page.goto('./');await page.evaluate(async state=>{const db=await new Promise(resolve=>{const r=indexedDB.open('heavy-duty-personal',1);r.onupgradeneeded=()=>r.result.createObjectStore('app');r.onsuccess=()=>resolve(r.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);await page.unroute('**/Templates/');await page.reload();await expect(page.locator('.simple-home')).toBeVisible();
+}
+test('inicio exacto con4 elementos, cardio claro, sesiones0/5, sin barra inferior y paleta premium',async({page})=>{
+ await boot(page);await expect(page.locator('.simple-home>h1')).toContainText('martes');await expect(page.locator('.simple-home>h1')).toContainText('PUSH');await expect(page.locator('.simple-home>*')).toHaveCount(4);await expect(page.locator('main input:visible,main select:visible,.fast-exercise')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toHaveCount(0);await expect(page.locator('.home-cardio')).toContainText('12 min');await expect(page.getByLabel('Progreso semanal',{exact:true})).toHaveAttribute('value','0');await expect(page.getByLabel('Progreso semanal',{exact:true})).toHaveAttribute('max','5');
+ for(const width of [320,390,1440]){await page.setViewportSize({width,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await expect(page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true})).toBeInViewport();}
+ expect(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--bg').trim().toUpperCase())).toBe('#0B0B0D');await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/simple-home-mobile.png',fullPage:true});
+});
+test('solo un ejercicio abierto, 17 series conservadas, progreso por ejercicio y recarga offline',async({page,context})=>{
+ await boot(page);await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();await expect(page.locator('.workout-exercise')).toHaveCount(7);await expect(page.locator('.workout-exercise[open]')).toHaveCount(1);await expect(page.locator('.fast-set-line')).toHaveCount(17);await expect(page.getByTestId('ember-field')).toHaveCount(0);await expect(page.getByTestId('side-decor')).toHaveCount(0);await expect(page.locator('.app-shell')).toHaveAttribute('data-effects','off');
+ const first='Press inclinado mancuernas';await page.getByRole('button',{name:`Confirmar ${first}, serie 1`,exact:true}).click();await expect(page.locator('.workout-exercise[open]>summary b')).toHaveText('1/4');await openExercise(page,'Press banca');await expect(page.locator('.workout-exercise[open]')).toHaveCount(1);await expect(page.getByRole('button',{name:'Confirmar Press banca, serie 1',exact:true})).toBeVisible();
+ await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await context.setOffline(true);await page.reload();await expect(page.locator('.workout-exercise[open]>summary')).toContainText('Press banca');await openExercise(page,first);await expect(page.getByRole('button',{name:`Guardada ${first}, serie 1`,exact:true})).toBeVisible();await page.screenshot({path:'test-results/simple-workout-mobile.png',fullPage:true});
+});
+test('todas las funciones secundarias siguen accesibles desde los7 grupos del cajón',async({page})=>{
+ await boot(page);await menu(page);await expect(page.locator('.simple-drawer-links>*')).toHaveCount(7);await page.getByRole('button',{name:'Cerrar menú',exact:true}).click();
+ for(const name of ['Historial','Progreso','Check mensual','Comida','Diario','Medidas','Método','Ajustes','Configurar pesos','Rutina','Zonas con molestias','Cardio y recuperación']){await go(page,name);await expect(page.locator('main')).toBeVisible();await expect(page.locator('.simple-home')).toHaveCount(0);}
+ await go(page,'Hoy');await expect(page.locator('.simple-home')).toBeVisible();await chooseDate(page,'2026-11-04');await expect(page.locator('.fast-session-heading')).toContainText('PULL');
+});
+test('descanso y medianoche se calculan sin mostrar formularios ni permitir empezar un descanso',async({page})=>{
+ await boot(page,'2026-11-02');await expect(page.locator('.simple-home')).toContainText('Descanso');await expect(page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true})).toBeDisabled();await expect(page.locator('.home-cardio')).toContainText('0 min');await page.clock.fastForward(86400000);await expect(page.locator('.simple-home')).toContainText('PUSH');await expect(page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true})).toBeEnabled();
+});

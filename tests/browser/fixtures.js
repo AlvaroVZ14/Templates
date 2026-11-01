@@ -29,6 +29,6 @@ export const test=onboardingTest.extend({page:async({page},use)=>{
 export {expect};
 
 import {go as navigate,chooseDate as selectDate} from './navigation-helpers.js';
-async function extras(page){for(const item of await page.locator('main .today-extra').all()){if(await item.getAttribute('open')===null)await item.locator(':scope > summary').click();}}
-export async function go(page,name){await navigate(page,name);if(name==='Hoy')await extras(page);}
-export async function chooseDate(page,date){await selectDate(page,date);await extras(page);}
+// Existing cardio/recovery scenarios now follow the secondary menu destination.
+export async function go(page,name){await navigate(page,name==='Hoy'?'Cardio y recuperaci\u00f3n':name);}
+export async function chooseDate(page,date){await selectDate(page,date);await navigate(page,'Cardio y recuperaci\u00f3n');}

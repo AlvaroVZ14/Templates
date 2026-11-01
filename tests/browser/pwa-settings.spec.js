@@ -8,11 +8,11 @@ import {resolve,relative,extname} from 'node:path';
 test('navegador sin servicio de actualización conserva la app y explica la limitación',async({page})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.addInitScript(()=>Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:undefined}));
-  await page.goto('./');await expect(page.locator('.fast-session-heading h1')).toBeVisible();
+  await page.goto('./');await expect(page.locator('.simple-home h1')).toBeVisible();
   await go(page,'Ajustes');const panel=page.getByRole('region',{name:'Actualizaciones de la app',exact:true});
   await panel.getByRole('button',{name:'Buscar actualizaciones',exact:true}).click();
   await expect(panel.getByRole('status')).toContainText('Este navegador no permite');
-  await go(page,'Hoy');await expect(page.locator('.session-list')).toBeVisible();expect(errors).toEqual([]);
+  await go(page,'Hoy');await expect(page.locator('.day-options')).toBeVisible();expect(errors).toEqual([]);
 });
 
 test('búsqueda visible, versión instalada, sin cambios, sin red y error recuperable',async({page,context})=>{
@@ -21,7 +21,7 @@ test('búsqueda visible, versión instalada, sin cambios, sin red y error recupe
     const original=ServiceWorkerRegistration.prototype.update;
     ServiceWorkerRegistration.prototype.update=function(){window.manualChecks++;return window.failCheck?Promise.reject(new Error('Error de red ficticio')):original.call(this);};
   });
-  await page.goto('./');await expect(page.locator('.fast-session-heading h1')).toBeVisible();
+  await page.goto('./');await expect(page.locator('.simple-home h1')).toBeVisible();
   await page.evaluate(()=>navigator.serviceWorker.ready);await go(page,'Ajustes');
   const panel=page.getByRole('region',{name:'Actualizaciones de la app',exact:true}),button=panel.getByRole('button',{name:'Buscar actualizaciones',exact:true});
   await expect(panel).toContainText(/Versión instalada: (local-|[0-9a-f]{7})/);

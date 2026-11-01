@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {initialState} from '../../src/domain.js';
 import {saveExerciseFeedback} from '../../src/doubleProgression.js';
-import {go} from './navigation-helpers.js';
+import {go,openExercise} from './navigation-helpers.js';
 
 const date='2026-11-03',now='2026-11-03T18:00:00Z';
 const card=(page,name)=>page.getByRole('article',{name,exact:true});
@@ -14,7 +14,7 @@ async function seed(page,{history=true,qualified=false}={}){
  if(qualified){const ex=state.routine[1][0];state.logs=state.logs.map(row=>row.exerciseId===ex.id?{...row,reps:10,weight:row.setRole==='backoff'?72.5:80}:row);state=saveExerciseFeedback(state,ex,'2026-10-27','strong',true);}
  await page.route('**/Templates/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Fictitious fixture</title>'}));await page.goto('./');
  await page.evaluate(async state=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal',1);req.onupgradeneeded=()=>req.result.createObjectStore('app');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);
- await page.unroute('**/Templates/');await page.reload();await expect(page.locator('.fast-exercise')).toHaveCount(7);
+ await page.unroute('**/Templates/');await page.reload();await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();await expect(page.locator('.fast-exercise')).toHaveCount(7);
 }
 test('progresión visible, sensación al terminar, decisión persistida y consultable sin popups',async({page})=>{
  await seed(page,{qualified:true});const name='Press inclinado mancuernas',c=card(page,name);
@@ -26,7 +26,7 @@ test('progresión visible, sensación al terminar, decisión persistida y consul
  await expect(c.locator('.fast-feedback')).toContainText('Sensación flojo: mantener');
  let state=await stateOf(page);expect(state.exerciseFeedback.at(-1).cleanRir).toBe(true);expect(state.progressionDecisions.at(-1).action).toBe('maintain');expect(state.logs.filter(row=>row.date===date&&row.kind==='effective')[0].weight).toBe(82.5);
  await page.reload();await expect(card(page,name).getByRole('button',{name:'😫 flojo',exact:true})).toHaveAttribute('aria-pressed','true');
- await go(page,'Historial');const decisions=page.locator('details').filter({has:page.locator('summary').filter({hasText:'Decisiones de progresión'})}).first();await decisions.locator('summary').click();await expect(decisions).toContainText('Sugerencia usada');await expect(decisions).toContainText('Registrado: 82,5 kg × 6');await expect(decisions).toContainText('Sensación flojo: mantener');
+ await go(page,'Historial');const decisions=page.locator('.history-page details').filter({has:page.locator('summary').filter({hasText:'Decisiones de progresión'})}).first();await decisions.locator('summary').click();await expect(decisions).toContainText('Sugerencia usada');await expect(decisions).toContainText('Registrado: 82,5 kg × 6');await expect(decisions).toContainText('Sensación flojo: mantener');
 });
 
 test('17 filas de44px, sin formularios ni previas, con tarjetas compactas en móvil y escritorio',async({page})=>{
@@ -50,17 +50,18 @@ test('stepper sin teclado, edición explícita y borrador recuperado',async({pag
  await page.reload();await expect(card(page,ex).getByRole('button',{name:`${label}: 42,5`,exact:true})).toBeVisible();await card(page,ex).getByRole('button',{name:`${label}: 42,5`,exact:true}).click();await card(page,ex).getByRole('button',{name:'Teclado',exact:true}).click();await card(page,ex).getByLabel(`Escribir ${label}`,{exact:true}).fill('55');await card(page,ex).getByRole('button',{name:'Listo',exact:true}).click();await card(page,ex).getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();expect((await stateOf(page)).logs.filter(log=>log.date===date)[0].weight).toBe(55);
 });
 test('Drop y RP están en la última fila, se guardan juntos y no añaden efectivas',async({page})=>{
- await seed(page);const name='Aperturas en polea',c=card(page,name);
+ await seed(page);const name='Aperturas en polea';await openExercise(page,name);const c=card(page,name);
  for(let index=1;index<3;index++){await c.getByRole('button',{name:`Confirmar ${name}, serie ${index}`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(index);}
  await c.getByRole('button',{name:`Drop en ${name}, serie 3`,exact:true}).click();await expect(c.locator('.fast-set-line')).toHaveCount(3);await expect(c.getByRole('button',{name:`Peso caída 1 de ${name}, serie 3: 30`,exact:true})).toBeVisible();
  const reps=`Reps caída 1 de ${name}, serie 3`;await c.getByRole('button',{name:`${reps}: —`,exact:true}).click();await c.getByRole('button',{name:`Sumar 1 a ${reps}`,exact:true}).click();await c.getByRole('button',{name:'Listo',exact:true}).click();await c.getByRole('button',{name:`Confirmar ${name}, serie 3`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(3);
- const lateral='Elevaciones laterales mancuerna',l=card(page,lateral);await l.getByRole('button',{name:`Confirmar ${lateral}, serie 1`,exact:true}).click();await expect(l.locator('.confirmed')).toHaveCount(1);await l.getByRole('button',{name:`RP en ${lateral}, serie 2`,exact:true}).click();await l.getByRole('button',{name:`Confirmar ${lateral}, serie 2`,exact:true}).click();await expect(l.locator('.confirmed')).toHaveCount(2);
+ const lateral='Elevaciones laterales mancuerna';await openExercise(page,lateral);const l=card(page,lateral);await l.getByRole('button',{name:`Confirmar ${lateral}, serie 1`,exact:true}).click();await expect(l.locator('.confirmed')).toHaveCount(1);await l.getByRole('button',{name:`RP en ${lateral}, serie 2`,exact:true}).click();await l.getByRole('button',{name:`Confirmar ${lateral}, serie 2`,exact:true}).click();await expect(l.locator('.confirmed')).toHaveCount(2);
  const state=await stateOf(page),rows=state.logs.filter(log=>log.date===date);expect(rows.filter(log=>log.kind==='effective')).toHaveLength(5);expect(rows.filter(log=>log.kind==='drop')).toHaveLength(1);expect(rows.filter(log=>log.kind==='rp')).toHaveLength(2);expect(rows.filter(log=>log.kind==='drop')[0].weight).toBe(30);expect(state.timer.duration).toBe(105);
  await go(page,'Progreso');await page.locator('.weekly-volume-details summary').click();await expect(page.locator('.volume-row').filter({hasText:'Pecho'}).locator('b')).toHaveText('3');
 });
 test('17 toques confirman la sesión; un solo botón termina y conserva histórico',async({page})=>{
  await seed(page);await expect(page.getByRole('button',{name:'Terminar sesión',exact:true})).toHaveCount(0);
- for(const c of await page.locator('.fast-exercise').all())while(await c.getByRole('button',{name:/^Confirmar /}).count()){const button=c.getByRole('button',{name:/^Confirmar /}).first(),label=await button.getAttribute('aria-label');await button.click();await expect(c.getByRole('button',{name:label,exact:true})).toHaveCount(0);}
+ for(const c of await page.locator('.fast-exercise').all()){await openExercise(page,await c.getAttribute('aria-label'));while(await c.getByRole('button',{name:/^Confirmar /}).count()){const button=c.getByRole('button',{name:/^Confirmar /}).first(),label=await button.getAttribute('aria-label');await button.click();await expect(c.getByRole('button',{name:label,exact:true})).toHaveCount(0);}
+ }
  await expect(page.locator('.fast-set.confirmed')).toHaveCount(17);await expect(page.getByRole('button',{name:'Terminar sesión',exact:true})).toHaveCount(1);await page.getByRole('button',{name:'Terminar sesión',exact:true}).click();await expect(page.getByText('✓ Sesión terminada · todo guardado.',{exact:true})).toBeVisible();
  const state=await stateOf(page);expect(state.logs.filter(log=>log.date===date&&log.kind==='effective')).toHaveLength(17);expect(state.logs.filter(log=>log.date==='2026-10-27')).toHaveLength(17);expect(state.sessionMeta[date].endedAt).toBeTruthy();expect(state.gymSession).toBeNull();
 });
@@ -68,7 +69,7 @@ test('fallo transaccional no confirma en falso, conserva valores y permite reint
  await seed(page);await page.evaluate(()=>{const original=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.name==='sessions'){IDBObjectStore.prototype.put=original;throw new DOMException('Fictitious quota','QuotaExceededError');}return original.apply(this,args);};});
  const ex='Press inclinado mancuernas',c=card(page,ex);await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();await expect(c.locator('.fast-error')).toContainText('No se pudo guardar');await expect(c.locator('.confirmed')).toHaveCount(0);expect((await stateOf(page)).logs.filter(log=>log.date===date)).toHaveLength(0);await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(1);
 });
-test('el primer ✓ activa gimnasio y Wake Lock, salir lo libera y volver recupera sin formularios',async({page})=>{
+test('Empezar activa gimnasio y Wake Lock, salir lo libera y volver recupera sin formularios',async({page})=>{
  await page.addInitScript(()=>{window.wakeRequests=0;window.wakeReleases=0;Object.defineProperty(navigator,'wakeLock',{configurable:true,value:{request:async()=>{window.wakeRequests++;return {released:false,addEventListener(){},removeEventListener(){},async release(){this.released=true;window.wakeReleases++;}};}}});});
- await seed(page);expect(await page.evaluate(()=>window.wakeRequests)).toBe(0);await card(page,'Press inclinado mancuernas').getByRole('button',{name:'Confirmar Press inclinado mancuernas, serie 1',exact:true}).click();await expect(page.locator('.app-shell')).toHaveClass(/gym-active/);await expect.poll(()=>page.evaluate(()=>window.wakeRequests)).toBe(1);await go(page,'Ajustes');await expect.poll(()=>page.evaluate(()=>window.wakeReleases)).toBe(1);await go(page,'Hoy');await expect(card(page,'Press inclinado mancuernas').locator('.confirmed')).toHaveCount(1);await expect.poll(()=>page.evaluate(()=>window.wakeRequests)).toBe(2);
+ await seed(page);expect(await page.evaluate(()=>window.wakeRequests)).toBe(1);await card(page,'Press inclinado mancuernas').getByRole('button',{name:'Confirmar Press inclinado mancuernas, serie 1',exact:true}).click();await expect(page.locator('.app-shell')).toHaveClass(/gym-active/);await expect.poll(()=>page.evaluate(()=>window.wakeRequests)).toBe(1);await go(page,'Ajustes');await expect.poll(()=>page.evaluate(()=>window.wakeReleases)).toBe(1);await go(page,'Hoy');await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();await expect(card(page,'Press inclinado mancuernas').locator('.confirmed')).toHaveCount(1);await expect.poll(()=>page.evaluate(()=>window.wakeRequests)).toBe(2);
 });

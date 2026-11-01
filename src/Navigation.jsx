@@ -36,14 +36,13 @@ export function Drawer({open,onClose,side,data,date,page,navigate}){
   },[open]);
   const closeGesture=useSwipe(direction=>{if(direction===side)onClose();});
   return <dialog ref={dialog} className={`nav-drawer ${side}`} aria-label="Menú de navegación" onCancel={event=>{event.preventDefault();onClose();}} onClick={event=>{if(event.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right)onClose();}}}>
-    <div className="drawer-heading" {...closeGesture}><div><p className="eyebrow">{appearanceFor(data).name}</p><h2>Tu semana</h2></div><button className="icon-button" aria-label="Cerrar menú" onClick={onClose}>×</button></div>
-    <p className="drawer-week">Semana del {weekDates(date)[0].split('-').reverse().join('/')} <span>Desliza el encabezado para cerrar</span></p>
-    <nav aria-label="Sesiones de la semana" className="drawer-sessions">{weekDates(date).map((value,index)=>{
+    <div className="drawer-heading" {...closeGesture}><div><p className="eyebrow">{appearanceFor(data).name}</p><h2>Menú</h2></div><button className="icon-button" aria-label="Cerrar menú" onClick={onClose}>×</button></div>
+    <DrawerSections data={data} page={page} navigate={navigate} sessions={<>    <nav aria-label="Sesiones de la semana" className="drawer-sessions">{weekDates(date).map((value,index)=>{
       const context=dayContext(data,value),rest=!context.exercises.length,today=value===localDate();
-      return <button key={value} className={`${today?'today':''} ${date===value&&page==='today'?'selected':''}`} aria-current={date===value&&page==='today'?'date':undefined} onClick={()=>navigate('today',value)}><span className="drawer-day">{DAYS[index].slice(0,3)}<b>{value.slice(-2)}</b></span><span><strong>{rest?'Descanso':sessionName(context.exercises)}</strong><small>{DAYS[index]}{today?' · Hoy':''}{rest?' · Recuperación':''}</small></span><span aria-hidden="true">{rest?'○':'›'}</span></button>;
+      return <button key={value} className={`${today?'today':''} ${date===value&&page==='workout'?'selected':''}`} aria-current={date===value&&page==='workout'?'date':undefined} onClick={()=>navigate('workout',value)}><span className="drawer-day">{DAYS[index].slice(0,3)}<b>{value.slice(-2)}</b></span><span><strong>{rest?'Descanso':sessionName(context.exercises)}</strong><small>{DAYS[index]}{today?' · Hoy':''}{rest?' · Recuperación':''}</small></span><span aria-hidden="true">{rest?'○':'›'}</span></button>;
     })}</nav>
-    <nav className="drawer-links" aria-label="Secciones">{[['today','Hoy','□'],['weights','Configurar pesos','㎏'],['pain','Zonas con molestias','!'],['history','Historial','◷'],['measurements','Medidas','↔'],['monthly-check','Check mensual','◫'],['diary','Diario','▤'],['volume','Progreso','↗'],['routine','Rutina','✎'],['food','Comida','◉'],['method','Método','◇'],['settings','Ajustes','⚙']].map(([id,label,icon])=><button key={id} aria-current={page===id?'page':undefined} aria-description={id==='monthly-check'&&checkReminder(data.monthlyChecks,localDate()).due?'Check pendiente: han pasado 4 semanas o aún no hay checks.':undefined} onClick={()=>navigate(id)}><span aria-hidden="true">{icon}</span>{label}{id==='monthly-check'&&checkReminder(data.monthlyChecks,localDate()).due&&<i className="check-due-dot" aria-hidden="true" title="Check mensual pendiente"/>}<span aria-hidden="true">›</span></button>)}</nav>
-    <label>Fecha de entrenamiento<input aria-label="Fecha de entrenamiento" type="date" value={date} onChange={event=>{if(event.target.value)navigate('today',event.target.value);}}/></label><SessionNavigation data={data} date={date} setDate={value=>navigate('today',value)}/>
+    <label>Fecha de entrenamiento<input aria-label="Fecha de entrenamiento" type="date" value={date} onChange={event=>{if(event.target.value)navigate('workout',event.target.value);}}/></label><SessionNavigation data={data} date={date} setDate={value=>navigate('workout',value)}/>
+</>}/>
     <p className="drawer-foot">Solo tú. Tu ritmo. Tu progreso.<br/>Datos privados en este dispositivo.</p>
   </dialog>;
 }
@@ -57,6 +56,17 @@ export function SessionNavigation({data,date,setDate}){
     <button className="last-week-button" aria-expanded={compare} onClick={()=>setCompare(!compare)}>◷ Ver la misma sesión de la semana pasada <span>{compare?'−':'+'}</span></button>
     {compare&&<div className="last-week-comparison" aria-label="Comparación con la semana pasada"><h3>{lastDate.split('-').reverse().join('/')} · {sessionName(dayContext(data,date).exercises)}</h3><p className="field-note">Referencia actual frente a las efectivas guardadas la semana pasada. Mancuernas: kg por mano.</p>{past?<><div className="comparison-scroll"><table><thead><tr><th>Ejercicio</th><th>Referencia actual</th><th>Semana pasada</th></tr></thead><tbody>{dayContext(data,date).exercises.map(ex=>{const old=past.exercises.find(item=>item.profileId===ex.profileId&&item.equipment===ex.equipment),sets=old?.sets.filter(item=>item.type==='effective');return <tr key={ex.id}><th>{ex.name}</th><td>{data.profiles[ex.profileId]?.workWeight??'Sin peso'} kg</td><td>{sets?.length?sets.map(item=>`${item.weight} kg × ${item.reps}`).join(' / '):'Sin registro'}</td></tr>;})}</tbody></table></div><button className="secondary" onClick={()=>setDate(lastDate)}>Abrir sesión del {lastDate}</button></>:<p>No hay una sesión guardada ese día. Tus datos actuales siguen intactos.</p>}</div>}
   </section>;
+}
+function DrawerSections({data,page,navigate,sessions}){
+  return <nav className="simple-drawer-links" aria-label="Secciones">
+    <details className="drawer-group"><summary>Ir a otra sesión</summary><button onClick={()=>navigate('today',localDate())}>Hoy</button><button onClick={()=>navigate('workout')}>Abrir sesión seleccionada</button>{sessions}</details>
+    <button aria-current={page==='overview'?'page':undefined} onClick={()=>navigate('overview')}>Historial y progreso <span aria-hidden="true">···</span></button>
+    <button onClick={()=>navigate('monthly-check')}>Check mensual {checkReminder(data.monthlyChecks,localDate()).due&&<i className="check-due-dot" aria-hidden="true"/>}</button>
+    <details className="drawer-group"><summary>Comida y sueño</summary><button onClick={()=>navigate('food')}>Comida</button><button onClick={()=>navigate('diary')}>Sueño y diario</button><button onClick={()=>navigate('day-options')}>Cardio y recuperación</button></details>
+    <button onClick={()=>navigate('measurements')}>Medidas</button>
+    <button onClick={()=>navigate('method')}>Método</button>
+    <details className="drawer-group"><summary>Ajustes</summary><button onClick={()=>navigate('settings')}>Configuración</button><button onClick={()=>navigate('weights')}>Configurar pesos</button><button onClick={()=>navigate('routine')}>Rutina</button><button onClick={()=>navigate('pain')}>Zonas con molestias</button></details>
+  </nav>;
 }
 export function NavigationSettings({data,change,saving}){
   const side=data.navigationSettings?.drawerSide??'right';

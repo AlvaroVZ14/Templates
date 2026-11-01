@@ -4,18 +4,16 @@ async function stored(page){return page.evaluate(async()=>{const db=await new Pr
 async function orientation(page,beta,gamma){await page.evaluate(({beta,gamma})=>{const event=new Event('deviceorientation');Object.assign(event,{beta,gamma});dispatchEvent(event);},{beta,gamma});}
 
 test('fuego solo en márgenes, ráfagas acotadas y menor presupuesto al registrar',async({page})=>{
-  await page.clock.install({time:new Date('2026-10-12T15:00:00Z')});await page.setViewportSize({width:1920,height:1080});await page.goto('./');await expect(page.locator('.fast-session-heading h1')).toBeVisible();const fire=page.getByTestId('ember-field');await expect(fire).toHaveAttribute('data-particles','200');
+  await page.clock.install({time:new Date('2026-10-12T15:00:00Z')});await page.setViewportSize({width:1920,height:1080});await page.goto('./');await go(page,'Ajustes');await expect(page.locator('h1:visible')).toBeVisible();const fire=page.getByTestId('ember-field');await expect(fire).toHaveAttribute('data-particles','200');
   const before=await stored(page);for(let i=0;i<5;i++)await page.mouse.click(120,700);
   await expect.poll(()=>fire.evaluate(el=>Number(el.dataset.bursts))).toBeGreaterThan(0);expect(await fire.evaluate(el=>Number(el.dataset.particles))).toBeLessThanOrEqual(240);expect(await stored(page)).toEqual(before);
   const pixels=await fire.evaluate(el=>{const ctx=el.getContext('2d'),ratio=el.width/innerWidth;return {center:ctx.getImageData(Math.floor(el.width/2),Math.floor(el.height*.9),1,1).data[3],edge:ctx.getImageData(Math.floor(150*ratio),Math.floor((innerHeight-30)*ratio),1,1).data[3]};});expect(pixels.center).toBe(0);expect(pixels.edge).toBeGreaterThan(0);
   await page.screenshot({path:'test-results/p18-fire-desktop.png'});
-  await page.getByRole('button',{name:/^Peso de Press banca, serie 1:/}).click();await expect(fire).toHaveAttribute('data-target-fps','30');await expect(fire).toHaveAttribute('data-bursts','0');expect(await fire.evaluate(el=>Number(el.dataset.particles))).toBeLessThanOrEqual(160);
-  await page.mouse.click(100,650);await expect(fire).toHaveAttribute('data-bursts','0');
-  await page.setViewportSize({width:390,height:844});await expect.poll(()=>fire.evaluate(el=>Number(el.dataset.particles))).toBeLessThanOrEqual(25);expect(await fire.evaluate(el=>getComputedStyle(el).pointerEvents)).toBe('none');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await go(page,'Hoy');await editNumber(page,'Press banca',100);await expect(fire).toHaveCount(0);
 });
 
 test('descanso: hoy, miércoles, domingo, editor y calendario sin días fijos',async({page})=>{
-  test.setTimeout(60000);await page.clock.install({time:new Date('2026-10-14T15:00:00Z')});await page.goto('./');const card=page.getByTestId('rest-card');await expect(card).toContainText('Hoy toca descansar.');await expect(card).toContainText('mañana (jueves): Hombro + Brazo');
+  test.setTimeout(60000);await page.clock.install({time:new Date('2026-10-14T15:00:00Z')});await page.goto('./');await go(page,'Hoy');const card=page.getByTestId('rest-card');await expect(card).toContainText('Hoy toca descansar.');await expect(card).toContainText('mañana (jueves): Hombro + Brazo');
   await chooseDate(page,'2026-10-18');await expect(card).toContainText('Este día es de descanso.');await expect(card).toContainText('mañana (lunes): Pecho + Hombro + Bíceps');
   await chooseDate(page,'2026-10-14');await go(page,'Rutina');await page.getByRole('button',{name:'Jue',exact:true}).click();
   for(let i=0;i<7;i++){await page.locator('.editor-card .exercise-summary').first().click();await page.getByRole('button',{name:'Quitar',exact:true}).click();await page.getByRole('button',{name:'Confirmar',exact:true}).click();}
