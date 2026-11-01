@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {generateSummary,summaryPeriods,SUMMARY_REQUEST} from '../src/summaries.js';
 test('ventanas semanales y mensuales cruzan mes/año y febrero bisiesto sin solaparse',()=>{
  assert.deepEqual(summaryPeriods('weekly','2027-01-03'),[{start:'2026-12-28',end:'2027-01-03'},{start:'2026-12-21',end:'2026-12-27'}]);assert.deepEqual(summaryPeriods('monthly','2024-03-15'),[{start:'2024-03-01',end:'2024-03-15'},{start:'2024-02-01',end:'2024-02-29'}]);

@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {sessionNeighbors,shiftWeek,swipeDirection,incompleteSession} from '../src/navigation.js';
 test('navegación limitada a sesiones de la semana, con descanso y calendario personalizado',()=>{
  const data=initialState();assert.deepEqual(sessionNeighbors(data,'2026-10-13'),{previous:'2026-10-12',next:'2026-10-15'});

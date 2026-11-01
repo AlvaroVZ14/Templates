@@ -1,6 +1,7 @@
 import { shiftDate } from '../wellness.js';
 import { daysBetween, lastWeight, phaseForDate, trend } from './phases.js';
 import {appleCount,fruitProgress} from './fruit.js';
+import {routineForDate} from '../routinePlan.js';
 
 export const MACROS=['kcal','protein','carbs','fat'];
 export const emptyMacros=()=>({kcal:0,protein:0,carbs:0,fat:0});
@@ -8,12 +9,14 @@ export function foodItem(food,quantity){return {food:structuredClone(food),quant
 export function sumItems(items){const sum=items.reduce((sum,item)=>Object.fromEntries(MACROS.map(key=>[key,sum[key]+item.macros[key]])),emptyMacros());const known=items.filter(item=>Number.isFinite(item.macros.fiber));return {...sum,...(known.length?{fiber:known.reduce((sum,item)=>sum+item.macros.fiber,0)}:{})};}
 export function validateFood(food){return !(food.portion>0&&food.portion<=10000&&MACROS.every(key=>Number.isFinite(food[key])&&food[key]>=0&&food[key]<=10000)&&(food.fiber==null||Number.isFinite(food.fiber)&&food.fiber>=0&&food.fiber<=10000))?'Porción mayor que 0 y nutrientes entre 0 y 10000.':null;}
 export function dayContext(state,date){
-  const index=(new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7,override=state.calendar[date];
-  const defaultType=state.routine[index].length===0?'rest':state.routine[index].some(ex=>ex.muscle==='Cuádriceps')?'legs':'weights';
+  const routine=routineForDate(state,date),index=(new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7,savedOverride=state.calendar?.[date];
+  const needsReview=Boolean(savedOverride?.routineNeedsReview&&(!state.routineActivatedOn||date>=state.routineActivatedOn));
+  const override=needsReview?{trainingTime:savedOverride.trainingTime}:savedOverride;
+  const defaultType=routine[index].length===0?'rest':routine[index].some(ex=>ex.muscle==='Cuádriceps')?'legs':'weights';
   const type=override?.type??defaultType;
-  const fallback=state.routine.findIndex(list=>list.length>0&&(type!=='legs'||list.some(ex=>ex.muscle==='Cuádriceps')));
-  const routineDay=override?.routineDay??(state.routine[index].length?index:Math.max(0,fallback));
-  return {type,routineDay,trainingTime:override?.trainingTime??state.programSettings.trainingTime,exercises:type==='rest'?[]:state.routine[routineDay]};
+  const fallback=routine.findIndex(list=>list.length>0&&(type!=='legs'||list.some(ex=>ex.muscle==='Cuádriceps')));
+  const routineDay=override?.routineDay??(routine[index].length?index:Math.max(0,fallback));
+  return {type,routineDay,trainingTime:override?.trainingTime??state.programSettings.trainingTime,exercises:type==='rest'?[]:routine[routineDay],calendarNeedsReview:needsReview};
 }
 export function suggestedTargets(state,date,base=state.baseIntake,ratio=state.programSettings.proteinRatio){
   const phase=phaseForDate(state,date),weight=lastWeight(state,date)?.value;

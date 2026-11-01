@@ -2,6 +2,7 @@ import { shiftDate } from './wellness.js';
 import { chileDate } from './program/state.js';
 import { contextualPreparation } from './preparation.js';
 import { dayContext } from './program/nutrition.js';
+import {effectiveSetPlan} from './routinePlan.js';
 
 const extensions=['drop','rp','forced','negative'];
 const days=(a,b)=>Math.round((Date.parse(`${b}T12:00:00Z`)-Date.parse(`${a}T12:00:00Z`))/86400000);
@@ -17,37 +18,41 @@ export function sessionExercise(state,exercise,date){
   const session=dayContext(state,date).exercises;
   const list=session.some(item=>item.id===base.id)?session:state.routine.find(list=>list.some(item=>item.id===base.id))??[base];
   const completed=new Set(state.logs.filter(log=>log.date===date&&log.kind==='effective').map(log=>log.exerciseId));
-  return {...base,...contextualPreparation(base,list,state.preparationSettings?.minimum??0,completed),normalSets:base.sets,sets:deload?Math.ceil(base.sets/2):base.sets,technique:deload?'':trial?.kind??base.technique,forced:!deload&&base.forced,negative:!deload&&base.negative,deload:!!deload};
+  const sets=deload?Math.ceil(base.sets/2):base.sets;
+  const technique=deload?'':trial?.kind??base.technique;
+  const setPlan=base.setPlan?.map((entry,index)=>({...entry,technique:deload?'':index===base.sets-1?technique:''})).slice(0,sets);
+  return {...base,...contextualPreparation(base,list,state.preparationSettings?.minimum??0,completed),normalSets:base.sets,sets,technique,...(setPlan?{setPlan}:{}),forced:!deload&&base.forced,negative:!deload&&base.negative,deload:!!deload};
 }
 export function sessions(state,ex,date){
   const grouped=new Map();
-  for(const log of state.logs.filter(log=>log.kind==='effective'&&(log.profileId??log.exerciseId)===ex.profileId&&(!log.equipment||log.equipment===ex.equipment)&&log.date<=date&&!log.deload).sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt??'').localeCompare(b.createdAt??''))){
+  for(const log of state.logs.filter(log=>log.kind==='effective'&&!['backoff','light'].includes(log.setRole)&&(log.profileId??log.exerciseId)===ex.profileId&&(!log.equipment||log.equipment===ex.equipment)&&log.date<=date&&!log.deload).sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt??'').localeCompare(b.createdAt??''))){
     if(!grouped.has(log.date))grouped.set(log.date,log);
   }
   return [...grouped.values()];
 }
 export function declining(rows){return rows.length>=3&&rows.slice(-2).every((row,i)=>{const prior=rows[rows.length-3+i];return row.weight<prior.weight||row.reps<prior.reps;});}
 export function progression(state,ex,date){
-  const rows=sessions(state,ex,date),last=rows.at(-1),profile=state.profiles[ex.profileId]??{},max=profile.repMax??12;
+  const rows=sessions(state,ex,date),last=rows.at(-1),profile=state.profiles[ex.profileId]??{},planned=ex.setPlan?.length?effectiveSetPlan(ex,0):null,max=planned?.repMax??profile.repMax??12,min=planned?.repMin??profile.repMin??8;
   if(activeDeload(state,date))return {type:'deload',reason:'Descarga activa: mantener carga, sin progresión ni técnicas. Las preparaciones se mantienen.'};
   if(!last)return {type:'data',reason:'Sin series efectivas comparables. Se usa la primera efectiva de cada fecha, del mismo ejercicio y equipo; no cuentan preparaciones, extensiones ni descargas.'};
   if(declining(rows))return {type:'review',reason:'Dos sesiones seguidas con menos repeticiones o carga en la primera efectiva. Mantén la referencia y revisa ejecución, descanso y recuperación antes de subir.'};
   const used=(state.progressionEvents??[]).some(event=>event.sourceId===last.id&&event.type==='weight');
-  if(last.failure&&last.reps>=max&&!used&&last.weight>0&&days(last.date,date)<=14){
+  const targetEffort=last.failure||!!planned&&typeof last.rpe==='number'&&last.rpe>=8;
+  if(targetEffort&&last.reps>=max&&!used&&last.weight>0&&days(last.date,date)<=14){
     const step=ex.increment,low=Math.ceil((last.weight*1.025-1e-8)/step)*step,high=last.weight*1.05;
-    if(low<=high+1e-8&&low<=1500)return {type:'increase',sourceId:last.id,weight:Number(low.toFixed(3)),reason:`${last.date}: ${last.weight} kg × ${last.reps} al fallo, tope ${max} alcanzado. Regla: subir 2,5–5% con el incremento de ${step} kg; propuesta +${((low/last.weight-1)*100).toFixed(1)}%.`};
+    if(low<=high+1e-8&&low<=1500)return {type:'increase',sourceId:last.id,weight:Number(low.toFixed(3)),reason:`${last.date}: ${last.weight} kg × ${last.reps} ${last.failure?'al fallo':'con RPE ≥8 (guía de 0–2 RIR)'}, tope ${max} alcanzado. Regla: subir 2,5–5% con el incremento de ${step} kg; propuesta +${((low/last.weight-1)*100).toFixed(1)}%.`};
     return {type:'rounding',reason:`Tope ${max} alcanzado al fallo, pero el incremento de ${step} kg no permite subir 2,5–5%. Mantén o ajusta el redondeo en Rutina; no se fuerza un salto mayor.`};
   }
   const window=rows.filter(row=>days(row.date,date)<=28),first=window[0];
   const stalled=window.length>=3&&days(first.date,last.date)>=21&&days(last.date,date)<=7&&!window.some(row=>row.weight>first.weight||row.weight===first.weight&&row.reps>first.reps);
   if(stalled)return {type:'technique',reason:'Al menos tres sesiones registradas cubren 21 días sin superar carga ni repeticiones a igual carga respecto de la primera sesión del período (últimos 28 días). Prueba una sola técnica: drop set o rest-pause; revisa primero recuperación y ejecución.'};
-  return {type:'maintain',reason:`Doble progresión: mantén la carga y avanza dentro de ${profile.repMin??8}–${max} reps. Solo se propone subir al llegar al tope al fallo. ${used?'La propuesta de la última efectiva ya fue aplicada.':'Faltan condiciones para otra recomendación; días sin registros no prueban estancamiento.'}`};
+  return {type:'maintain',reason:`Doble progresión: mantén la carga y avanza dentro de ${min}–${max} reps. Solo se propone subir al llegar al tope ${planned?'con RPE ≥8 o fallo técnico':'al fallo'}. ${used?'La propuesta de la última efectiva ya fue aplicada.':'Faltan condiciones para otra recomendación; días sin registros no prueban estancamiento.'}`};
 }
 export function applyProgression(state,ex,date){
   const advice=progression(state,ex,date);if(advice.type!=='increase')throw new Error('La recomendación de carga ya no está disponible.');
   const profile=state.profiles[ex.profileId],previousWeight=profile.workWeight;
   if(previousWeight!==null&&previousWeight!==sessions(state,ex,date).at(-1).weight)throw new Error('La referencia cambió desde la última efectiva. Registra otra sesión antes de aplicar la propuesta.');
-  return {...state,profiles:{...state.profiles,[ex.profileId]:{...profile,workWeight:advice.weight,targetReps:profile.repMin??8}},progressionEvents:[...state.progressionEvents,{id:crypto.randomUUID(),type:'weight',date,profileId:ex.profileId,sourceId:advice.sourceId,previousWeight,weight:advice.weight,reason:advice.reason,at:new Date().toISOString()}]};
+  return {...state,profiles:{...state.profiles,[ex.profileId]:{...profile,workWeight:advice.weight,targetReps:ex.setPlan?.[0]?.repMin??profile.repMin??8}},progressionEvents:[...state.progressionEvents,{id:crypto.randomUUID(),type:'weight',date,profileId:ex.profileId,sourceId:advice.sourceId,previousWeight,weight:advice.weight,reason:advice.reason,at:new Date().toISOString()}]};
 }
 export function introduceTechnique(state,ex,date,kind){
   if(activeDeload(state,date)||!['drop','rp'].includes(kind))throw new Error('Solo drop set o rest-pause, fuera de descarga.');
@@ -58,6 +63,11 @@ export function introduceTechnique(state,ex,date,kind){
 }
 export function trainingLogError(state,ex,log){
   const current=sessionExercise(state,ex,log.date),same=state.logs.filter(item=>item.date===log.date&&item.exerciseId===ex.id);
+  if(current.setPlan?.length){
+    const effective=same.filter(item=>item.kind==='effective');
+    if(log.kind==='effective'&&effective.length>=current.sets)return 'Ya completaste las series efectivas del plan de este ejercicio.';
+    if(extensions.includes(log.kind)&&(effective.length<current.sets||log.parentId!==effective[current.sets-1]?.id))return 'La técnica se registra solo después de la última serie efectiva y vinculada a ella.';
+  }
   if(['warmup','approach'].includes(log.kind)){
     const reference=state.profiles[ex.profileId]?.workWeight;
     if(!Number.isFinite(reference))return 'Ingresa tu peso de trabajo para registrar las previas.';
@@ -103,11 +113,15 @@ function chileInstant(date,time){
   return result;
 }
 export function muscleRecovery(state,muscle,date,now=new Date()){
-  const logs=state.logs.filter(log=>log.muscle===muscle&&log.kind==='effective'&&log.date<date).sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt??'').localeCompare(b.createdAt??'')),last=logs.at(-1);
-  const today=state.logs.some(log=>log.muscle===muscle&&log.kind==='effective'&&log.date===date);
-  if(!last)return {today,last:null,label:today?'Hoy · esta sesión':'Sin estímulo previo registrado',warning:false};
+  const aliases={Femorales:['Femoral'],Gemelos:['Gemelo'],Aductores:['Aductor'],'Deltoides laterales':['Hombro'],'Deltoides posteriores':['Hombro']};
+  const matches=log=>log.muscle===muscle||(aliases[muscle]??[]).includes(log.muscle);
+  const logs=state.logs.filter(log=>matches(log)&&log.kind==='effective'&&log.date<date).sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt??'').localeCompare(b.createdAt??'')),last=logs.at(-1);
+  const today=state.logs.some(log=>matches(log)&&log.kind==='effective'&&log.date===date);
+  const generalToday=today&&state.logs.some(log=>log.kind==='effective'&&log.date===date&&log.muscle==='Hombro')&&muscle.startsWith('Deltoides');
+  if(!last)return {today,last:null,label:today?`Hoy · esta sesión${generalToday?' · registro general de Hombro; zona concreta no especificada':''}`:'Sin estímulo previo registrado',warning:false};
   const elapsed=days(last.date,date),known=last.performedAt&&chileDate(new Date(last.performedAt))===last.date;
   const at=date===chileDate(now)?now.getTime():chileInstant(date,state.calendar?.[date]?.trainingTime??state.programSettings?.trainingTime??'18:00');
   const hours=known?(at-Date.parse(last.performedAt))/3600000:null;
-  return {today,last:last.date,days:elapsed,hours,label:`${today?'Hoy · esta sesión. Anterior: ':''}${elapsed} días${hours!==null?` (${Math.max(0,hours).toFixed(1)} h)`:' · hora no registrada'}`,warning:hours!==null?hours<48:elapsed<2,uncertain:hours===null&&elapsed===2};
+  const general=last.muscle==='Hombro'&&muscle.startsWith('Deltoides');
+  return {today,last:last.date,days:elapsed,hours,label:`${today?'Hoy · esta sesión. Anterior: ':''}${elapsed} días${hours!==null?` (${Math.max(0,hours).toFixed(1)} h)`:' · hora no registrada'}${general?' · registro previo general de Hombro; zona concreta no especificada':''}`,warning:hours!==null?hours<48:elapsed<2,uncertain:hours===null&&elapsed===2};
 }

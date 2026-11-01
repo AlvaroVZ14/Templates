@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {dayContext} from '../src/program/nutrition.js';
 import {progressReport,performance,captureMonthlyReviews} from '../src/progress.js';
 const date='2026-12-31';

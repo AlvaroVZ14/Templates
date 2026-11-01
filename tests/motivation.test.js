@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {DEFAULT_MOTIVATION,motivationPhrases,saveMotivation,selectMotivation,validateMotivation} from '../src/motivation.js';
 
 test('un banco combinado grande conserva todas las frases y permite editarlas',()=>{

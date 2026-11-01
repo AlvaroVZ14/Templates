@@ -1,5 +1,5 @@
 import {quickTab} from './quick-helpers.js';
-import {test as base} from '@playwright/test';
+import {base} from './fixtures.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
 
 base('apertura de 1,3 s omitible, una vez al día de Chile y sin irrumpir a medianoche',async({page})=>{

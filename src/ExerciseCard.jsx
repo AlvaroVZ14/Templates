@@ -7,19 +7,27 @@ import { trainingLogError } from './training.js';
 import { ProgressionPanel } from './TrainingPanels.jsx';
 import { PreparationCount } from './PreparationControls.jsx';
 import './set-animations.css';
+import './routine-plan.css';
 import {ExercisePainNotice,FailureSafety} from './Pain.jsx';
+import {effectiveSetPlan,effectiveSetSuggestion} from './routinePlan.js';
+
+const setRoleLabel={top:'Top set',backoff:'Back-off',heavy:'Pesada',light:'Ligera',standard:'Efectiva',effective:'Efectiva'};
+const rangeLabel=plan=>`${plan.repMin}–${plan.repMax} reps`;
 
 export default function ExerciseCard({ exercise: ex, index, date, data, logs, expanded, toggle, change, saving, startTimer,gym=false,current=false,next=false }) {
   const draft=useFormDraft(`exercise:${date}:${ex.id}`,date);
   const profile = data.profiles[ex.profileId] ?? { workWeight: null, targetReps: 8, notes: '' };
+  const effective = logs.filter(log => log.kind === 'effective');
+  const plannedSets=Array.isArray(ex.setPlan)&&ex.setPlan.length>0;
+  const initialSuggestion=effectiveSetSuggestion(ex,profile.workWeight,effective.length,logs);
   const [reference, setReference] = useDraftState(draft,'reference',profile.workWeight === null ? '' : String(profile.workWeight));
   const [target, setTarget] = useDraftState(draft,'target',String(profile.targetReps));
   const [kind, setKind] = useDraftState(draft,'kind','effective');
-  const [weight, setWeight] = useDraftState(draft,'weight',profile.workWeight === null ? '' : String(profile.workWeight));
-  const [reps, setReps] = useDraftState(draft,'reps',String(profile.targetReps));
-  const [rpe, setRpe] = useDraftState(draft,'rpe','10');
+  const [weight, setWeight] = useDraftState(draft,'weight',plannedSets?(initialSuggestion.weight==null?'':String(initialSuggestion.weight)):(profile.workWeight==null?'':String(profile.workWeight)));
+  const [reps, setReps] = useDraftState(draft,'reps',String(plannedSets?initialSuggestion.reps:profile.targetReps));
+  const [rpe, setRpe] = useDraftState(draft,'rpe',plannedSets?'9':'10');
   const [restReal,setRestReal]=useDraftState(draft,'restReal','');
-  const [failure, setFailure] = useDraftState(draft,'failure',true);
+  const [failure, setFailure] = useDraftState(draft,'failure',!plannedSets);
   const [parent, setParent] = useDraftState(draft,'parent','');
   const [panel, setPanel] = useDraftState(draft,'panel',draft.initial.kind && draft.initial.kind !== 'effective' ? 'manual' : 'effective');
   const [message, setMessage] = useState('');
@@ -31,16 +39,17 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   const [failureMotion, setFailureMotion] = useState(0);
   const preparationSaves=useRef(new Set());
   const observedPreparations=useRef(new Set(logs.filter(log=>log.kind==='approach'&&log.step).map(log=>log.step)));
-  const effective = logs.filter(log => log.kind === 'effective');
-  const selectedParent = effective.find(log => log.id === parent) ?? effective.at(-1);
+  const techniqueReady=plannedSets?effective.length>=ex.sets:effective.length>0;
+  const selectedParent = plannedSets?(techniqueReady?effective[ex.sets-1]:null):(effective.find(log=>log.id===parent)??effective.at(-1));
   const currentWeight = reference.trim() !== '' && Number.isFinite(Number(reference)) && Number(reference) >= 0 ? Number(reference) : null;
   const linkedLogs = logs.filter(log => log.parentId === selectedParent?.id);
   const history = exerciseHistory(data, ex);
   const previous = history.filter(log => log.date <= date).at(-1);
   const preparations = preparationSuggestions(ex, currentWeight);
-  const extensions = extensionSuggestions(ex, selectedParent?.weight ?? currentWeight, ex.technique, linkedLogs);
-  const unit = ex.equipment === 'dumbbell' ? 'kg por mano' : 'kg';
-  const allowed = Object.entries(KINDS).filter(([value]) => (!ex.deload||!EXTENSIONS.includes(value))&&(!['forced', 'negative'].includes(value) || ex[value]));
+  const nextSuggestion=effectiveSetSuggestion(ex,currentWeight,effective.length,logs);
+  const extensions = techniqueReady||!plannedSets?extensionSuggestions(ex, selectedParent?.weight ?? currentWeight, ex.technique, linkedLogs):[];
+  const unit = ex.equipment === 'dumbbell' ? 'kg por mano' : ex.weightMode==='added-load'?'kg de lastre':'kg';
+  const allowed = Object.entries(KINDS).filter(([value]) => ((!ex.deload&&(techniqueReady||!plannedSets))||!EXTENSIONS.includes(value))&&(!['forced', 'negative'].includes(value) || ex[value]));
 
   useEffect(()=>draft.remember({reference,target,kind,weight,reps,rpe,restReal,failure,parent,panel}),[reference,target,kind,weight,reps,rpe,restReal,failure,parent,panel]);
   const firstProfile=useRef(true),firstMode=useRef(true);
@@ -49,10 +58,11 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
     if(draft.dirty.current)return;
     setReference(profile.workWeight === null ? '' : String(profile.workWeight));
     setTarget(String(profile.targetReps));
-    if (kind === 'effective') { setWeight(profile.workWeight === null ? '' : String(profile.workWeight)); setReps(String(profile.targetReps)); }
+    if (kind === 'effective') { const suggestion=plannedSets?effectiveSetSuggestion(ex,profile.workWeight,effective.length,logs):{weight:profile.workWeight,reps:profile.targetReps};setWeight(suggestion.weight==null?'':String(suggestion.weight));setReps(String(suggestion.reps)); }
   }, [profile.workWeight, profile.targetReps]);
   useEffect(() => { if (['forced', 'negative'].includes(kind) && !ex[kind]) chooseKind('effective'); }, [ex.forced, ex.negative]);
-  useEffect(() => { if(firstMode.current){firstMode.current=false;if(draft.restored&&!ex.deload)return;} setKind('effective'); setFailure(!ex.deload); setRpe(ex.deload?'6':'10'); }, [ex.deload]);
+  useEffect(() => { if(firstMode.current){firstMode.current=false;if(draft.restored&&!ex.deload)return;} setKind('effective'); setFailure(!ex.deload&&!plannedSets); setRpe(ex.deload?'6':plannedSets?'9':'10'); }, [ex.deload]);
+  useEffect(()=>{if(plannedSets&&!techniqueReady&&EXTENSIONS.includes(kind))chooseKind('effective');},[techniqueReady]);
   useEffect(()=>{
     const current=new Set(logs.filter(log=>log.kind==='approach'&&log.step).map(log=>log.step));
     for(const step of observedPreparations.current)if(!current.has(step))preparationSaves.current.delete(step);
@@ -68,12 +78,12 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
     event?.preventDefault(); setError(''); setMessage('');
     const invalid = referenceError(); if (invalid) { setError(invalid); return false; }
     if (await change(state => ({ ...state, profiles: { ...state.profiles, [ex.profileId]: { ...profile, ...state.profiles[ex.profileId], workWeight: currentWeight, targetReps: Number(target) } } }))) {
-      draft.clear();setWeight(String(currentWeight)); setReps(target); setMessage('Peso de trabajo guardado.');
+      draft.clear();const suggestion=plannedSets?effectiveSetSuggestion(ex,currentWeight,effective.length,logs):{weight:currentWeight,reps:target};setWeight(suggestion.weight==null?'':String(suggestion.weight));setReps(String(suggestion.reps));setMessage('Peso de trabajo guardado.');
       return true;
     }
     return false;
   }
-  function updateReference(value){draft.touch();setReference(value);if(kind==='effective')setWeight(value);}
+  function updateReference(value){draft.touch();setReference(value);if(kind==='effective'){const suggestion=plannedSets?effectiveSetSuggestion(ex,value===''?null:Number(value),effective.length,logs):{weight:value};setWeight(suggestion.weight==null?'':String(suggestion.weight));}}
   function updateTarget(value){draft.touch();setTarget(value);if(kind==='effective')setReps(value);}
   async function savePreparation(values){
     if(preparationSaves.current.has(values.step)||logs.some(log=>log.kind==='approach'&&log.step===values.step))return false;
@@ -89,9 +99,10 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
     const prep = ['warmup', 'approach'].includes(value);
     const nextStep = linkedLogs.filter(log => log.kind === value).length;
     const suggestion = prep ? preparations.find(step => !logs.some(log => log.kind === 'approach' && log.step === step.step)) ?? preparations[0] ?? preparationSuggestions({...ex,approaches:1,preparationSteps:undefined},currentWeight)[0] : extensionSuggestions(ex, selectedParent?.weight ?? currentWeight, value, linkedLogs)[nextStep];
-    setWeight(suggestion ? String(suggestion.weight) : currentWeight === null ? '' : String(currentWeight));
-    setReps(String(suggestion?.reps ?? (value === 'rp' ? 4 : profile.targetReps)));
-    setFailure(!prep&&!ex.deload); setRpe(prep||ex.deload ? '6' : '10');
+    const planned=value==='effective'?(plannedSets?nextSuggestion:{weight:currentWeight,reps:profile.targetReps}):suggestion;
+    setWeight(planned?.weight!=null ? String(planned.weight) : value==='effective'&&plannedSets ? '' : currentWeight === null ? '' : String(currentWeight));
+    setReps(String(planned?.reps ?? (value === 'rp' ? 4 : profile.targetReps)));
+    setFailure(!prep&&!ex.deload&&(!plannedSets||EXTENSIONS.includes(value))); setRpe(prep||ex.deload ? '6' : plannedSets&&value==='effective'?'9':'10');
   }
   async function saveSet(values) {
     setError(''); setMessage('');
@@ -104,7 +115,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
       const next = referenceError()||ex.deload ? state : { ...state, profiles: { ...state.profiles, [ex.profileId]: { ...profile, ...state.profiles[ex.profileId], workWeight: currentWeight, targetReps: Number(target) } } };
       return recordSet(next, ex, log);
     });
-    if (success) {setSavedSet(log.id);if(!values.step)draft.clear();if(log.kind === 'effective')setSavedEffective(log.id);setMessage(`${KINDS[log.kind]} guardada · ${log.weight} ${unit} × ${log.reps} · RPE ${log.rpe}`);}
+    if (success) {setSavedSet(log.id);if(!values.step)draft.clear();if(log.kind === 'effective'){setSavedEffective(log.id);if(plannedSets){const following=effectiveSetSuggestion(ex,currentWeight,effective.length+1,[...logs,{...log,setRole:effectiveSetPlan(ex,effective.length).role}]);setWeight(following.weight==null?'':String(following.weight));setReps(String(following.reps??profile.targetReps));}}setMessage(`${KINDS[log.kind]} guardada · ${log.weight} ${unit} × ${log.reps} · RPE ${log.rpe}`);}
     return success;
   }
   const rows = (items, title) => items.length > 0 && <div className="log-group"><h4>{title}</h4>{items.map(log => <div className={`log-row ${savedSet===log.id?'fresh-set':''}`} data-kind={log.kind} key={log.id}><span className="log-mark">{log.kind === 'effective' ? '✓' : '·'}</span><div><strong>{KINDS[log.kind]}{log.step ? ` ${log.step}` : ''}{log.parentId ? ` · de E${effective.findIndex(item => item.id === log.parentId) + 1}` : ''}</strong><small>{log.failure ? <><Stamp>FALLO</Stamp>Llegué al fallo</> : 'Sin fallo'} · RPE {log.rpe ?? 'sin dato'}</small></div><b>{log.weight}<small> {unit}</small> × {log.reps}</b><button className="icon-button" aria-label={`Eliminar ${KINDS[log.kind]} de ${ex.name}`} disabled={saving} onClick={() => setDeleting(log.id)}>×</button></div>)}</div>;
@@ -112,8 +123,8 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
   const activePanel = !['preparation','effective','technique','manual'].includes(panel)||panel==='technique'&&!ex.technique ? 'effective' : panel;
   const tabs = [
     {id:'preparation',label:'Previas',detail:currentWeight===null?'Falta peso':preparations.length?preparations.map(step=>`${step.weight}`).join(' / ')+' kg':'Sin previas',count:`${logs.filter(log=>log.kind==='approach'&&log.step).length}/${preparations.length}`},
-    {id:'effective',label:'Efectiva',detail:currentWeight===null?'Falta peso':`${currentWeight} kg × ${target}`,count:`${effective.length}/${ex.sets}`},
-    ...(ex.technique?[{id:'technique',label:KINDS[ex.technique],detail:currentWeight===null?'Falta peso':extensions.map(step=>step.weight).join(' / ')+' kg',count:`${linkedLogs.filter(log=>log.kind===ex.technique).length}/${extensions.length}`}]:[]),
+    {id:'effective',label:'Efectiva',detail:plannedSets?(effective.length>=ex.sets?'Completas':`${setRoleLabel[nextSuggestion.role]??'Efectiva'} · ${rangeLabel(nextSuggestion)}`):(currentWeight===null?'Falta peso':`${currentWeight} kg × ${target}`),count:`${effective.length}/${ex.sets}`},
+    ...(ex.technique?[{id:'technique',label:KINDS[ex.technique],detail:plannedSets&&!techniqueReady?'Tras última efectiva':currentWeight===null&&!selectedParent?'Falta peso':extensions.map(step=>step.weight).join(' / ')+' kg',count:techniqueReady||!plannedSets?`${linkedLogs.filter(log=>log.kind===ex.technique).length}/${extensions.length}`:undefined}]:[]),
     {id:'manual',label:'Otras',detail:'Calent. y más'},
   ];
   function openPanel(value){
@@ -132,7 +143,7 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
         <summary>{profile.workWeight===null?'Configurar peso de trabajo':`Referencia · ${profile.workWeight} ${unit} × ${profile.targetReps}`}<span>Editar</span></summary>
         <form onChangeCapture={draft.touch} className="work-reference" onSubmit={saveReference}>
           <h3>{profile.workWeight === null ? 'Ingresa tu peso de trabajo' : 'Tu peso de trabajo'}</h3>
-          <p>{EQUIPMENT[ex.equipment]} · {ex.equipment === 'dumbbell' ? 'Peso por mano.' : 'Carga total.'} Redondeo: {ex.increment} kg.</p>
+          <p>{EQUIPMENT[ex.equipment]} · {ex.equipment === 'dumbbell' ? 'Peso por mano.' : ex.weightMode==='added-load'?'Registra solo el lastre añadido: 0 kg es sin lastre.':'Carga total.'} Redondeo: {ex.increment} kg.</p>
           <div className="input-pair"><label>Peso ({unit})<input aria-label={`Peso de trabajo de ${ex.name}`} type="number" min="0" max="1500" step="0.5" inputMode="decimal" placeholder="Ingresa los kg" value={reference} onChange={event=>updateReference(event.target.value)} required /></label><label>Reps objetivo<input aria-label={`Reps objetivo de ${ex.name}`} type="number" min="1" max="200" inputMode="numeric" value={target} onChange={event=>updateTarget(event.target.value)} required /></label></div>
           <button type="submit" className="secondary" disabled={saving}>Guardar peso de trabajo</button>
         </form>
@@ -152,8 +163,10 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
         </div>
         {ex.technique&&<div role="tabpanel" id={panelId('technique')} aria-labelledby={`${panelId('technique')}-tab`} hidden={activePanel!=='technique'}>
           <div className="quick-panel-heading"><h3>{KINDS[ex.technique]}</h3><span>{ex.technique==='drop'?`${ex.rests.drop} s · cambiar carga`:`${ex.rests.rp} s · meta 3–5 reps`}</span></div>
-          {!selectedParent&&<p className="quick-hint">Vista previa. Guarda una efectiva para registrar la técnica.</p>}
-          {effective.length>1&&<label>Extensiones de la efectiva<select value={selectedParent?.id??''} onChange={event=>setParent(event.target.value)}>{effective.map((log,i)=><option key={log.id} value={log.id}>E{i+1} · {log.weight} {unit} × {log.reps}</option>)}</select></label>}
+          {ex.weightMode==='added-load'&&ex.technique==='drop'&&<p className="quick-hint">La caída reduce solo el lastre añadido. Con 0 kg no reduce tu peso corporal; ajusta manualmente la variante o asistencia, sin registrarla como carga corporal.</p>}
+          {!techniqueReady&&<p className="quick-hint">{plannedSets?`Solo tras la última efectiva (${effective.length}/${ex.sets}). No añade volumen.`:'Vista previa. Guarda una efectiva para registrar la técnica.'}</p>}
+          {selectedParent&&plannedSets&&<p className="quick-hint">Vinculada a la última efectiva · {selectedParent.weight} {unit} × {selectedParent.reps}.</p>}
+          {!plannedSets&&effective.length>1&&<label>Extensiones de la efectiva<select value={selectedParent?.id??''} onChange={event=>setParent(event.target.value)}>{effective.map((log,i)=><option key={log.id} value={log.id}>E{i+1} · {log.weight} {unit} × {log.reps}</option>)}</select></label>}
           {currentWeight===null&&!selectedParent?<p className="suggestion-empty">Ingresa tu peso de trabajo arriba para calcular {KINDS[ex.technique]}.</p>:extensions.map(step=><SuggestedSet date={date} draftKey={`suggestion:${date}:${ex.id}:${step.kind}:${step.step}:${selectedParent?.id??'preview'}`} fallbackKey={selectedParent?`suggestion:${date}:${ex.id}:${step.kind}:${step.step}:preview`:undefined} key={`${step.kind}-${step.step}-${selectedParent?.id??'preview'}`} suggestion={step} unit={unit} saved={linkedLogs.find(log=>log.kind===step.kind&&log.step===step.step)} saving={saving} blocked={!selectedParent} onSave={saveSet}/>)}
         </div>}
       </section>
@@ -161,8 +174,9 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
 
         <form onChangeCapture={draft.touch} className="set-form quick-set-form" data-kind={kind} onSubmit={event=>{event.preventDefault();saveSet({kind,weight,reps,rpe,failure,restReal});}}>
           <div className="quick-panel-heading"><h3>{activePanel==='manual'?'Registrar otra serie':effective.length>=ex.sets?'Efectivas completas':`Efectiva ${effective.length+1} de ${ex.sets}`}</h3><span>{formatSeconds(ex.rests[kind]??ex.rests.effective)} descanso</span></div>
+          {plannedSets&&kind==='effective'&&effective.length<ex.sets&&<div className="next-effective-plan"><strong>{setRoleLabel[nextSuggestion.role]??'Efectiva'} · {rangeLabel(nextSuggestion)}</strong><span>{nextSuggestion.role==='light'?`Carga ligera: ajústala para ${rangeLabel(nextSuggestion)}.`:nextSuggestion.weight==null?'Ingresa tu peso de trabajo':`${nextSuggestion.weight} ${unit} sugeridos · editable`}{nextSuggestion.role==='backoff'?` · −${ex.backoffPercent??10}% ${nextSuggestion.referenceSource==='top-today'?'del Top de hoy':'de referencia; falta Top'}`:''}</span></div>}
           <label hidden={activePanel!=='manual'}>Tipo de serie<select value={kind} onChange={event=>chooseKind(event.target.value)}>{allowed.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-          {EXTENSIONS.includes(kind)&&<label>Vinculada a<select value={selectedParent?.id??''} onChange={event=>setParent(event.target.value)} required><option value="">Selecciona una efectiva</option>{effective.map((log,i)=><option key={log.id} value={log.id}>E{i+1} · {log.weight} kg × {log.reps}</option>)}</select></label>}
+          {EXTENSIONS.includes(kind)&&(plannedSets?<p className="quick-hint">Última efectiva: {selectedParent?`${selectedParent.weight} ${unit} × ${selectedParent.reps}`:'completa las efectivas antes de la técnica'}.</p>:<label>Vinculada a<select value={selectedParent?.id??''} onChange={event=>setParent(event.target.value)} required><option value="">Selecciona una efectiva</option>{effective.map((log,i)=><option key={log.id} value={log.id}>E{i+1} · {log.weight} kg × {log.reps}</option>)}</select></label>)}
           <div className="quick-values"><label>Carga ({unit})<input aria-label={`Carga de ${ex.name}`} type="number" min="0" max="1500" step="0.5" inputMode="decimal" value={weight} onChange={event=>setWeight(event.target.value)} required /></label><label>Reps<input aria-label={`Repeticiones de ${ex.name}`} type="number" min="1" max="200" inputMode="numeric" value={reps} onChange={event=>setReps(event.target.value)} required /></label><label>RPE<input aria-label={`RPE de ${ex.name}`} type="number" min="0" max="10" step="0.5" inputMode="decimal" value={rpe} onChange={event=>setRpe(event.target.value)} required /></label></div>
           <div className="quick-set-footer"><label className="check-label"><input type="checkbox" checked={failure} disabled={['warmup','approach'].includes(kind)} onChange={event=>{setFailure(event.target.checked);if(event.target.checked)setFailureMotion(value=>value+1);}}/><span key={failureMotion} className={failureMotion?'failure-shake':undefined}>Llegué al fallo</span></label><details className="quick-rest"><summary>Descanso real{restReal!==''?` · ${restReal} s`:''}</summary><label>Antes de la serie (s)<input aria-label={`Descanso real de ${ex.name}`} type="number" min="0" max="86400" inputMode="numeric" value={restReal} onChange={event=>setRestReal(event.target.value)}/></label></details></div>
           <FailureSafety data={data} exercise={ex} enabled={failure&&!['warmup','approach'].includes(kind)} change={change} saving={saving} compact/>
@@ -170,13 +184,13 @@ export default function ExerciseCard({ exercise: ex, index, date, data, logs, ex
         </form>
       </div>
       {error&&<p className="error" role="alert">{error}</p>}{message&&<p className="success" role="status">{message}</p>}
-      {effective.length>0&&ex.technique&&activePanel==='effective'&&<button type="button" className="quick-next secondary full" onClick={()=>openPanel('technique')}>Registrar {KINDS[ex.technique]} →</button>}
+      {techniqueReady&&ex.technique&&activePanel==='effective'&&<button type="button" className="quick-next secondary full" onClick={()=>openPanel('technique')}>Registrar {KINDS[ex.technique]} →</button>}
       <details className="quick-details quick-records"><summary>Series guardadas <span>{logs.length}</span></summary>{rows(logs.filter(log=>['warmup','approach'].includes(log.kind)),'Preparación · no suma volumen')}{rows(effective,'Series efectivas')}{rows(logs.filter(log=>EXTENSIONS.includes(log.kind)),'Extensiones · no suman otra efectiva')}{logs.length===0&&<p className="field-note">Todavía no hay series guardadas en este ejercicio.</p>}</details>
       {deleting&&<div className="delete-confirm" role="alert"><p>¿Eliminar esta serie{effective.some(log=>log.id===deleting)?' y sus extensiones':''}?</p><button className="danger" disabled={saving} onClick={async()=>{if(await change(state=>({...state,logs:removeLog(state.logs,deleting)})))setDeleting(null);}}>Eliminar</button><button className="quiet" onClick={()=>setDeleting(null)}>Cancelar</button></div>}
       <details className="quick-details"><summary>Progresión, reglas y descansos</summary>
         <ProgressionPanel key={`${ex.profileId}-${date}`} data={data} exercise={ex} date={date} change={change} saving={saving}/>
         <p className="field-note">{ex.preparationReason} Previas sin fallo, máximo 80% del peso de trabajo; no suman volumen. Ejecución controlada en todas las series.</p>
-        {ex.technique&&<p className="field-note">{ex.technique==='drop'?`Drop set: −20% por caída, redondeado; ${ex.rests.drop} s solo para cambiar el peso; a fallo.`:`Rest-pause: mismo peso; ${ex.rests.rp} s entre mini-series; a fallo, meta 3–5 reps.`} {selectedParent?`Desde E${effective.indexOf(selectedParent)+1}: ${selectedParent.weight} ${unit}.`:'Primero registra una efectiva para guardar sus extensiones.'}</p>}
+        {ex.technique&&<p className="field-note">{ex.technique==='drop'?`Drop set: −20% por caída, redondeado; ${ex.rests.drop} s solo para cambiar el peso; a fallo.`:`Rest-pause: mismo peso; ${ex.rests.rp} s entre mini-series; a fallo, meta 3–5 reps.`} {selectedParent?`Desde E${effective.indexOf(selectedParent)+1}: ${selectedParent.weight} ${unit}.`:plannedSets?'Completa las efectivas: la técnica se vincula solo a la última.':'Primero registra una efectiva para guardar sus extensiones.'}</p>}
         <div className="rest-shortcuts"><span>Iniciar descanso</span>{[['warmup','Calent.'],['effective','Efectiva'],...(ex.technique?[[ex.technique,KINDS[ex.technique]]]:[])].map(([type,label])=><button key={type} disabled={saving} onClick={()=>startTimer(ex.rests[type],`${label} · ${ex.name}`)}>{label} <b>{formatSeconds(ex.rests[type])}</b></button>)}</div>
         {!ex.forced&&!ex.negative&&<p className="technique-note">Forzadas y negativas desactivadas. Se habilitan por ejercicio en Rutina.</p>}
       </details>

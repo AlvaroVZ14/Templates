@@ -1,5 +1,5 @@
 import {onboardingTest as test,expect} from './fixtures.js';
-import {initialState} from '../../src/domain.js';
+import {initialState} from '../fixtures/legacy-state.js';
 import {projectCollections} from '../../src/history.js';
 import {progressReport} from '../../src/progress.js';
 import {BACKUP_STORES} from '../../src/backup.js';

@@ -1,12 +1,30 @@
 # BLOOD & GUTS · Registro personal
 
-PWA mobile-first de fisicoculturismo natural, inspirada en Heavy Duty / Blood and
-Guts: poco volumen, series efectivas al fallo técnico y ejecución controlada.
+PWA mobile-first de fisicoculturismo natural, con estética Blood and Guts y rutina
+**PPL + Torso + Leg**: 85 series efectivas semanales, 0–2 RIR y ejecución controlada.
 Construida con React + Vite. Sin backend, cuentas, analítica ni servicios externos.
 El repositorio conserva el nombre **Templates**.
 
 La [revisión de arquitectura](docs/architecture/README.md) documenta la división
 frontend, persistencia local y testing, sus hallazgos y verificaciones.
+
+La [rutina actual completa](docs/ppl-routine.md) contiene los 35 ejercicios, roles,
+rangos y volumen por músculo. Descanso lunes y viernes; PUSH martes, PULL miércoles,
+LEG A jueves, TORSO sábado y LEG B domingo. Cada sesión suma 17 efectivas.
+
+La rama `backup-rutina-anterior` conserva el código anterior. Al actualizar una
+instalación existente, la migración guarda una instantánea local completa en
+`routineMigrationBackups`, conserva los registros y perfiles originales y reutiliza
+pesos solo por coincidencias inequívocas de ejercicio y equipo. No cambia la versión
+de IndexedDB ni borra entrenamientos. Exportar un JSON incluye esa instantánea;
+la rama Git no contiene los datos personales guardados en tu navegador.
+
+La rutina anterior sigue siendo la referencia de calendario para fechas previas a
+la migración (fecha de Chile). Las excepciones futuras del calendario anterior se
+conservan y se marcan para revisar, evitando asignarlas silenciosamente a otra
+sesión. Un borrador antiguo del editor no reemplaza automáticamente la nueva rutina.
+Si hay un entrenamiento anterior abierto hoy, se mantiene accesible y el plan nuevo
+se activa mañana, con un aviso en Hoy.
 
 **URL final de publicación:** [https://alvarovz14.github.io/Templates/](https://alvarovz14.github.io/Templates/).
 GitHub Pages está configurado con **GitHub Actions**; cada integración en `main`
@@ -293,24 +311,21 @@ Todas las series nuevas guardan RPE; puedes ajustar el valor propuesto antes de
 guardar (6 en preparación y 10 en trabajo a fallo). Los registros antiguos sin
 RPE muestran «sin dato»; no se inventa un esfuerzo retrospectivo.
 
-Las metas solicitadas se conservan como referencia, sin modificar la rutina para
-hacerlas coincidir con el plan:
+El plan PPL y sus metas coinciden: pecho 14, espalda 13, bíceps 10, tríceps 4,
+deltoides laterales 6, deltoides posteriores 4, cuádriceps 10, femorales 6,
+glúteos 4, aductores 2, abductores 4, gemelos 4 y abdomen 4: **85**.
+En **Progreso → Series semanales** se compara planeado y realizado. Previas y
+extensiones no suman efectivas. Las hiperextensiones nuevas se asignan a glúteos;
+las antiguas conservan su músculo original. Fondos cuenta en pecho.
 
-| Músculo | Meta | Plan inicial |
-| --- | ---: | ---: |
-| Pecho | 8 | 9 |
-| Espalda | 9 | 9 |
-| Hombro | 8 | 8 |
-| Bíceps | 8 | 8 |
-| Tríceps | 6 | 7 |
-| Cuádriceps | 6 | 6 |
-| Femoral | 4 | 3 |
-| Aductor | 1 | 1 |
-| Gemelo | 1 | 2 |
-
-Hiperextensiones se asigna a femoral; sóleo y gemelos a gemelo. Puedes cambiar
-el músculo principal en el editor. Editar la rutina modifica el plan mostrado para
-cualquier semana; los registros ya realizados conservan nombre y músculo originales.
+Top Set y Back-off cuentan como efectivas individuales. El Back-off sugiere −10%
+del Top registrado hoy, redondeado por equipo; el porcentaje se edita en Rutina y
+el peso al registrar. Un Back-off o una serie ligera no rebaja la referencia pesada.
+Drop y rest-pause solo se vinculan a la última efectiva del ejercicio. El curl de
+TORSO tiene tres pesadas de 6–10 y dos ligeras de 12–15; la app pide elegir la carga
+ligera, sin inventar un porcentaje. Dominadas y fondos registran lastre añadido,
+con 0 kg para peso corporal sin lastre; un drop de lastre no representa una reducción
+del peso corporal total.
 
 ## Preparación y descanso
 

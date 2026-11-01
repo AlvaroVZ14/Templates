@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {applyWorkWeights,weightExercises,startGymSession,openGymSession,finishGymSession,gymSummary} from '../src/gym.js';
 import {projectCollections,hydrateCollections} from '../src/history.js';
 const start='2026-10-12T15:00:00.000Z',end='2026-10-12T16:05:00.000Z';

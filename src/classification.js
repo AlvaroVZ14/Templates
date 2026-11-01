@@ -3,10 +3,10 @@ export const PATTERNS={'chest-press':'Press de pecho','overhead-press':'Press so
 const plain=name=>name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 export function classifyExercise(ex){
   const name=plain(ex.name);let inferred='isolation',pattern='other';
-  if(/press (banca|declinado|inclinado)/.test(name)){inferred='heavy';pattern='chest-press';}
+  if(/press (banca|declinado|inclinado)|\bfondos\b/.test(name)){inferred='heavy';pattern='chest-press';}
   else if(/press militar/.test(name)){inferred='heavy';pattern='overhead-press';}
   else if(/remo/.test(name)){inferred='heavy';pattern='row';}
-  else if(/jalon/.test(name)){inferred='heavy';pattern='vertical-pull';}
+  else if(/jalon|dominadas/.test(name)){inferred='heavy';pattern='vertical-pull';}
   else if(/hack|^prensa\b/.test(name)){inferred='heavy';pattern='knee-press';}
   else if(/hiperextensiones/.test(name)){inferred='compound';pattern='hip-extension';}
   else if(ex.compound)inferred='compound';

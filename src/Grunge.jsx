@@ -6,7 +6,7 @@ export function Cracks({header=false}){
 }
 export function Stamp({children,record=false}){return <span className={`grunge-stamp ${record?'record-stamp':''}`}>{children}</span>;}
 export function PosterTitle({exercises}){
-  const name=sessionName(exercises),group=['Pierna','Torso'].includes(name);
+  const name=sessionName(exercises),group=['Pierna','Torso','PUSH','PULL','LEG A','TORSO','LEG B'].includes(name);
   const muscles=[...new Set(exercises.map(ex=>ex.muscle))];
   const ordered=muscles.toSorted((a,b)=>exercises.filter(ex=>ex.muscle===b).reduce((sum,ex)=>sum+ex.sets,0)-exercises.filter(ex=>ex.muscle===a).reduce((sum,ex)=>sum+ex.sets,0));
   return <h2 className="poster-session" aria-label={sessionTitle(exercises)}><span aria-hidden="true"><strong>{group?name:ordered[0]}</strong>{!group&&ordered.length>1&&<em>Y</em>}<small>{(group?muscles:ordered.slice(1)).join(' + ')||'UNA SERIE. TODA TU INTENCIÓN.'}</small></span></h2>;

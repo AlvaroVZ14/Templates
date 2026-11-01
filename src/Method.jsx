@@ -1,23 +1,23 @@
 const sections = [
   {
     title: 'Filosofía',
-    summary: 'Pocas series. Buena técnica. Mucha intención.',
-    content: <><p>Esta app se inspira en el Heavy Duty y en el enfoque Blood and Guts de Dorian Yates: priorizar la intensidad sobre acumular series.</p><p>La adaptación para un deportista natural combina pocas series exigentes con ejecución controlada y recuperación. Fallo técnico significa que no puedes completar otra repetición con buena técnica; no necesitas perder el control para llegar a él.</p></>,
+    summary: 'PPL + Torso + Leg. Técnica, progresión y recuperación.',
+    content: <><p>La estética Blood and Guts inspira la intención del entrenamiento, pero el plan actual es PPL + Torso + Leg: cinco sesiones semanales y dos días de descanso, según tu calendario editable.</p><p>Las prioridades Classic Physique son pecho superior, dorsales, bíceps, cuádriceps, glúteos y femorales. Son prioridades del plan, no una promesa de resultados ni un motivo para ignorar la recuperación.</p><p>Trabaja a 0–2 RIR: termina cuando calcules que quedan de cero a dos repeticiones con buena técnica. Controla la excéntrica durante 2–3 segundos. El fallo técnico es el límite; no sacrifiques la forma.</p></>,
   },
   {
     title: 'Tipos de serie',
     summary: 'Preparar y estimular cumplen funciones distintas.',
-    content: <><p><strong>Previas:</strong> preparan músculo, articulaciones y mente para la carga. Se hacen lejos del fallo y se guardan aparte; no cuentan como volumen efectivo.</p><p><strong>Efectivas:</strong> concentran el trabajo intenso del ejercicio, normalmente al fallo técnico. Son las que la app cuenta como volumen. Durante una descarga se mantienen lejos del fallo.</p></>,
+    content: <><p><strong>Previas:</strong> preparan músculo, articulaciones y mente para la carga. Se hacen lejos del fallo y se guardan aparte; no cuentan como volumen efectivo.</p><p><strong>Efectivas:</strong> Top set, Back-off, pesadas y ligeras cuentan una serie de volumen cada una. No todas tienen que llegar al fallo: el objetivo general es 0–2 RIR. Durante una descarga se mantienen lejos del fallo.</p><p><strong>Top set:</strong> serie pesada principal. <strong>Back-off:</strong> carga sugerida un 10% menor que el Top registrado ese día; puedes editar el porcentaje en Rutina y la carga al registrar.</p><p>Compuestos: 6–10 reps. Aislamientos: 8–15. Laterales y gemelos: 12–20. Abdomen: 10–20. El curl con mancuerna de Torso lleva tres pesadas de 6–10 y dos ligeras de 12–15; ajusta la carga ligera sin perder control.</p></>,
   },
   {
     title: 'Técnicas de intensidad',
     summary: 'Una a la vez, con moderación.',
-    content: <><ul><li><strong>Drop set:</strong> tras la efectiva, baja el peso y continúa. La app sugiere reducir un 20% por caída, con el redondeo de tu equipo.</li><li><strong>Rest-pause:</strong> conserva la carga, descansa 15–20 segundos y haz una mini-serie al fallo técnico.</li><li><strong>Forzadas:</strong> un compañero ayuda a completar repeticiones cuando ya no puedes hacerlas por tu cuenta.</li><li><strong>Negativas:</strong> enfatizan la fase de bajada con control; pueden requerir ayuda para colocar la carga.</li></ul><p>Introduce una técnica a la vez. Forzadas y negativas están desactivadas por defecto: solo se usan si las activas, en uno o dos ejercicios por sesión como máximo. Las caídas y mini-series se registran por separado; no suman otra efectiva al volumen.</p></>,
+    content: <><ul><li><strong>Drop set:</strong> solo después de la última efectiva del ejercicio, baja el peso y continúa. La app sugiere reducir un 20% por caída, con el redondeo de tu equipo.</li><li><strong>Rest-pause:</strong> después de la última efectiva, conserva la carga, descansa 15–20 segundos y haz una mini-serie al fallo técnico.</li><li><strong>Forzadas:</strong> un compañero ayuda a completar repeticiones cuando ya no puedes hacerlas por tu cuenta.</li><li><strong>Negativas:</strong> enfatizan la fase de bajada con control; pueden requerir ayuda para colocar la carga.</li></ul><p>Introduce una técnica a la vez. Forzadas y negativas están desactivadas por defecto: solo se usan si las activas, en uno o dos ejercicios por sesión como máximo. Las caídas y mini-series se registran por separado y son extensiones de la última efectiva: no suman otra serie al volumen. En dominadas, reducir el lastre no equivale a reducir el peso corporal; no se sugiere una carga corporal ficticia.</p></>,
   },
   {
     title: 'Descansos',
     summary: 'Recupera antes de volver a exigir.',
-    content: <><p>Antes de una efectiva pesada, descansa más: por defecto, 3–4 minutos en compuestos y 2–3 en aislamientos. Entre previas, 1–2 minutos.</p><p>Los descansos cortos se reservan para encadenar técnicas: 15–20 segundos en rest-pause y 10–15 segundos para cambiar el peso en un drop set. Puedes editar los descansos por ejercicio.</p></>,
+    content: <><p>El plan PPL usa 2–3 minutos antes de una efectiva compuesta y 1,5–2 minutos en aislamientos. Entre previas, 1–2 minutos. Los descansos guardados de rutinas anteriores se conservan.</p><p>Los descansos cortos se reservan para encadenar técnicas: 15–20 segundos en rest-pause y 10–15 segundos para cambiar el peso en un drop set. Puedes editar los descansos por ejercicio.</p></>,
   },
   {
     title: 'Recuperación',

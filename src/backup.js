@@ -5,15 +5,35 @@ import {JOURNAL_FIELDS} from './wellness.js';
 import {validateFood,MACROS} from './program/nutrition.js';
 import {validatePainEntries} from './pain.js';
 import {validateCardioSettings,validateCardioSnapshot} from './program/cardio.js';
+import {ROUTINE_VERSION} from './routinePlan.js';
 export const BACKUP_STORES=['app','sessions','cardio','journal','measurements','phases','sessionRevisions','migrationBackups'];
 const collections=['sessions','cardio','journal','measurements','phases'];
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const date=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(`${value}T12:00:00Z`))&&new Date(`${value}T12:00:00Z`).toISOString().slice(0,10)===value;
 function require(condition,message){if(!condition)throw new Error(message);}
 function safeTree(value,depth=0){require(depth<120,'El archivo contiene datos demasiado anidados.');if(value===null)return;if(typeof value==='number')require(Number.isFinite(value),'Número no válido en el archivo.');if(typeof value==='object')for(const key of Object.keys(value)){require(!['__proto__','prototype','constructor'].includes(key),'El archivo contiene una clave no permitida.');safeTree(value[key],depth+1);}else require(['string','number','boolean'].includes(typeof value),'Dato no compatible con JSON.');}
+function validateStoredRoutine(routine,schemaVersion){
+ require(Array.isArray(routine)&&routine.length===7&&routine.every(Array.isArray),'La rutina del respaldo no es válida.');
+ const raw=routine.map(day=>day.map(ex=>{
+  require(object(ex)&&typeof ex.name==='string'&&object(ex.rests),'Ejercicio o descansos no válidos en la rutina del respaldo.');
+  // The first format predates equipment rounding and extension counts. Supply
+  // only those missing legacy defaults for validation; never replace bad values.
+  if(schemaVersion!==1)return ex;
+  return {...ex,increment:ex.increment===undefined?({barbell:2.5,dumbbell:1,machine:5,cable:5,bodyweight:1}[ex.equipment]??2.5):ex.increment,dropCount:ex.dropCount===undefined?1:ex.dropCount,rpCount:ex.rpCount===undefined?2:ex.rpCount};
+ }));
+ require(!validateRoutine(raw),'La rutina del respaldo no es válida.');
+}
 function validateState(state){
  require(object(state)&&Number.isInteger(state.schemaVersion)&&state.schemaVersion>=1&&state.schemaVersion<=7,'Versión de datos no compatible.');
  require(Array.isArray(state.routine)&&state.routine.length===7&&state.routine.every(Array.isArray)&&Array.isArray(state.logs),'Falta la rutina o el historial.');
+ validateStoredRoutine(state.routine,state.schemaVersion);
+ require(state.routineVersion===undefined||state.routineVersion===ROUTINE_VERSION,'Versión de rutina no compatible.');
+ require(state.routineActivatedOn===undefined||date(state.routineActivatedOn),'Fecha de activación de rutina no válida.');
+ require(state.routineActivationDeferred===undefined||typeof state.routineActivationDeferred==='boolean','Transición de rutina no válida.');
+ if(state.routineMigrationBackups!==undefined){
+  require(Array.isArray(state.routineMigrationBackups),'Respaldos de rutina no válidos.');
+  for(const row of state.routineMigrationBackups)require(object(row)&&typeof row.id==='string'&&object(row.state)&&Array.isArray(row.state.routine)&&row.state.routine.length===7&&row.state.routine.every(day=>Array.isArray(day)&&day.every(ex=>object(ex)&&typeof ex.name==='string'))&&Array.isArray(row.state.logs)&&object(row.state.profiles),'Instantánea de rutina anterior no válida.');
+ }
  const next=migrateState(structuredClone(state));require(!validateRoutine(next.routine),'La rutina del respaldo no es válida.');
  for(const key of ['profiles','dailySteps','journal','calendar','programSettings'])require(object(next[key]),`Configuración no válida: ${key}.`);
  for(const key of ['cardio','measurements','phases','phaseHistory','goalRevisions','foods','foodLogs','meals','deloads'])require(Array.isArray(next[key]),`Colección no válida: ${key}.`);

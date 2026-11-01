@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {nextTraining,restMessage,sessionName,weekdayName} from '../src/calendarText.js';
 import {shiftDate} from '../src/wellness.js';
 test('miércoles vuelve jueves y domingo vuelve lunes, con nombre y mañana',()=>{

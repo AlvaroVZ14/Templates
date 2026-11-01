@@ -6,15 +6,16 @@ import { migratePreparation, PREPARATION_STEPS } from './preparation.js';
 import {classifyExercise,migrateClassification} from './classification.js';
 import {migrateFruit} from './program/fruit.js';
 import {dayContext} from './program/nutrition.js';
+import {ROUTINE_VERSION,ROUTINE_TARGETS,createRoutinePlan,migrateRoutinePlan,effectiveSetPlan} from './routinePlan.js';
 
-export const MUSCLES = ['Pecho', 'Espalda', 'Hombro', 'Bíceps', 'Tríceps', 'Cuádriceps', 'Femoral', 'Aductor', 'Gemelo'];
-export const TARGETS = { Pecho: 8, Espalda: 9, Hombro: 8, Bíceps: 8, Tríceps: 6, Cuádriceps: 6, Femoral: 4, Aductor: 1, Gemelo: 1 };
+export const MUSCLES = Object.keys(ROUTINE_TARGETS);
+export const TARGETS = {...ROUTINE_TARGETS};
 export const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 export const KINDS = { warmup: 'Calentamiento', approach: 'Aproximación', effective: 'Efectiva', drop: 'Drop set', rp: 'Rest-pause', forced: 'Forzadas', negative: 'Negativas' };
 export const EXTENSIONS = ['drop', 'rp', 'forced', 'negative'];
 export const PREPARATION = PREPARATION_STEPS;
-export const EQUIPMENT = { barbell: 'Barra', dumbbell: 'Mancuernas (por mano)', machine: 'Máquina', cable: 'Polea' };
-export const INCREMENTS = { barbell: 2.5, dumbbell: 1, machine: 5, cable: 5 };
+export const EQUIPMENT = { barbell: 'Barra / disco', dumbbell: 'Mancuernas (por mano)', machine: 'Máquina', cable: 'Polea',bodyweight:'Peso corporal / lastre' };
+export const INCREMENTS = { barbell: 2.5, dumbbell: 1, machine: 5, cable: 5,bodyweight:1 };
 export function inferEquipment(ex) {
   if (ex.equipment !== 'free') return ex.equipment;
   return /mancuerna|elevaciones laterales/i.test(ex.name) ? 'dumbbell' : 'barbell';
@@ -41,18 +42,19 @@ export function exerciseHistory(state, exercise) {
   return state.logs.filter(log => (log.profileId ?? log.exerciseId) === exercise.profileId).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 }
 export function migrateState(original) {
-  if (original.schemaVersion >= 2) return migrateFruit(migrateClassification(migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(original)))))));
+  if (original.schemaVersion >= 2) return migrateRoutinePlan(migrateFruit(migrateClassification(migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(original))))))));
   const state = structuredClone(original);
   state.profiles ??= {}; state.cardio ??= []; state.dailySteps ??= {};
   for (const day of state.routine) {
     const seen = new Set();
     for (const ex of day) {
       ex.equipment = inferEquipment(ex);
-      ex.profileId = profileKey(ex);
+      ex.profileId ??= profileKey(ex);
       ex.increment = INCREMENTS[ex.equipment];
       ex.approaches = defaultPreparation(ex, !seen.has(ex.muscle));
       ex.dropCount ??= 1; ex.rpCount ??= 2;
-      state.profiles[ex.profileId] ??= { workWeight: null, targetReps: 8, notes: '' };
+      const first=ex.setPlan?.[0];
+      state.profiles[ex.profileId] ??= { workWeight: null, targetReps:first?.repMin??8,...(first?{repMin:first.repMin,repMax:first.repMax}:{}), notes: '' };
       for (const log of state.logs.filter(log => log.exerciseId === ex.id)) { log.profileId ??= ex.profileId; log.equipment ??= ex.equipment; log.rpe ??= null; }
       seen.add(ex.muscle);
     }
@@ -62,7 +64,7 @@ export function migrateState(original) {
     if (last && profile.workWeight === null) profile.workWeight = last.weight;
   }
   state.schemaVersion = 2;
-  return migrateFruit(migrateClassification(migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(state)))))));
+  return migrateRoutinePlan(migrateFruit(migrateClassification(migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(state))))))));
 }
 
 export function localDate(date = new Date()) {
@@ -79,27 +81,21 @@ export function makeExercise(name = 'Nuevo ejercicio', muscle = 'Pecho', sets = 
   return { id, profileId: id, name, muscle, sets, technique, equipment, compound, ...classifyExercise({name,compound}), approaches, preparationOverride:null, preparationJoint:'', increment: INCREMENTS[equipment] ?? 2.5, dropCount: 1, rpCount: 2, forced: false, negative: false, rests: { warmup: 90, effective: compound ? 210 : 150, rp: 20, drop: 15 } };
 }
 export function initialState() {
-  const ex = (name, muscle, sets = 1, technique = '', equipment = 'free', compound = false, approaches = 1) => makeExercise(name, muscle, sets, technique, equipment, compound, approaches);
   return migrateState({
     schemaVersion: 1,
+    routineVersion:ROUTINE_VERSION,
     targets: { ...TARGETS },
     logs: [], timer: null,
-    routine: [
-      [ex('Press banca', 'Pecho', 2, '', 'free', true, 3), ex('Press declinado', 'Pecho', 1, 'drop', 'free', true), ex('Press inclinado mancuernas', 'Pecho', 1, '', 'free', true), ex('Aperturas mancuernas', 'Pecho', 1), ex('Aperturas máquina', 'Pecho', 1, '', 'machine'), ex('Elevaciones laterales', 'Hombro', 2, 'drop', 'free', false, 3), ex('Curl polea', 'Bíceps', 1, 'drop', 'cable', false, 1), ex('Curl mancuernas sentado', 'Bíceps', 2, 'rp')],
-      [ex('Ext. tríceps tras nuca', 'Tríceps', 2, 'drop', 'cable', false, 1), ex('Ext. tríceps', 'Tríceps', 1, '', 'cable'), ex('Pullover polea', 'Espalda', 1, '', 'cable', false, 1), ex('Remo pecho apoyado', 'Espalda', 2, 'drop', 'machine', true), ex('Jalón agarre estrecho', 'Espalda', 2, 'drop', 'cable', true), ex('Remo barra libre', 'Espalda', 2, '', 'free', true), ex('Sóleo máquina', 'Gemelo', 1, 'rp', 'machine', false, 1)],
-      [],
-      [ex('Press militar mancuernas', 'Hombro', 2, '', 'free', true, 3), ex('Elevaciones laterales polea', 'Hombro', 1, 'drop', 'cable'), ex('Ext. tríceps tras nuca', 'Tríceps', 1, 'drop', 'cable', false, 1), ex('Curl polea', 'Bíceps', 1, 'rp', 'cable', false, 1), ex('Ext. tríceps', 'Tríceps', 1, '', 'cable'), ex('Curl mancuernas', 'Bíceps', 2), ex('Posterior peck deck', 'Hombro', 2, 'drop', 'machine')],
-      [ex('Ext. cuádriceps', 'Cuádriceps', 2, 'drop', 'machine', false, 1), ex('Hack squat', 'Cuádriceps', 2, '', 'machine', true), ex('Prensa', 'Cuádriceps', 2, 'drop', 'machine', true), ex('Gemelos prensa', 'Gemelo', 1, 'rp', 'machine', false, 1), ex('Femoral acostado', 'Femoral', 2, 'rp', 'machine', false, 1), ex('Hiperextensiones', 'Femoral', 1, '', 'free'), ex('Aductor', 'Aductor', 1, 'drop', 'machine', false, 1)],
-      [ex('Press inclinado mancuernas', 'Pecho', 2, '', 'free', true, 3), ex('Jalón estrecho', 'Espalda', 1, 'drop', 'cable', true, 1), ex('Remo barra', 'Espalda', 1, '', 'free', true), ex('Aperturas polea', 'Pecho', 1, '', 'cable'), ex('Elevaciones laterales polea', 'Hombro', 1, 'drop', 'cable', false, 1), ex('Curl polea', 'Bíceps', 2, 'rp', 'cable', false, 1), ex('Ext. tríceps tras nuca', 'Tríceps', 2, 'drop', 'cable', false, 1)],
-      [],
-    ],
+    routine:createRoutinePlan(),
   });
 }
 export function weeklyVolume(state, date) {
   const dates = weekDates(date);
-  return MUSCLES.map(muscle => ({
-    muscle, target: state.targets[muscle],
-    planned: dates.flatMap(day=>dayContext(state,day).exercises.map(ex=>sessionExercise(state,ex,day))).filter(ex => ex.muscle === muscle).reduce((sum, ex) => sum + ex.sets, 0),
+  const plannedExercises=dates.flatMap(day=>dayContext(state,day).exercises.map(ex=>sessionExercise(state,ex,day)));
+  const configured=[...new Set([...MUSCLES,...Object.keys(state.targets??{}),...plannedExercises.map(ex=>ex.muscle),...state.logs.filter(log=>log.kind==='effective'&&dates.includes(log.date)).map(log=>log.muscle)])].filter(Boolean);
+  return configured.map(muscle => ({
+    muscle, target: state.targets[muscle]??0,
+    planned: plannedExercises.filter(ex => ex.muscle === muscle).reduce((sum, ex) => sum + ex.sets, 0),
     done: state.logs.filter(log => log.muscle === muscle && log.kind === 'effective' && dates.includes(log.date)).length,
   }));
 }
@@ -118,6 +114,14 @@ export function validateRoutine(routine) {
   for (const ex of routine.flat()) {
     if (!ex.name.trim()) return 'Escribe un nombre para cada ejercicio.';
     if (!Number.isInteger(ex.sets) || ex.sets < 1 || ex.sets > 20) return 'Cada ejercicio debe tener entre 1 y 20 series efectivas.';
+    if(ex.setPlan!==undefined){
+      if(!Array.isArray(ex.setPlan)||ex.setPlan.length!==ex.sets)return 'El plan debe contener una entrada por serie efectiva.';
+      for(const [index,entry] of ex.setPlan.entries()){
+        if(!entry||!['standard','top','backoff','heavy','light'].includes(entry.role)||!Number.isInteger(entry.repMin)||!Number.isInteger(entry.repMax)||entry.repMin<1||entry.repMax<entry.repMin||entry.repMax>200)return 'Revisa el rol y rango de repeticiones de cada serie.';
+        if(!['','drop','rp'].includes(entry.technique??'')||entry.technique&&index!==ex.sets-1)return 'La técnica se aplica solo en la última serie efectiva.';
+      }
+      if(!Number.isFinite(ex.backoffPercent??10)||(ex.backoffPercent??10)<0||(ex.backoffPercent??10)>50)return 'El back-off debe reducir entre 0 y 50% del Top Set.';
+    }
     if (!Number.isInteger(ex.approaches) || ex.approaches < 0 || ex.approaches > 3 || ex.preparationOverride!=null&&(!Number.isInteger(ex.preparationOverride)||ex.preparationOverride<0||ex.preparationOverride>3)) return 'Elige entre 0 y 3 series previas por ejercicio.';
     if (!Number.isFinite(ex.increment) || ex.increment <= 0 || ex.increment > 100) return 'El redondeo debe ser mayor que 0 y hasta 100 kg.';
     if (!Number.isInteger(ex.dropCount) || ex.dropCount < 1 || ex.dropCount > 3) return 'Elige entre 1 y 3 caídas de drop set.';
@@ -137,11 +141,15 @@ export function recordSet(state, exercise, log) {
   if (invalid) throw new Error(invalid);
   const trainingError = trainingLogError(state,exercise,log);
   if (trainingError) throw new Error(trainingError);
+  const effectiveIndex=state.logs.filter(item=>item.exerciseId===exercise.id&&item.date===log.date&&item.kind==='effective').length;
+  const planned=exercise.setPlan?.length?effectiveSetPlan(exercise,effectiveIndex):null;
+  if(log.kind==='effective'&&planned)log={...log,setIndex:effectiveIndex,setRole:planned.role,repMin:planned.repMin,repMax:planned.repMax};
   log = {...log,exerciseNotes:log.exerciseNotes??state.profiles[exercise.profileId]?.notes??'',...(['warmup','approach'].includes(log.kind)?{referenceWeight:state.profiles[exercise.profileId]?.workWeight}:{}),deload:exercise.deload,techniqueIntroduced:['drop','rp'].includes(log.kind)&&exercise.technique!==log.kind,performedAt:log.date===chileDate()?new Date().toISOString():null};
   const next = { ...state, logs: [...state.logs, log] };
-  if (log.kind === 'effective' && !exercise.deload) next.profiles = { ...state.profiles, [exercise.profileId]: { workWeight: null, targetReps: 8, notes: '', ...state.profiles[exercise.profileId], workWeight: log.weight } };
+  if (log.kind === 'effective' && !exercise.deload&&!['backoff','light'].includes(log.setRole)) next.profiles = { ...state.profiles, [exercise.profileId]: { workWeight: null, targetReps: 8, notes: '', ...state.profiles[exercise.profileId], workWeight: log.weight } };
   const prepared = next.logs.filter(item => item.exerciseId === exercise.id && item.date === log.date && item.kind === 'approach').length;
-  const seconds = log.kind === 'effective' && exercise.technique ? exercise.rests[exercise.technique] : restFor(exercise, log.kind, prepared);
+  const finalTechnique=planned?planned.technique:exercise.technique;
+  const seconds = log.kind === 'effective' && finalTechnique ? exercise.rests[finalTechnique] : restFor(exercise, log.kind, prepared);
   next.timer = { end: Date.now() + seconds * 1000, duration: seconds, label: exercise.name };
   return next;
 }

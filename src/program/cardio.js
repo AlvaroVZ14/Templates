@@ -1,6 +1,7 @@
 import {shiftDate,validDate} from '../wellness.js';
 import {daysBetween,phaseForDate,trend} from './phases.js';
 import {dayContext} from './nutrition.js';
+import {routineForDate} from '../routinePlan.js';
 
 export const CARDIO_RANGES={bulk:[10,15],cut:[20,30],maintain:[15,20]};
 export const CARDIO_MODES=['Caminata inclinada','Bicicleta suave','Trote suave'];
@@ -28,7 +29,7 @@ export function saveCardioSettings(state,settings,date,at=new Date().toISOString
 }
 export function cardioWeekDates(date){const index=(new Date(`${date}T12:00:00Z`).getUTCDay()+6)%7;return Array.from({length:7},(_,i)=>shiftDate(date,i-index));}
 export function cardioSchedule(state,date,kind,settings=cardioSettings(state,date)){
-  const available=state.routine.map((exercises,day)=>({exercises,day})).filter(row=>row.exercises.length&&!row.exercises.some(ex=>ex.muscle==='Cuádriceps')).map(row=>row.day);
+  const available=routineForDate(state,date).map((exercises,day)=>({exercises,day})).filter(row=>row.exercises.length&&!row.exercises.some(ex=>ex.muscle==='Cuádriceps')).map(row=>row.day);
   const automatic=kind==='maintain'?[...new Set([available[0],available[Math.floor(available.length/2)],available.at(-1)].filter(day=>day!==undefined))]:available.slice(0,4);
   const rest=cardioWeekDates(date).map((day,index)=>({index,context:dayContext(state,day)})).filter(row=>row.context.type==='rest').map(row=>row.index);
   const config=settings.phases[kind];return {days:config.days??automatic,restDays:config.restDays??(kind==='cut'&&rest.length?[rest.at(-1)]:[])};

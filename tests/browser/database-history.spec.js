@@ -1,7 +1,7 @@
 import {quickDetails} from './quick-helpers.js';
 import {go,chooseDate} from './fixtures.js';
 import {test,expect} from './fixtures.js';
-import {initialState} from '../../src/domain.js';
+import {initialState} from '../fixtures/legacy-state.js';
 import {readFile} from 'node:fs/promises';
 
 function fixture(){const state=initialState(),ex=state.routine[0][0];state.phases[0].startDate='2025-01-01';state.profiles[ex.profileId].workWeight=120;state.logs=['2025-01-06','2026-03-02','2026-07-06','2026-10-05','2026-10-12'].map((date,i)=>({id:`effective-${i}`,date,exerciseId:ex.id,profileId:ex.profileId,exerciseName:ex.name,muscle:ex.muscle,equipment:ex.equipment,kind:'effective',weight:100+i*5,reps:8,rpe:i===0?null:10,failure:true,createdAt:`${date}T18:00:00Z`}));for(const kind of ['warmup','approach','drop','rp','forced','negative'])state.logs.push({...state.logs[4],id:kind,kind,parentId:state.logs[4].id,weight:['warmup','approach'].includes(kind)?50:100,step:1,failure:!['warmup','approach'].includes(kind)});state.cardio=[{id:'bike',date:'2026-10-12',type:'Bici',minutes:20,intensity:'Suave'}];state.journal={'2026-10-11':{weight:70,sleepHours:6},'2026-10-12':{weight:70.2,sleepHours:8}};state.meals=[{id:'meal',date:'2026-10-12',name:'Prueba',kcal:220,protein:10}];state.phaseHistory=[{...state.phases[0],id:'historical',closedAt:'2025-01-01',calorieChanges:[],completeDays:0,fulfillment:null,finalWeight:null,finalWaist:null}];return state;}
