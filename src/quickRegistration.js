@@ -1,5 +1,5 @@
 import {recordSet,roundWeight,localDate} from './domain.js';
-import {effectiveSetPlan,effectiveSetSuggestion} from './routinePlan.js';
+import {progressionSet,progressionSuggestion} from './doubleProgression.js';
 import {startGymSession,openGymSession,finishGymSession,gymSummary} from './gym.js';
 
 export function previousEffectiveSession(state,ex,date){
@@ -8,10 +8,8 @@ export function previousEffectiveSession(state,ex,date){
   return rows.filter(row=>row.date===lastDate).sort((a,b)=>(a.createdAt??'').localeCompare(b.createdAt??''));
 }
 export function quickSetValues(state,ex,date,index,logs=[]){
-  const previous=previousEffectiveSession(state,ex,date),plan=effectiveSetPlan(ex,index),prior=previous[index];
-  const compatible=prior&&(plan.role!=='light'||prior.setRole==='light');
-  const suggested=effectiveSetSuggestion(ex,state.profiles[ex.profileId]?.workWeight??null,index,logs);
-  return {...plan,weight:compatible?prior.weight:suggested.weight,reps:compatible?prior.reps:suggested.reps,prior:compatible?prior:null};
+  const prior=previousEffectiveSession(state,ex,date)[index];
+  return {...progressionSet(state,ex,date,index,logs),prior:prior??null};
 }
 export function quickRestSeconds(ex){return Math.max(1,Math.min(900,ex.rests?.effective??(ex.compound?150:105)));}
 export function dropWeight(ex,weight,index=0){return weight==null?null:roundWeight(weight*Math.pow(.7,index+1),ex.increment??1);}
@@ -27,11 +25,13 @@ export function confirmQuickSet(state,ex,date,index,values,now=Date.now()){
   const effective=state.logs.filter(row=>row.date===date&&row.exerciseId===ex.id&&row.kind==='effective');
   if(index!==effective.length)throw new Error('Confirma las series en orden.');
   if(values.weight==null||values.weight===''||values.reps==null||values.reps==='')throw new Error('Elige el peso y las repeticiones.');
+  const suggestion=progressionSuggestion(state,ex,date);
   let next={...state,logs:measuredRest(state,date,now)};
+  if(!(next.progressionDecisions??[]).some(row=>row.date===date&&row.exerciseId===ex.id&&row.type==='used'))next={...next,progressionDecisions:[...(next.progressionDecisions??[]),{...suggestion,id:crypto.randomUUID(),type:'used',createdAt:new Date(now).toISOString()}]};
   if(date===today&&!openGymSession(next))next=startGymSession(next,date,new Date(now).toISOString());
   if(!next.sessionMeta?.[date]?.startedAt)next={...next,sessionMeta:{...next.sessionMeta,[date]:{...meta,startedAt:new Date(now).toISOString()}}};
   const parentId=crypto.randomUUID(),common={exerciseId:ex.id,profileId:ex.profileId,equipment:ex.equipment,exerciseName:ex.name,muscle:ex.muscle,date,rpe:null,failure:null,createdAt:new Date(now).toISOString(),restRealSeconds:null};
-  next=recordSet(next,ex,{...common,id:parentId,kind:'effective',weight:Number(values.weight),reps:Number(values.reps)});
+  next=recordSet(next,ex,{...common,id:parentId,kind:'effective',progressionDecisionId:next.progressionDecisions.findLast(row=>row.date===date&&row.exerciseId===ex.id&&row.type==='used')?.id,weight:Number(values.weight),reps:Number(values.reps)});
   if(values.technique){
     const kind=values.technique;
     if(ex.deload||index!==ex.sets-1||kind!==ex.technique||!['drop','rp'].includes(kind))throw new Error('La técnica corresponde solo a la última efectiva, fuera de descarga.');

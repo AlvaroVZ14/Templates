@@ -1,19 +1,34 @@
 import {test,expect} from '@playwright/test';
 import {initialState} from '../../src/domain.js';
+import {saveExerciseFeedback} from '../../src/doubleProgression.js';
 import {go} from './navigation-helpers.js';
 
 const date='2026-11-03',now='2026-11-03T18:00:00Z';
 const card=(page,name)=>page.getByRole('article',{name,exact:true});
 async function stateOf(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});try{return await new Promise(resolve=>{const req=db.transaction('app').objectStore('app').get('state');req.onsuccess=()=>resolve(req.result);});}finally{db.close();}});}
-async function seed(page,{history=true}={}){
+async function seed(page,{history=true,qualified=false}={}){
  await page.clock.install({time:new Date(now)});page.on('dialog',dialog=>dialog.accept());
- const state=initialState();state.weightSetup={reviewedAt:now};state.navigationSettings={drawerSide:'right',lastSession:date};state.appearanceSettings={...state.appearanceSettings,effects:'off'};
+ let state=initialState();state.weightSetup={reviewedAt:now};state.navigationSettings={drawerSide:'right',lastSession:date};state.appearanceSettings={...state.appearanceSettings,effects:'off'};
  for(const ex of state.routine.flat())state.profiles[ex.profileId].workWeight=40;
  if(history)for(const ex of state.routine[1])for(let index=0;index<ex.sets;index++)state.logs.push({id:`last-${ex.id}-${index}`,exerciseId:ex.id,profileId:ex.profileId,equipment:ex.equipment,exerciseName:ex.name,muscle:ex.muscle,date:'2026-10-27',kind:'effective',weight:ex.setPlan[index].role==='backoff'?36:40,reps:8+index,setRole:ex.setPlan[index].role,createdAt:`2026-10-27T18:${String(state.logs.length).padStart(2,'0')}:00Z`,rpe:9,failure:false});
+ if(qualified){const ex=state.routine[1][0];state.logs=state.logs.map(row=>row.exerciseId===ex.id?{...row,reps:10,weight:row.setRole==='backoff'?72.5:80}:row);state=saveExerciseFeedback(state,ex,'2026-10-27','strong',true);}
  await page.route('**/Templates/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Fictitious fixture</title>'}));await page.goto('./');
  await page.evaluate(async state=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal',1);req.onupgradeneeded=()=>req.result.createObjectStore('app');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);
  await page.unroute('**/Templates/');await page.reload();await expect(page.locator('.fast-exercise')).toHaveCount(7);
 }
+test('progresión visible, sensación al terminar, decisión persistida y consultable sin popups',async({page})=>{
+ await seed(page,{qualified:true});const name='Press inclinado mancuernas',c=card(page,name);
+ await expect(c.locator('.fast-progression').first()).toContainText('82,5 kg × 6–10');
+ await expect(c.getByRole('group',{name:`Sensación de ${name}`})).toHaveCount(0);
+ for(let index=1;index<=4;index++){await c.getByRole('button',{name:`Confirmar ${name}, serie ${index}`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(index);}
+ await c.getByRole('checkbox',{name:'Todas las efectivas con técnica limpia y 0–2 RIR',exact:true}).check();
+ await c.getByRole('button',{name:'😫 flojo',exact:true}).click();await expect(c.getByRole('button',{name:'😫 flojo',exact:true})).toHaveAttribute('aria-pressed','true');
+ await expect(c.locator('.fast-feedback')).toContainText('Sensación flojo: mantener');
+ let state=await stateOf(page);expect(state.exerciseFeedback.at(-1).cleanRir).toBe(true);expect(state.progressionDecisions.at(-1).action).toBe('maintain');expect(state.logs.filter(row=>row.date===date&&row.kind==='effective')[0].weight).toBe(82.5);
+ await page.reload();await expect(card(page,name).getByRole('button',{name:'😫 flojo',exact:true})).toHaveAttribute('aria-pressed','true');
+ await go(page,'Historial');const decisions=page.locator('details').filter({has:page.locator('summary').filter({hasText:'Decisiones de progresión'})}).first();await decisions.locator('summary').click();await expect(decisions).toContainText('Sugerencia usada');await expect(decisions).toContainText('Registrado: 82,5 kg × 6');await expect(decisions).toContainText('Sensación flojo: mantener');
+});
+
 test('17 filas de44px, sin formularios ni previas, con tarjetas compactas en móvil y escritorio',async({page})=>{
  await seed(page);await expect(page.locator('.fast-set-line')).toHaveCount(17);await expect(page.locator('main input:visible')).toHaveCount(0);await expect(page.getByRole('tab',{name:/Previas/})).toHaveCount(0);
  await expect(card(page,'Press inclinado mancuernas').getByText('Calentamiento: 1–2 progresivas + 1 de ajuste (no se registra)',{exact:true})).toBeVisible();
@@ -25,7 +40,7 @@ test('✓ confirma valores anteriores por serie, sin duplicados; recarga offline
  await seed(page);const ex='Press inclinado mancuernas',c=card(page,ex);await expect(c.locator('.fast-target')).toContainText('40×8');
  await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).dblclick();await expect(c.locator('.confirmed')).toHaveCount(1);
  await page.clock.fastForward(178000);await c.getByRole('button',{name:`Confirmar ${ex}, serie 2`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(2);
- let state=await stateOf(page),rows=state.logs.filter(log=>log.date===date);expect(rows).toHaveLength(2);expect(rows[0].weight).toBe(40);expect(rows[1].weight).toBe(36);expect(rows[1].reps).toBe(9);expect(rows[0].restRealSeconds).toBeGreaterThanOrEqual(178);expect(rows[0].restRealSeconds).toBeLessThan(185);expect(rows[0].rpe).toBeNull();
+ let state=await stateOf(page),rows=state.logs.filter(log=>log.date===date);expect(rows).toHaveLength(2);expect(rows[0].weight).toBe(40);expect(rows[1].weight).toBe(36);expect(rows[1].reps).toBe(10);expect(rows[0].restRealSeconds).toBeGreaterThanOrEqual(178);expect(rows[0].restRealSeconds).toBeLessThan(185);expect(rows[0].rpe).toBeNull();
  await expect(page.getByLabel('Temporizador de descanso',{exact:true})).toBeVisible();expect(await page.getByLabel('Temporizador de descanso',{exact:true}).evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(65);
  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await context.setOffline(true);await page.reload();await expect(card(page,ex).locator('.confirmed')).toHaveCount(2);
 });

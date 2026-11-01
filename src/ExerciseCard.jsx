@@ -4,6 +4,7 @@ import {localDate} from './domain.js';
 import {shiftDate} from './wellness.js';
 import {ExercisePainNotice,FailureSafety} from './Pain.jsx';
 import {confirmQuickSet,dropWeight,previousEffectiveSession,quickSetValues} from './quickRegistration.js';
+import ProgressionControl from './ProgressionControl.jsx';
 import './fast-register.css';
 
 const roles={top:'Top',backoff:'Back-off',heavy:'Pesada',light:'Ligera',standard:'Efectiva'};
@@ -49,6 +50,7 @@ export default function ExerciseCard({exercise:ex,index,date,data,logs,change,sa
     <header className="fast-exercise-heading"><span className="fast-index">{String(index+1).padStart(2,'0')}</span><h2>{ex.name}</h2><small>{effective.length}/{ex.sets}</small></header>
     {ex.loadType==='heavy'&&<p className="fast-warmup">Calentamiento: 1–2 progresivas + 1 de ajuste (no se registra)</p>}
     <p className="fast-target">{firstPlan.repMin}–{firstPlan.repMax} reps · {ex.deload?'descarga, lejos del fallo':'0–2 RIR'} · {previous?`${previousLabel(previous.date,localDate())} ${display(previous.weight)}×${previous.reps}`:'Sin historial: toca el peso'}<span> · {unit}</span></p>
+    <ProgressionControl data={data} ex={ex} date={date} change={change} saving={saving||busy} complete={effective.length===ex.sets}/>
     <ExercisePainNotice data={data} exercise={ex} date={date}/>
     <div className="fast-series" role="group" aria-label={`Series de ${ex.name}`}>
       {Array.from({length:ex.sets},(_,row)=>{
