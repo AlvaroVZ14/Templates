@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B0B0D">
+<title>Olympia · Propuesta de carga</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0B0B0D;color:#F2F0EB;font-family:Arial,sans-serif}
+body{min-height:100svh;display:grid;place-items:center;padding:env(safe-area-inset-top) 24px env(safe-area-inset-bottom)}
+main{width:min(100%,470px);text-align:center}.brand{position:relative;isolation:isolate;overflow:hidden}.brand img{display:block;width:100%;height:auto;aspect-ratio:900/800}
+.shine{position:absolute;inset:0;overflow:hidden;pointer-events:none;mask:url('./logo.svg') center/contain no-repeat;mask-mode:luminance}
+.shine:after{content:'';position:absolute;inset:-50% -120%;background:linear-gradient(100deg,transparent 44%,#F2F0EB66 49%,#fff9 50%,transparent 55%);transform:translateX(-40%);opacity:0;animation:shine 180ms ease-out 100ms}
+@keyframes shine{0%{transform:translateX(-40%);opacity:0}25%{opacity:.8}100%{transform:translateX(40%);opacity:0}}
+.load{margin:0 auto;width:86px;height:2px;overflow:hidden;background:#F2F0EB1A}.load:before{content:'';display:block;width:100%;height:100%;background:#E10600;transform-origin:left;animation:load 180ms ease-out}
+@keyframes load{from{transform:scaleX(0);opacity:.5}to{transform:scaleX(1);opacity:1}}
+p{margin:20px 0;color:#ADA8A2;font-size:10px;letter-spacing:3px}button{margin-top:35px;min-height:44px;padding:0 18px;border:1px solid #393438;background:transparent;color:#ADA8A2;cursor:pointer;font-size:11px}
+@media(prefers-reduced-motion:reduce){.shine:after,.load:before{animation:none!important}.shine{display:none}}
+</style>
+<main><div class="brand"><img src="./logo.svg" width="900" height="800" alt="Olympia. Classic Physique."><div class="shine" aria-hidden="true"></div></div><div class="load" aria-hidden="true"></div><p>PREPARANDO TU SESIÓN</p><button type="button" id="replay">Repetir brillo de muestra</button></main>
+<script>document.querySelector('#replay').addEventListener('click',()=>{const area=document.querySelector('.brand'),next=area.cloneNode(true);area.replaceWith(next);});</script>
+</html>

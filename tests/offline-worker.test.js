@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import config, { appearanceAssets, offlineWorker } from '../vite.config.js';
+import {BRAND_ASSETS} from '../src/brand.js';
 
 const scope = 'https://example.test/Templates/';
 function generatedWorker(publicRoot, warnings = []) {
@@ -143,7 +144,7 @@ function appearanceFixture(t) {
   write('backgrounds/own.webp', new Uint8Array([1, 2, 3]));
   write('backgrounds/own.mp4', new Uint8Array([4, 5, 6]));
   write('appearance.json', JSON.stringify({ media: null, poster: null }));
-  for (const asset of ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png']) write(asset, 'fixture');
+  for (const asset of ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png',...BRAND_ASSETS]) write(asset, 'fixture');
   return { root, write, validate };
 }
 

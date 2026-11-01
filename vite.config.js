@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {BRAND_ASSETS} from './src/brand.js';
 
 // Media is opt-in and stays in the same origin/cache as the rest of the PWA.
 // Reject mistakes at build time instead of silently publishing a broken offline loop.
@@ -41,7 +42,7 @@ export function offlineWorker(directory = fileURLToPath(new URL('./public/', imp
     apply: 'build',
     generateBundle(_, bundle) {
       const publicRoot = realpathSync(directory);
-      const publicAssets = ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'appearance.json', ...appearanceAssets(publicRoot)];
+      const publicAssets = ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'appearance.json', ...BRAND_ASSETS, ...appearanceAssets(publicRoot)];
       if (publicAssets.includes('hero.jpg') && statSync(resolve(publicRoot, 'hero.jpg')).size > 2 * 1024 * 1024) this.warn?.('hero.jpg supera los 2 MiB recomendados. Comprime la portada para acelerar el primer inicio y su copia offline.');
       const files = ['index.html', ...publicAssets, ...Object.keys(bundle)];
       const hash = createHash('sha256').update(Object.values(bundle).map(x => x.code ?? String(x.source)).join(''));

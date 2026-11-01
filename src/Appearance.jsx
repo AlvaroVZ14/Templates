@@ -1,11 +1,12 @@
 import {useEffect, useRef, useState} from 'react';
 import {IronSilhouettes} from './Grunge.jsx';
+import {APP_NAME,appName} from './brand.js';
 
-export const DEFAULT_APPEARANCE = {name:'BLOOD & GUTS', motto:'POCAS SERIES. MÁXIMA INTENCIÓN.', motion:true, customMedia:true, effects:'full'};
+export const DEFAULT_APPEARANCE = {name:APP_NAME, motto:'POCAS SERIES. MÁXIMA INTENCIÓN.', motion:true, customMedia:true, effects:'full'};
 export const appearanceFor = data => {
   const settings=data?.appearanceSettings;
   return {
-    name:typeof settings?.name==='string'&&settings.name.trim()?settings.name.trim().slice(0,32):DEFAULT_APPEARANCE.name,
+    name:appName(settings?.name),
     motto:typeof settings?.motto==='string'&&settings.motto.trim()?settings.motto.trim().slice(0,80):DEFAULT_APPEARANCE.motto,
     motion:typeof settings?.motion==='boolean'?settings.motion:true,
     customMedia:typeof settings?.customMedia==='boolean'?settings.customMedia:true,

@@ -1,4 +1,5 @@
 import GrungeAtmosphere,{Cracks} from './Grunge.jsx';
+import Brand from './Brand.jsx';
 import {useVisualEnvironment} from './VisualEffects.jsx';
 import usePwa from './usePwa.js';
 import PwaSettings from './PwaSettings.jsx';
@@ -164,7 +165,7 @@ export default function App() {
     <SideDecor appearance={appearance}/>
     <header className="masthead"><Cracks header/>
       <div className="brand" aria-label={appearance.name}>
-        <span className="brand-symbol"><Icon name="bar" size={29} /></span><span className="brand-name">{appearance.name}<small>DIARIO DE ENTRENAMIENTO · NATURAL</small></span>
+        <Brand name={appearance.name}/>
       </div>
       <div className="header-actions"><button className="menu-button" aria-label="Abrir menú" aria-expanded={menuOpen} aria-haspopup="dialog" onClick={()=>setMenuOpen(true)}><Icon name="menu" size={22}/><span className="menu-word">Menú</span></button><span className={`connection ${!pwa.online ? 'offline' : ''}`}><i />{!pwa.online ? 'Sin conexión' : pwa.ready ? 'Offline listo' : 'Local · privado'}</span>
 </div>
@@ -172,7 +173,7 @@ export default function App() {
     {pwa.available&&page!=='today'&&<aside className="notice pwa-update" role="status"><button className="primary" disabled={saving||pwa.updating||pwa.checking||!data} onClick={()=>pwa.update(async()=>{if(locked.current)return false;await seriesQueue.flush();await drafts.flush();return true;})}>{pwa.updating?'Guardando y actualizando…':'Hay una versión nueva, tocar para actualizar'}</button><p className="field-note">Conserva tus registros y borradores en este dispositivo.</p></aside>}
     {installHelp && <aside className="install-help"><strong>Instala {appearance.name}</strong><p>En Android o escritorio: menú del navegador → Instalar aplicación. En iPhone: Safari → Compartir → Añadir a pantalla de inicio.</p><p>{pwa.ready ? 'La app está preparada para abrir sin conexión.' : 'La instalación y el modo offline se preparan en la versión de producción, con HTTPS o localhost.'}</p><button className="quiet" onClick={() => setInstallHelp(false)}>Entendido</button></aside>}
     {(error || pwa.error) && <div className="error global-error" role="alert">{error || pwa.error}{!data && <button className="quiet" onClick={boot}>Reintentar</button>}</div>}
-    {!data ? <main className="loading" aria-live="polite"><span className="loading-mark" aria-hidden="true">B&amp;G</span><strong>{appearance.name}</strong><span>{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</span></main> : <>
+    {!data ? <main className="loading" aria-live="polite"><Brand name={appearance.name} full loading/><span>{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</span></main> : <>
       <main id="main-content"><Suspense fallback={<div className="page-skeleton" role="status">Abriendo sección local…</div>}>
         {page==='workout'&&date!==clockDay&&<aside className="notice"><p>Estás viendo la sesión del {date}. Hoy en Chile: {clockDay}.</p><button className="secondary" onClick={()=>navigate('today',clockDay)}>Ir a hoy</button></aside>}
         {gymOpen&&!gymActive&&page!=='today'&&<aside className="notice gym-recovery"><p>Sesión abierta del {gymOpen.date}. Tus series están guardadas.</p><button className="secondary" onClick={()=>navigate('workout',gymOpen.date)}>Volver a la sesión abierta</button></aside>}

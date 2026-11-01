@@ -1,4 +1,6 @@
-# BLOOD & GUTS · Registro personal
+# Olympia · Registro personal
+
+**Identidad actual:** [logo vectorial, íconos, splash y actualización a Olympia](docs/identidad-olympia.md).
 
 **Interfaz actual:** [inicio de cuatro elementos y entrenamiento con un ejercicio abierto](docs/interfaz-simple.md).
 Todo lo secundario sigue accesible desde el menú lateral.
@@ -890,11 +892,11 @@ comprueba el historial y los ajustes. Usa **Reemplazar** cuando quieras restaura
 todo el estado de ese archivo. Las pruebas automatizadas verifican ambos modos,
 la repetición sin duplicados, importación offline, preservación de campos y
 reversión ante una escritura fallida; usan bases aisladas con datos ficticios.
-# Diseño BLOOD & GUTS
+# Diseño Olympia
 
 La interfaz usa fondo `#0A0A0A`, paneles `#161616`, rojo sangre `#C8102E`, activo `#FF1A1A`, texto hueso y gris acero. Anton para títulos/números y Barlow para el cuerpo se sirven desde la propia app; sus licencias OFL están en `src/assets/fonts/`. No depende de Google Fonts ni de fotos externas. Las señales de Progreso conservan sus colores e iconos y sus reglas originales.
 
-En **Menú → Ajustes → Tu identidad** puedes cambiar el nombre BLOOD & GUTS y el lema, pausar el fondo o desactivar tu medio propio. El nombre personalizado se guarda localmente y se incluye en el respaldo; el nombre instalado que muestra el sistema parte del manifest. Los cálculos, datos históricos y reglas de entrenamiento conservan su funcionamiento.
+En **Menú → Ajustes → Tu identidad** puedes cambiar el nombre Olympia y el lema, pausar el fondo o desactivar tu medio propio. El nombre personalizado se guarda localmente y se incluye en el respaldo; el nombre instalado que muestra el sistema parte del manifest. Los cálculos, datos históricos y reglas de entrenamiento conservan su funcionamiento.
 
 El inicio contiene una silueta SVG original, grano suave y un resplandor rojo lento. Se detienen al ocultar la pestaña o activar movimiento reducido. Guardar una efectiva produce un destello rojo; marcar fallo, una sacudida breve. Las previas se distinguen en gris y las efectivas en rojo. El descanso muestra un anillo que se vacía y termina con una vibración de 120 ms en dispositivos compatibles. `prefers-reduced-motion` desactiva las animaciones, transiciones y la reproducción del video.
 
