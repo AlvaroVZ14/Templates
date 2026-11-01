@@ -11,9 +11,11 @@ const display=value=>value==null||value===''?'—':Number(value).toLocaleString(
 function NumberControl({value,label,onChange,disabled=false,inherited=false,step=1,min=0,max=1500,initialValue=null}){
   const [editing,setEditing]=useState(false),[keyboard,setKeyboard]=useState(false);
   const container=useRef(null);
+  const numberRef=useRef(null),previousValue=useRef(value);
+  useEffect(()=>{const before=previousValue.current;previousValue.current=value;if(before===value||!label.startsWith('Peso')||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const animation=numberRef.current?.animate([{opacity:.6,transform:'translateY(3px) scale(.98)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:200,easing:'ease-out'});return()=>animation?.cancel();},[value]);
   useEffect(()=>{if(!editing)return;const close=event=>{if(!container.current?.contains(event.target)){setEditing(false);setKeyboard(false);}};document.addEventListener('pointerdown',close);return()=>document.removeEventListener('pointerdown',close);},[editing]);
   return <div ref={container} className={`fast-number ${inherited?'inherited':''}`}>
-    <button type="button" className="number-value" disabled={disabled} aria-label={`${label}: ${display(value)}`} aria-expanded={editing} onClick={()=>{setEditing(!editing);setKeyboard(false);}}>{display(value)}</button>
+    <button ref={numberRef} type="button" className="number-value" disabled={disabled} aria-label={`${label}: ${display(value)}`} aria-expanded={editing} onClick={()=>{setEditing(!editing);setKeyboard(false);}}>{display(value)}</button>
     {editing&&!disabled&&<div className="number-stepper" role="group" aria-label={`Ajustar ${label}`} onKeyDown={event=>{if(event.key==='Escape'){setEditing(false);setKeyboard(false);}}}>
       <button type="button" aria-label={`Restar ${step} a ${label}`} onClick={()=>onChange(Number(Math.max(min,(Number(value??initialValue)||0)-step).toFixed(2)))}>−{display(step)}</button>
       {value==null&&initialValue!=null?<button type="button" aria-label={`Usar sugerencia de ${label}`} onClick={()=>onChange(initialValue)}>{display(initialValue)}</button>:<strong>{display(value)}</strong>}

@@ -15,6 +15,7 @@ import CardioSettings from './CardioSettings.jsx';
 import PainPage from './Pain.jsx';
 import SimpleHome from './SimpleHome.jsx';
 import WorkoutDeck from './WorkoutDeck.jsx';
+import WorkoutSummary,{CompletionStamp} from './WorkoutSummary.jsx';
 import RestTimer from './RestTimer.jsx';
 import {adjustRestTimer} from './restTimer.js';
 import {startGymSession,openGymSession} from './gym.js';
@@ -182,7 +183,7 @@ export default function App() {
         {gymOpen&&!gymActive&&page!=='today'&&<aside className="notice gym-recovery"><p>Sesión abierta del {gymOpen.date}. Tus series están guardadas.</p><button className="secondary" onClick={()=>navigate('workout',gymOpen.date)}>Volver a la sesión abierta</button></aside>}
         {page !== 'today' && page !== 'workout' && page !== 'measurements' && page !== 'monthly-check' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
         {page==='today'&&<SimpleHome data={data} date={clockDay} onStart={beginWorkout} saving={saving}/>}
-        {page === 'workout' && <Workout key={date} data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} gymActive={gymActive} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} onConfirm={seriesQueue.confirm} restTimer={<RestTimer timer={data.timer} data={data} busy={saving} onAdjust={delta=>change(state=>adjustRestTimer(state,delta))} onFinish={()=>{if(gymActive&&data.gymSettings?.sound)audio.play();}} onClose={()=>change(state=>({...state,timer:null}))}/>} />}
+        {page === 'workout' && <Workout key={date} data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} gymActive={gymActive} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} onConfirm={seriesQueue.confirm} onDone={()=>navigate('today',clockDay)} restTimer={<RestTimer timer={data.timer} data={data} busy={saving} onAdjust={delta=>change(state=>adjustRestTimer(state,delta))} onFinish={()=>{if(gymActive&&data.gymSettings?.sound)audio.play();}} onClose={()=>change(state=>({...state,timer:null}))}/>} />}
         {page==='weights'&&<WeightSetup data={data} change={change} saving={saving} onDone={()=>{setPage('today');setMenuOpen(false);}}/>}
         {page==='pain'&&<PainPage data={data} date={localDate()} onDiary={value=>navigate('diary',value)}/>}
         {page==='routine'&&<Routine data={data} change={change} saving={saving}/>}
@@ -202,7 +203,7 @@ export default function App() {
   </div></DraftProvider>;
 }
 
-function Workout({ data, date, change, saving, onFood, onDiary, onMeasures, gymActive, finishGym, wake, audio, gymSound, onPain, onConfirm, restTimer }) {
+function Workout({ data, date, change, saving, onFood, onDiary, onMeasures, gymActive, finishGym, wake, audio, gymSound, onPain, onConfirm, restTimer,onDone }) {
   const {context,exercises}=sessionPreview(data,date);
   const logs=data.logs.filter(log=>log.date===date),planned=exercises.reduce((sum,ex)=>sum+ex.sets,0);
   const done=exercises.reduce((sum,ex)=>sum+logs.filter(log=>log.exerciseId===ex.id&&log.kind==='effective').length,0);
@@ -213,15 +214,19 @@ function Workout({ data, date, change, saving, onFood, onDiary, onMeasures, gymA
   async function selectExercise(id){setCurrent(id);if(data.gymSession?.date===date)try{await persistTrainingMetadata({selection:{date,id}});}catch{/* The last confirmed exercise remains recoverable. */}}
   const selectRef=useRef(selectExercise);selectRef.current=selectExercise;
   const selectPanel=useCallback(id=>selectRef.current(id),[]);
+  const [review,setReview]=useState(false),[closing,setClosing]=useState(false);
+  async function closeWorkout(){setReview(true);setClosing(true);try{await finishGym(date);}finally{setClosing(false);}}
+  if(review)return <div className="fast-session"><WorkoutSummary data={data} date={date} planned={planned} pending={closing||saving} finished={finished} onFinish={()=>finished?onDone():closeWorkout()}/><button className="quiet recap-back" onClick={()=>setReview(false)}>Revisar ejercicios</button></div>;
   return <div className="fast-session">
-    <div className="fast-session-heading"><div><p>{dateLabel}</p><h1>{exercises.length?sessionName(exercises):'Descanso'}</h1></div></div>
+    <div className="fast-session-heading"><div><p>{dateLabel}</p><h1>{exercises.length?sessionName(exercises):'Descanso'}</h1></div><CompletionStamp complete={complete} done={done} planned={planned}/></div>
     {planned>0&&<div className="session-segments" role="progressbar" aria-label="Series completadas" aria-valuemin={0} aria-valuemax={planned} aria-valuenow={done}>{exercises.flatMap(ex=>Array.from({length:ex.sets},(_,row)=><i key={`${ex.id}-${row}`} className={logs.filter(log=>log.exerciseId===ex.id&&log.kind==='effective').length>row?'complete':''}/>))}</div>}
     {data.routineActivatedOn>localDate()&&<p className="notice">La sesión anterior sigue disponible. La nueva rutina se activa el {data.routineActivatedOn}.</p>}
     {context.calendarNeedsReview&&<p className="notice">Este día tenía un ajuste del calendario anterior. Puedes revisarlo en las opciones del día.</p>}
     {exercises.length?<WorkoutDeck exercises={exercises} current={current} onSelect={selectPanel} data={data} date={date} logs={logs} restTimer={restTimer}>
       {exercises.map((ex,index)=><ExercisePanel key={`${date}-${ex.id}`} exercise={ex} index={index} date={date} data={data} logs={logs.filter(log=>log.exerciseId===ex.id)} change={change} saving={saving} onConfirm={onConfirm} open={current===ex.id} onSelect={selectPanel}/>)}
     </WorkoutDeck>:<div className="rest-card" data-testid="rest-card"><h3>{rest.title}</h3><p>{rest.text}</p></div>}
-    {complete&&!finished&&<button type="button" className="primary session-finish" disabled={saving} onClick={()=>finishGym(date)}>Terminar sesión</button>}
+    {complete&&!finished&&<button type="button" className="primary session-finish" disabled={saving} onClick={closeWorkout}>Terminar sesión</button>}
+    {finished&&<button type="button" className="secondary session-finish" onClick={()=>setReview(true)}>Ver resumen</button>}
     {finished&&<p className="fast-finished" role="status">✓ Sesión terminada · todo guardado.</p>}
 
   </div>;

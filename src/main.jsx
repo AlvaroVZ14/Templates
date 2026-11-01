@@ -23,5 +23,6 @@ import './brand.css';
 import './workout-deck.css';
 import './series-cards.css';
 import './rest-timer.css';
+import './workout-premium.css';
 
 createRoot(document.getElementById('root')).render(<App />);
