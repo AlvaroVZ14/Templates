@@ -19,7 +19,8 @@ function measuredRest(state,date,now){
   const seconds=Math.max(0,Math.min(86400,Math.round((now-timer.startedAt)/1000)));
   return state.logs.map(log=>log.id===timer.sourceLogId?{...log,restRealSeconds:seconds,restMeasurement:'between-confirmations'}:log);
 }
-export function confirmQuickSet(state,ex,date,index,values,now=Date.now()){
+export function confirmQuickSet(state,ex,date,index,values,now=Date.now(),operationId=null){
+  if(operationId&&state.logs.some(row=>row.id===`${operationId}:set`))return state;
   const today=localDate(new Date(now)),meta=state.sessionMeta?.[date];
   if(meta?.endedAt)throw new Error('Esta sesión ya está terminada.');
   const effective=state.logs.filter(row=>row.date===date&&row.exerciseId===ex.id&&row.kind==='effective');
@@ -27,10 +28,10 @@ export function confirmQuickSet(state,ex,date,index,values,now=Date.now()){
   if(values.weight==null||values.weight===''||values.reps==null||values.reps==='')throw new Error('Elige el peso y las repeticiones.');
   const suggestion=progressionSuggestion(state,ex,date);
   let next={...state,logs:measuredRest(state,date,now)};
-  if(!(next.progressionDecisions??[]).some(row=>row.date===date&&row.exerciseId===ex.id&&row.type==='used'))next={...next,progressionDecisions:[...(next.progressionDecisions??[]),{...suggestion,id:crypto.randomUUID(),type:'used',createdAt:new Date(now).toISOString()}]};
+  if(!(next.progressionDecisions??[]).some(row=>row.date===date&&row.exerciseId===ex.id&&row.type==='used'))next={...next,progressionDecisions:[...(next.progressionDecisions??[]),{...suggestion,id:operationId?`${operationId}:decision`:crypto.randomUUID(),type:'used',createdAt:new Date(now).toISOString()}]};
   if(date===today&&!openGymSession(next))next=startGymSession(next,date,new Date(now).toISOString());
   if(!next.sessionMeta?.[date]?.startedAt)next={...next,sessionMeta:{...next.sessionMeta,[date]:{...meta,startedAt:new Date(now).toISOString()}}};
-  const parentId=crypto.randomUUID(),common={exerciseId:ex.id,profileId:ex.profileId,equipment:ex.equipment,exerciseName:ex.name,muscle:ex.muscle,date,rpe:null,failure:null,createdAt:new Date(now).toISOString(),restRealSeconds:null};
+  const parentId=operationId?`${operationId}:set`:crypto.randomUUID(),common={exerciseId:ex.id,profileId:ex.profileId,equipment:ex.equipment,exerciseName:ex.name,muscle:ex.muscle,date,rpe:null,failure:null,createdAt:new Date(now).toISOString(),restRealSeconds:null};
   next=recordSet(next,ex,{...common,id:parentId,kind:'effective',progressionDecisionId:next.progressionDecisions.findLast(row=>row.date===date&&row.exerciseId===ex.id&&row.type==='used')?.id,weight:Number(values.weight),reps:Number(values.reps)});
   if(values.technique){
     const kind=values.technique;
@@ -39,10 +40,11 @@ export function confirmQuickSet(state,ex,date,index,values,now=Date.now()){
     if(!Array.isArray(values.extensions)||values.extensions.length!==count)throw new Error('Completa la técnica antes de confirmar.');
     for(const [step,extension] of values.extensions.entries()){
       if(extension.weight==null||extension.weight===''||extension.reps==null||extension.reps==='')throw new Error('Completa peso y reps de la técnica.');
-      next=recordSet(next,ex,{...common,id:crypto.randomUUID(),kind,parentId,step:step+1,weight:Number(extension.weight),reps:Number(extension.reps)});
+      next=recordSet(next,ex,{...common,id:operationId?`${operationId}:${kind}:${step}`:crypto.randomUUID(),kind,parentId,step:step+1,weight:Number(extension.weight),reps:Number(extension.reps)});
     }
   }
   const seconds=quickRestSeconds(ex);
+  if(operationId)next={...next,logs:next.logs.map(row=>row.id.startsWith(`${operationId}:`)?{...row,performedAt:date===today?new Date(now).toISOString():null}:row)};
   return {...next,gymSession:next.gymSession?.date===date?{...next.gymSession,currentExerciseId:ex.id}:next.gymSession,quickRest:{startedAt:now,sourceLogId:parentId,date},timer:{end:now+seconds*1000,duration:seconds,startedAt:now,sourceLogId:parentId,date,label:ex.name}};
 }
 export function finishQuickSession(state,date,now=Date.now()){

@@ -1,6 +1,7 @@
 import {hydrateCollections,projectCollections,preservationCounts,verifyProjection} from './history.js';
 import {BACKUP_STORES,validateBackup,combineStates} from './backup.js';
 import {PHOTO_PREFIX,validMonthlyPhoto} from './monthlyCheck.js';
+import {applySeriesOperation} from './seriesQueue.js';
 
 export const DB_NAME='heavy-duty-personal';
 export const DB_VERSION=2;
@@ -67,6 +68,39 @@ export async function updateState(updater,photos=[]){
 }
 export async function loadState(){const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction(['app',...COLLECTIONS],'readonly');let value;readTransaction(tx,result=>{value=result.cache?.storageFormat===2?hydrateCollections(result.cache,result):result.cache;});tx.oncomplete=()=>resolve(value);tx.onerror=()=>reject(tx.error);});}
 export async function saveState(state){return updateState(()=>state);}
+// Small training metadata changes do not affect projected history collections.
+export async function saveTrainingMetadata({drafts,selection}){
+  const db=await openDatabase();return new Promise((resolve,reject)=>{
+    const tx=db.transaction('app','readwrite'),store=tx.objectStore('app'),read=store.get('state');let result;
+    read.onsuccess=()=>{try{
+      const state=read.result;if(!state)throw new Error('Almacenamiento no preparado.');
+      const next={...state};
+      if(drafts){next.trainingDrafts={...state.trainingDrafts};for(const [key,value] of Object.entries(drafts)){if(value===null)delete next.trainingDrafts[key];else next.trainingDrafts[key]=value;}}
+      if(selection&&state.gymSession?.date===selection.date)next.gymSession={...state.gymSession,currentExerciseId:selection.id};
+      store.put(next,'state');result={trainingDrafts:next.trainingDrafts??{}};
+    }catch(error){tx.abort();reject(error);}};
+    tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error??new Error('No se pudo guardar el borrador.'));
+  });
+}
+// Training touches one date. Do not project/rewrite unrelated years or photo records.
+export async function saveSeriesOperation(operation){
+  const db=await openDatabase();return new Promise((resolve,reject)=>{
+    const tx=db.transaction(['app','sessions','sessionRevisions'],'readwrite'),read=tx.objectStore('app').get('state'),sessionRead=tx.objectStore('sessions').index('byDate').get(operation.date);let receipt;
+    sessionRead.onsuccess=()=>{try{
+      const current=read.result;if(current?.storageFormat!==2||!Array.isArray(current.logs))throw new Error('Abre de nuevo la app para preparar el almacenamiento.');
+      const next=applySeriesOperation(current,operation),old=sessionRead.result;
+      const subset={...next,logs:next.logs.filter(row=>row.date===operation.date),sessionMeta:{[operation.date]:next.sessionMeta?.[operation.date]??{}},cardio:[],journal:{},measurements:[],phaseHistory:[],goalRevisions:[]};
+      const session=projectCollections(subset,old?[old]:[]).sessions[0],orders=new Map(next.logs.map((row,index)=>[row.id,index]));
+      for(const exercise of session.exercises)for(const set of exercise.sets)set.order=orders.get(set.id);
+      if(next!==current){
+        if(old)tx.objectStore('sessionRevisions').add({id:crypto.randomUUID(),sessionId:old.id,date:old.date,month:old.month,at:new Date().toISOString(),session:old});
+        tx.objectStore('sessions').put(session);tx.objectStore('app').put(next,'state');
+      }
+      receipt={session,trainingDrafts:next.trainingDrafts??{}};
+    }catch(error){tx.abort();reject(error);}};
+    tx.oncomplete=()=>resolve(receipt);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error??new Error('No se pudo guardar la serie.'));
+  });
+}
 export async function loadCheckPhotos(ids){
   const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction('app','readonly'),result={};for(const id of new Set(ids)){const request=tx.objectStore('app').get(PHOTO_PREFIX+id);request.onsuccess=()=>{if(request.result)result[id]=request.result;};}tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);});
 }

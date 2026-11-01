@@ -1244,3 +1244,5 @@ También puedes cerrar todas sus ventanas y abrirla otra vez sin borrar sus dato
 En `npm run dev`, el botón explica que Vite actualiza los cambios al guardar.
 
 [Revisión y pasos de prueba de actualizaciones](docs/design/pwa-manual-update-review.md).
+
+[Rendimiento móvil: cambios, mediciones y pruebas](docs/rendimiento.md).

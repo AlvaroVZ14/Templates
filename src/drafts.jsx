@@ -1,5 +1,5 @@
 import {createContext,useContext,useEffect,useRef,useState} from 'react';
-import {updateState} from './db.js';
+import {persistTrainingMetadata} from './trainingPersistence.js';
 
 const Context=createContext(null), RECOVERY='heavy-duty-training-drafts-v1';
 const apply=(base,patch)=>{const next={...base};for(const [key,value] of Object.entries(patch)){if(value===null)delete next[key];else next[key]=value;}return next;};
@@ -23,7 +23,7 @@ export function useDrafts(data,setData,onError){
         const run=async()=>{
           const patch={...pending};if(!Object.keys(patch).length||!latest.current)return;
           try{
-            const next=await updateState(state=>({...state,trainingDrafts:apply(state.trainingDrafts??{},patch)}));
+            const next=await persistTrainingMetadata({drafts:patch});
             // Keep the latest complete state from independent saves intact.
             latest.current={...latest.current,trainingDrafts:next.trainingDrafts};
             setData(current=>({...current,trainingDrafts:next.trainingDrafts}));

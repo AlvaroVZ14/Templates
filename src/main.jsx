@@ -18,5 +18,6 @@ import './safety-cardio.css';
 import './grunge.css';
 import './quick-register.css';
 import './simple-interface.css';
+import './performance.css';
 
 createRoot(document.getElementById('root')).render(<App />);

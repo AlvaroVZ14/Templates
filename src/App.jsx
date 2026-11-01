@@ -9,10 +9,9 @@ import {AppearanceSettings, ShadowBackground, appearanceFor} from './Appearance.
 import {MotivationSettings} from './Motivation.jsx';
 import ParticleBackground from './VisualEffects.jsx';
 import SideDecor from './SideDecor.jsx';
-import WeightSetup from './WeightSetup.jsx';
-import CardioToday from './CardioToday.jsx';
+const WeightSetup=lazy(()=>import('./WeightSetup.jsx'));
 import CardioSettings from './CardioSettings.jsx';
-import PainPage,{PainOverview} from './Pain.jsx';
+import PainPage from './Pain.jsx';
 import SimpleHome from './SimpleHome.jsx';
 import {startGymSession,openGymSession} from './gym.js';
 import {finishQuickSession} from './quickRegistration.js';
@@ -20,31 +19,32 @@ import useWakeLock from './useWakeLock.js';
 import useRestAudio from './useRestAudio.js';
 import {restMessage,sessionName} from './calendarText.js';
 import {LOAD_TYPES,PATTERNS,classifyExercise} from './classification.js';
-import Progress from './Progress.jsx';
+const Progress=lazy(()=>import('./Progress.jsx'));
 import {captureMonthlyReviews} from './progress.js';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, dayIndex, formatSeconds, initialState, migrateState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
-import { updateState } from './db.js';
+import useSeriesQueue from './useSeriesQueue.js';
+import {warmTrainingPersistence,persistTrainingMetadata} from './trainingPersistence.js';
+import { updateState, loadState } from './db.js';
 import {DraftProvider,useDrafts,useFormDraft} from './drafts.jsx';
 import {incompleteSession} from './navigation.js';
-import {Drawer,EdgeSwipe,NavigationSettings,Method} from './Navigation.jsx';
-import ExerciseCard from './ExerciseCard.jsx';
-import Cardio from './Cardio.jsx';
-import Diary from './Diary.jsx';
-import Measurements, { WaistNotice } from './Measurements.jsx';
+import {Drawer,EdgeSwipe,NavigationSettings} from './Navigation.jsx';
+import ExerciseCard,{equalExerciseView} from './ExerciseCard.jsx';
+const Diary=lazy(()=>import('./Diary.jsx'));
+const Measurements=lazy(()=>import('./Measurements.jsx'));
+const WaistNotice=lazy(()=>import('./Measurements.jsx').then(module=>({default:module.WaistNotice})));
 import { measurementReminder } from './measurements.js';
 import { advancePhases, captureAnchors } from './program/phases.js';
 import { dayContext } from './program/nutrition.js';
-import PhasePanel from './program/PhasePanel.jsx';
-import TodayPlan from './program/TodayPlan.jsx';
-import FoodPage from './program/FoodPage.jsx';
-import Recovery from './program/Recovery.jsx';
+const FoodPage=lazy(()=>import('./program/FoodPage.jsx'));
 import { sessionExercise } from './training.js';
-import { TrainingRecovery } from './TrainingPanels.jsx';
+import {sessionPreview} from './sessionPreview.js';
 import { contextualPreparation } from './preparation.js';
-import History from './History.jsx';
-import MonthlyCheck from './MonthlyCheck.jsx';
-import {SessionEditor,StorageNotice,requestPersistentStorage} from './SessionRecord.jsx';
+const History=lazy(()=>import('./History.jsx'));
+const MonthlyCheck=lazy(()=>import('./MonthlyCheck.jsx'));
+const DayOptions=lazy(()=>import('./DayOptions.jsx'));
+const Method=lazy(()=>import('./Method.jsx'));
+import {StorageNotice,requestPersistentStorage} from './SessionRecord.jsx';
 
 function Icon({ name, size = 22 }) {
   const paths = {
@@ -78,6 +78,7 @@ export default function App() {
   const [clockDay,setClockDay]=useState(localDate());
   const [menuOpen,setMenuOpen]=useState(false);
   const drafts=useDrafts(data,setData,setError);
+  const seriesQueue=useSeriesQueue(data,setData,setError);
   useEffect(()=>{const exported=event=>setData(current=>current?{...current,backupSettings:event.detail}:current);window.addEventListener('heavy-duty-backup-exported',exported);return()=>window.removeEventListener('heavy-duty-backup-exported',exported);},[]);
   const navigating=useRef(false);
   async function navigate(target,nextDate=target==='today'?localDate():date){
@@ -86,6 +87,7 @@ export default function App() {
     navigating.current=true;
     try{
       if(!window.dispatchEvent(new Event('heavy-duty-before-navigate',{cancelable:true})))return;
+      await seriesQueue.flush();
       await drafts.flush();
       setError('');
       if(page==='workout'&&data&&incompleteSession(data,date,drafts.entries())&&!window.confirm('Hay una sesión o un registro a medio completar. Tu borrador está guardado y lo recuperarás al volver. ¿Quieres cambiar de pantalla o sesión?'))return;
@@ -115,15 +117,21 @@ export default function App() {
   async function boot() {
     setError('');
     try {
-      const state = await updateState(existing => captureMonthlyReviews(captureAnchors(advancePhases(existing ? migrateState(existing) : initialState(),localDate())),localDate()));
+      const existing=await loadState();
+      const state=captureMonthlyReviews(captureAnchors(advancePhases(existing?migrateState(existing):initialState(),localDate())),localDate());
+      if(state!==existing)await updateState(()=>state);
       const open=openGymSession(state);
-      setData(state);setDate(open?.date??localDate());
+      seriesQueue.initialize(state);setDate(open?.date??localDate());
       setPage(open?'workout':'today');
+      warmTrainingPersistence();
+      const preload=()=>{sessionPreview(state,open?.date??localDate());};
+      if('requestIdleCallback' in window)requestIdleCallback(preload,{timeout:1000});else setTimeout(preload,200);
     } catch { setError('No se pudo abrir IndexedDB. Permite el almacenamiento del navegador y vuelve a intentar.'); }
   }
   useEffect(() => { boot(); }, []);
   useEffect(()=>{let day=localDate();const check=()=>{const next=localDate();setClockDay(next);if(next!==day)change(state=>state).then(saved=>{if(saved)day=next;});};const timer=setInterval(check,60000);document.addEventListener('visibilitychange',check);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',check);};},[]);
   async function change(updater,photos=[]) {
+    try{await seriesQueue.flush();}catch{return false;}
     if (locked.current) return false;
     locked.current = true; setSaving(true); setError('');
     try {
@@ -135,12 +143,12 @@ export default function App() {
   }
   async function beginWorkout(){
     const pending=openGymSession(data),target=pending?.date??localDate();
-    if(!pending&&!data.sessionMeta?.[target]?.endedAt&&!(await change(state=>startGymSession(state,target))))return;
+    try{if(!pending&&!data.sessionMeta?.[target]?.endedAt)seriesQueue.begin(target);}catch(error){setError(error.message);return;}
     if(data.gymSettings?.sound)audio.arm();
     setDate(target);setPage('workout');
   }
   async function finishGym(dateToFinish=date){
-    try{await drafts.flush();}catch{return;}
+    try{await seriesQueue.flush();await drafts.flush();}catch{return;}
     await change(state=>finishQuickSession(state,dateToFinish));
   }
   async function gymSound(enabled){
@@ -161,71 +169,65 @@ export default function App() {
       <div className="header-actions"><button className="menu-button" aria-label="Abrir menú" aria-expanded={menuOpen} aria-haspopup="dialog" onClick={()=>setMenuOpen(true)}><Icon name="menu" size={22}/><span className="menu-word">Menú</span></button><span className={`connection ${!pwa.online ? 'offline' : ''}`}><i />{!pwa.online ? 'Sin conexión' : pwa.ready ? 'Offline listo' : 'Local · privado'}</span>
 </div>
     </header>
-    {pwa.available&&page!=='today'&&<aside className="notice pwa-update" role="status"><button className="primary" disabled={saving||pwa.updating||pwa.checking||!data} onClick={()=>pwa.update(async()=>{if(locked.current)return false;await drafts.flush();return true;})}>{pwa.updating?'Guardando y actualizando…':'Hay una versión nueva, tocar para actualizar'}</button><p className="field-note">Conserva tus registros y borradores en este dispositivo.</p></aside>}
+    {pwa.available&&page!=='today'&&<aside className="notice pwa-update" role="status"><button className="primary" disabled={saving||pwa.updating||pwa.checking||!data} onClick={()=>pwa.update(async()=>{if(locked.current)return false;await seriesQueue.flush();await drafts.flush();return true;})}>{pwa.updating?'Guardando y actualizando…':'Hay una versión nueva, tocar para actualizar'}</button><p className="field-note">Conserva tus registros y borradores en este dispositivo.</p></aside>}
     {installHelp && <aside className="install-help"><strong>Instala {appearance.name}</strong><p>En Android o escritorio: menú del navegador → Instalar aplicación. En iPhone: Safari → Compartir → Añadir a pantalla de inicio.</p><p>{pwa.ready ? 'La app está preparada para abrir sin conexión.' : 'La instalación y el modo offline se preparan en la versión de producción, con HTTPS o localhost.'}</p><button className="quiet" onClick={() => setInstallHelp(false)}>Entendido</button></aside>}
     {(error || pwa.error) && <div className="error global-error" role="alert">{error || pwa.error}{!data && <button className="quiet" onClick={boot}>Reintentar</button>}</div>}
     {!data ? <main className="loading" aria-live="polite"><span className="loading-mark" aria-hidden="true">B&amp;G</span><strong>{appearance.name}</strong><span>{error ? 'Tus datos no se han modificado.' : 'Preparando tu entrenamiento…'}</span></main> : <>
-      <main id="main-content">
+      <main id="main-content"><Suspense fallback={<div className="page-skeleton" role="status">Abriendo sección local…</div>}>
         {page==='workout'&&date!==clockDay&&<aside className="notice"><p>Estás viendo la sesión del {date}. Hoy en Chile: {clockDay}.</p><button className="secondary" onClick={()=>navigate('today',clockDay)}>Ir a hoy</button></aside>}
         {gymOpen&&!gymActive&&page!=='today'&&<aside className="notice gym-recovery"><p>Sesión abierta del {gymOpen.date}. Tus series están guardadas.</p><button className="secondary" onClick={()=>navigate('workout',gymOpen.date)}>Volver a la sesión abierta</button></aside>}
         {page !== 'today' && page !== 'workout' && page !== 'measurements' && page !== 'monthly-check' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
         {page==='today'&&<SimpleHome data={data} date={clockDay} onStart={beginWorkout} saving={saving}/>}
-        {page === 'workout' && <Workout key={date} data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} gymActive={gymActive} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} />}
+        {page === 'workout' && <Workout key={date} data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} gymActive={gymActive} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} onConfirm={seriesQueue.confirm} />}
         {page==='weights'&&<WeightSetup data={data} change={change} saving={saving} onDone={()=>{setPage('today');setMenuOpen(false);}}/>}
         {page==='pain'&&<PainPage data={data} date={localDate()} onDiary={value=>navigate('diary',value)}/>}
-        <div hidden={page !== 'routine'}><Routine data={data} change={change} saving={saving} /></div>
+        {page==='routine'&&<Routine data={data} change={change} saving={saving}/>}
         {page === 'overview'&&<><Progress data={data}><Volume data={data} date={date} setDate={setDate}/></Progress><details className="overview-history"><summary>Historial de sesiones</summary><History embedded data={data} change={change} saving={saving} storage={storage}/></details></>}
         {page === 'volume' && <Progress data={data}><Volume data={data} date={date} setDate={setDate}/></Progress>}
         {page === 'diary' && <Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} />}
-        {page==='settings'&&<><label className="check-label settings-audio"><input type="checkbox" checked={data.gymSettings?.sound===true} onChange={event=>gymSound(event.target.checked)}/>Aviso sonoro de descanso</label><div className="settings-shortcuts">{[['weights','Configurar pesos'],['routine','Rutina'],['day-options','Cardio y recuperación'],['pain','Zonas con molestias']].map(([id,label])=><button className="secondary" key={id} onClick={()=>navigate(id)}>{label}</button>)}</div><NavigationSettings data={data} change={change} saving={saving}/><PwaSettings pwa={pwa} saving={saving} onUpdate={()=>pwa.update(async()=>{if(locked.current)return false;await drafts.flush();return true;})}/><CardioSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
+        {page==='settings'&&<><label className="check-label settings-audio"><input type="checkbox" checked={data.gymSettings?.sound===true} onChange={event=>gymSound(event.target.checked)}/>Aviso sonoro de descanso</label><div className="settings-shortcuts">{[['weights','Configurar pesos'],['routine','Rutina'],['day-options','Cardio y recuperación'],['pain','Zonas con molestias']].map(([id,label])=><button className="secondary" key={id} onClick={()=>navigate(id)}>{label}</button>)}</div><NavigationSettings data={data} change={change} saving={saving}/><PwaSettings pwa={pwa} saving={saving} onUpdate={()=>pwa.update(async()=>{if(locked.current)return false;await seriesQueue.flush();await drafts.flush();return true;})}/><CardioSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
         {page==='method'&&<Method/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
         {page==='day-options'&&<DayOptions data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} onPain={()=>navigate('pain')} gymActive={Boolean(gymOpen)} wake={wake} audio={audio} gymSound={gymSound}/>}
         {page==='monthly-check'&&<MonthlyCheck data={data} change={change} saving={saving}/>}
-      </main>
+      </Suspense></main>
       {page==='workout'&&(data.timer||gymActive) && <Timer timer={data.timer} gym={gymActive} onFinish={()=>{if(gymActive&&data.gymSettings?.sound)audio.play();}} onClose={() => change(state => ({ ...state, timer: null }))} />}
     </>}
     {data&&<><EdgeSwipe side={drawerSide} onOpen={()=>setMenuOpen(true)}/><Drawer open={menuOpen} onClose={()=>setMenuOpen(false)} side={drawerSide} data={data} date={date} page={page} navigate={navigate}/></>}
   </div></DraftProvider>;
 }
 
-function Workout({ data, date, change, saving, onFood, onDiary, onMeasures, gymActive, finishGym, wake, audio, gymSound, onPain }) {
-  const context=dayContext(data,date),exercises=context.exercises.map(ex=>sessionExercise(data,ex,date));
+function Workout({ data, date, change, saving, onFood, onDiary, onMeasures, gymActive, finishGym, wake, audio, gymSound, onPain, onConfirm }) {
+  const {context,exercises}=sessionPreview(data,date);
   const logs=data.logs.filter(log=>log.date===date),planned=exercises.reduce((sum,ex)=>sum+ex.sets,0);
   const done=exercises.reduce((sum,ex)=>sum+logs.filter(log=>log.exerciseId===ex.id&&log.kind==='effective').length,0);
   const complete=exercises.length>0&&exercises.every(ex=>logs.filter(log=>log.exerciseId===ex.id&&log.kind==='effective').length>=ex.sets);
   const finished=Boolean(data.sessionMeta?.[date]?.endedAt),rest=exercises.length?null:restMessage(data,date,localDate());
   const dateLabel=new Date(`${date}T12:00:00Z`).toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'short',timeZone:'UTC'});
   const [current,setCurrent]=useState(data.gymSession?.date===date?data.gymSession.currentExerciseId:exercises.find(ex=>logs.filter(log=>log.exerciseId===ex.id&&log.kind==='effective').length<ex.sets)?.id??exercises[0]?.id);
-  async function selectExercise(id){setCurrent(id);if(data.gymSession?.date===date)await change(state=>({...state,gymSession:{...state.gymSession,currentExerciseId:id}}));}
+  async function selectExercise(id){setCurrent(id);if(data.gymSession?.date===date)try{await persistTrainingMetadata({selection:{date,id}});}catch{/* The last confirmed exercise remains recoverable. */}}
+  const selectRef=useRef(selectExercise);selectRef.current=selectExercise;
+  const selectPanel=useCallback(id=>selectRef.current(id),[]);
   return <div className="fast-session">
     <div className="fast-session-heading"><div><p>{dateLabel}</p><h1>{exercises.length?sessionName(exercises):'Descanso'}</h1></div>{planned>0&&<strong className="fast-session-count">{done}<small>/{planned}</small></strong>}</div>
     {data.routineActivatedOn>localDate()&&<p className="notice">La sesión anterior sigue disponible. La nueva rutina se activa el {data.routineActivatedOn}.</p>}
     {context.calendarNeedsReview&&<p className="notice">Este día tenía un ajuste del calendario anterior. Puedes revisarlo en las opciones del día.</p>}
     <section className="session-list" aria-label="Registrar pesos">
-      {exercises.length?exercises.map((ex,index)=>{const count=logs.filter(log=>log.exerciseId===ex.id&&log.kind==='effective').length;return <details className="workout-exercise" key={`${date}-${ex.id}`} open={current===ex.id}><summary onClick={event=>{event.preventDefault();selectExercise(ex.id);}}><span>{ex.name}</span><b>{count}/{ex.sets}</b></summary><ExerciseCard exercise={ex} index={index} date={date} data={data} logs={logs.filter(log=>log.exerciseId===ex.id)} change={change} saving={saving}/></details>;}):<div className="rest-card" data-testid="rest-card"><h3>{rest.title}</h3><p>{rest.text}</p></div>}
+      {exercises.length?exercises.map((ex,index)=><ExercisePanel key={`${date}-${ex.id}`} exercise={ex} index={index} date={date} data={data} logs={logs.filter(log=>log.exerciseId===ex.id)} change={change} saving={saving} onConfirm={onConfirm} open={current===ex.id} onSelect={selectPanel}/>):<div className="rest-card" data-testid="rest-card"><h3>{rest.title}</h3><p>{rest.text}</p></div>}
     </section>
     {complete&&!finished&&<button type="button" className="primary session-finish" disabled={saving} onClick={()=>finishGym(date)}>Terminar sesión</button>}
     {finished&&<p className="fast-finished" role="status">✓ Sesión terminada · todo guardado.</p>}
 
   </div>;
 }
-function DayOptions({data,date,change,saving,onFood,onDiary,onMeasures,onPain,gymActive,wake,audio,gymSound}){
- const exercises=dayContext(data,date).exercises.map(ex=>sessionExercise(data,ex,date));
- const rest=exercises.length?null:restMessage(data,date,localDate());
- return <><div className="page-heading"><h1>Cardio y recuperación</h1></div><PainOverview data={data} date={date} onOpen={onPain}/>{rest&&<div className="rest-card" data-testid="rest-card"><h3>{rest.title}</h3><p>{rest.text}</p></div>}<div className="day-options">
-      <CardioToday key={`cardio-today-${date}`} data={data} date={date} change={change} saving={saving}/>
-      <PhasePanel key={`phase-${date}`} data={data} date={date} change={change} saving={saving} compact/>
-      <SessionEditor key={`session-${date}`} data={data} date={date} change={change} saving={saving}/>
-      <TrainingRecovery key={`recovery-${date}`} data={data} date={date} exercises={exercises} change={change} saving={saving}/>
-      <TodayPlan key={`plan-${date}`} data={data} date={date} change={change} saving={saving} onFood={onFood}/>
-      <Cardio key={date} data={data} date={date} change={change} saving={saving}/>
-      <Recovery data={data} date={date} change={change} saving={saving} onDiary={onDiary} onMeasures={onMeasures}/>
-      {gymActive&&<><p role="status">{wake.status==='held'?'Pantalla encendida':wake.status==='unsupported'?'Pantalla encendida no disponible':wake.status==='denied'?'El navegador no permitió mantener la pantalla encendida':'Modo gimnasio activo'}</p><label className="check-label"><input type="checkbox" checked={data.gymSettings?.sound===true} onChange={event=>gymSound(event.target.checked)}/><span>Aviso sonoro de descanso</span></label>{data.gymSettings?.sound&&!audio.armed&&<button type="button" className="secondary" onClick={audio.arm}>Habilitar sonido</button>}</>}
-    </div></>;
-}
+
+const ExercisePanel=memo(function ExercisePanel(props){
+ const {exercise:ex,logs,open,onSelect}=props,count=logs.filter(log=>log.kind==='effective').length;
+ globalThis.__BG_PERF__?.panelRender?.(ex.id);
+ return <details className="workout-exercise" open={open}><summary onClick={event=>{event.preventDefault();onSelect(ex.id);}}><span>{ex.name}</span><b>{count}/{ex.sets}</b></summary><ExerciseCard {...props}/></details>;
+},(a,b)=>a.open===b.open&&equalExerciseView(a,b));
 
 function Routine({ data, change, saving }) {
   const recovery=useFormDraft('routine:editor',localDate());
@@ -321,7 +323,7 @@ function Timer({ timer, onClose,gym=false,onFinish }) {
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(id); }, []);
   const end=timer?.end,remaining = Math.max(0, Math.ceil(((end??now) - now) / 1000));
   const notified = useRef(end&&end<=Date.now()?end:null);
-  useEffect(() => { if (end&&remaining === 0 && notified.current !== end) { notified.current = end; navigator.vibrate?.([120]);onFinish?.(); } }, [remaining, end]);
+  useEffect(() => { if (end&&remaining === 0 && notified.current !== end) { notified.current = end; try{navigator.vibrate?.([120]);}catch{/* Optional haptic support. */}onFinish?.(); } }, [remaining, end]);
   const fraction=timer?Math.min(1,Math.max(0,(end-now)/(Math.max(1,timer.duration)*1000))):0;
-  return <aside className={`timer-bar ${remaining === 0&&timer ? 'finished' : ''} ${gym?'gym-timer':''}`} aria-label="Temporizador de descanso"><div className="timer-strip" aria-hidden="true" style={{'--remaining':`${fraction*100}%`}}><i/></div><div className="rest-ring" aria-hidden="true"><svg viewBox="0 0 48 48"><circle className="rest-track" cx="24" cy="24" r="20"/><circle className="rest-countdown" cx="24" cy="24" r="20" pathLength="1" strokeDasharray="1" strokeDashoffset={1-fraction}/></svg><Icon name="clock" size={18}/></div><div><strong>{!timer?'Descanso listo':remaining > 0 ? 'Descanso' : 'Descanso terminado'}</strong><span>{timer?.label??'Confirma una serie para iniciar'}</span></div><b role="timer" aria-label={`${remaining} segundos restantes`}>{formatSeconds(remaining)}</b>{timer&&<button className="icon-button" aria-label={gym?'Finalizar descanso':'Cerrar temporizador'} onClick={onClose}><Icon name="close" size={20} /></button>}</aside>;
+  return <aside className={`timer-bar ${remaining === 0&&timer ? 'finished' : ''} ${gym?'gym-timer':''}`} aria-label="Temporizador de descanso"><div className="timer-strip" aria-hidden="true" style={{'--rest-fraction':fraction}}><i/></div><div className="rest-ring" aria-hidden="true"><svg viewBox="0 0 48 48"><circle className="rest-track" cx="24" cy="24" r="20"/><circle className="rest-countdown" cx="24" cy="24" r="20" pathLength="1" strokeDasharray="1" strokeDashoffset={1-fraction}/></svg><Icon name="clock" size={18}/></div><div><strong>{!timer?'Descanso listo':remaining > 0 ? 'Descanso' : 'Descanso terminado'}</strong><span>{timer?.label??'Confirma una serie para iniciar'}</span></div><b role="timer" aria-label={`${remaining} segundos restantes`}>{formatSeconds(remaining)}</b>{timer&&<button className="icon-button" aria-label={gym?'Finalizar descanso':'Cerrar temporizador'} onClick={onClose}><Icon name="close" size={20} /></button>}</aside>;
 }
