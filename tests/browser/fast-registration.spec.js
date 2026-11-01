@@ -29,15 +29,15 @@ test('progresión visible, sensación al terminar, decisión persistida y consul
  await go(page,'Historial');const decisions=page.locator('.history-page details').filter({has:page.locator('summary').filter({hasText:'Decisiones de progresión'})}).first();await decisions.locator('summary').click();await expect(decisions).toContainText('Sugerencia usada');await expect(decisions).toContainText('Registrado: 82,5 kg × 6');await expect(decisions).toContainText('Sensación flojo: mantener');
 });
 
-test('17 filas de44px, sin formularios ni previas, con tarjetas compactas en móvil y escritorio',async({page})=>{
+test('17 tarjetas sin formularios ni previas, con números grandes en móvil y escritorio',async({page})=>{
  await seed(page);await expect(page.locator('.fast-set-line')).toHaveCount(17);await expect(page.locator('main input:visible')).toHaveCount(0);await expect(page.getByRole('tab',{name:/Previas/})).toHaveCount(0);
  await expect(card(page,'Press inclinado mancuernas').getByText('Calentamiento: 1–2 progresivas + 1 de ajuste (no se registra)',{exact:true})).toBeVisible();
  await expect(card(page,'Curl polea')).toHaveCount(0);
- for(const width of [320,390,1440]){await page.setViewportSize({width,height:844});expect(await page.locator('.fast-set-line').first().evaluate(el=>el.getBoundingClientRect().height)).toBe(44);expect(await page.locator('.fast-session-heading h1').evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(45);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
+ for(const width of [320,390,1440]){await page.setViewportSize({width,height:844});expect(await page.locator('.series-card').first().evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThan(170);expect(await page.locator('.fast-session-heading h1').evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(45);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
  await page.setViewportSize({width:390,height:844});expect(await page.locator('.session-list').evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(1600);await page.screenshot({path:'test-results/fast-mobile.png',fullPage:true});
 });
 test('✓ confirma valores anteriores por serie, sin duplicados; recarga offline y descanso automático',async({page,context})=>{
- await seed(page);const ex='Press inclinado mancuernas',c=card(page,ex);await expect(c.locator('.fast-target')).toContainText('40×8');
+ await seed(page);const ex='Press inclinado mancuernas',c=card(page,ex);await expect(c.locator('.fast-progression').first()).toContainText('40×8');
  await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).dblclick();await expect(c.locator('.confirmed')).toHaveCount(1);
  await page.clock.fastForward(178000);await c.getByRole('button',{name:`Confirmar ${ex}, serie 2`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(2);
  let state=await stateOf(page),rows=state.logs.filter(log=>log.date===date);expect(rows).toHaveLength(2);expect(rows[0].weight).toBe(40);expect(rows[1].weight).toBe(36);expect(rows[1].reps).toBe(10);expect(rows[0].restRealSeconds).toBeGreaterThanOrEqual(178);expect(rows[0].restRealSeconds).toBeLessThan(185);expect(rows[0].rpe).toBeNull();

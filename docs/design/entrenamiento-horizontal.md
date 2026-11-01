@@ -11,7 +11,8 @@ No modifica las funciones de registro, progresión, rutina, migración o volumen
   verde apagado. Los paneles fuera de vista no reciben foco ni interacción.
 - Desde 1000 px hay riel de ejercicios, tarjeta central y panel lateral con el
   mismo temporizador de descanso, última marca y sugerencia calculada existente.
-- Se conservan las filas de 44 px, sus controles, borradores, selección recuperable,
+- El registro ahora usa [tarjetas de series](series-tarjetas.md), conservando
+  controles, borradores, selección recuperable,
   autoguardado optimista, vibración, sonido opcional y Wake Lock.
 - Sin movimiento reducido, las flechas desplazan suavemente el carrusel. Con
   prefers-reduced-motion el desplazamiento es inmediato.
