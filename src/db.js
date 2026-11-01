@@ -1,5 +1,6 @@
 import {hydrateCollections,projectCollections,preservationCounts,verifyProjection} from './history.js';
 import {BACKUP_STORES,validateBackup,combineStates} from './backup.js';
+import {PHOTO_PREFIX,validMonthlyPhoto} from './monthlyCheck.js';
 
 export const DB_NAME='heavy-duty-personal';
 export const DB_VERSION=2;
@@ -56,16 +57,19 @@ function writeState(tx,next,previous=[]){
   const {sessions:ignored,...cache}=next;tx.objectStore('app').put({...cache,storageFormat:2},'state');
   return {...hydrateCollections(cache,rows),storageFormat:2};
 }
-export async function updateState(updater){
+export async function updateState(updater,photos=[]){
   const db=await openDatabase();
   return new Promise((resolve,reject)=>{
     const tx=db.transaction(STORES,'readwrite');let next;
-    readTransaction(tx,result=>{try{const current=result.cache?.storageFormat===2?hydrateCollections(result.cache,result):result.cache;next=writeState(tx,updater(current),result.sessions);}catch(error){tx.abort();reject(error);}});
+    readTransaction(tx,result=>{try{const current=result.cache?.storageFormat===2?hydrateCollections(result.cache,result):result.cache;next=writeState(tx,updater(current),result.sessions);for(const photo of photos){if(!validMonthlyPhoto(photo))throw new Error('Foto procesada no válida.');tx.objectStore('app').add(photo,PHOTO_PREFIX+photo.id);}}catch(error){tx.abort();reject(error);}});
     tx.oncomplete=()=>resolve(next);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error??new Error('No se pudo completar la transacción.'));
   });
 }
 export async function loadState(){const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction(['app',...COLLECTIONS],'readonly');let value;readTransaction(tx,result=>{value=result.cache?.storageFormat===2?hydrateCollections(result.cache,result):result.cache;});tx.oncomplete=()=>resolve(value);tx.onerror=()=>reject(tx.error);});}
 export async function saveState(state){return updateState(()=>state);}
+export async function loadCheckPhotos(ids){
+  const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction('app','readonly'),result={};for(const id of new Set(ids)){const request=tx.objectStore('app').get(PHOTO_PREFIX+id);request.onsuccess=()=>{if(request.result)result[id]=request.result;};}tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);});
+}
 export async function querySessions({month,year,exercise,from,to}={}){
   const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction('sessions','readonly'),store=tx.objectStore('sessions');const req=exercise?store.index('byExercise').getAll(exercise):month?store.index('byMonth').getAll(month):year?store.index('byYear').getAll(year):store.index('byDate').getAll();tx.oncomplete=()=>resolve(req.result.filter(item=>(!from||item.date>=from)&&(!to||item.date<=to)).sort((a,b)=>a.date.localeCompare(b.date)));tx.onerror=()=>reject(tx.error);});
 }

@@ -42,6 +42,7 @@ import { sessionExercise } from './training.js';
 import { TrainingRecovery } from './TrainingPanels.jsx';
 import { contextualPreparation } from './preparation.js';
 import History from './History.jsx';
+import MonthlyCheck from './MonthlyCheck.jsx';
 import {SessionEditor,StorageNotice,requestPersistentStorage} from './SessionRecord.jsx';
 
 function Icon({ name, size = 22 }) {
@@ -83,6 +84,7 @@ export default function App() {
     if(target===page&&nextDate===date){setMenuOpen(false);return;}
     navigating.current=true;
     try{
+      if(!window.dispatchEvent(new Event('heavy-duty-before-navigate',{cancelable:true})))return;
       await drafts.flush();
       setError('');
       if(page==='today'&&data&&incompleteSession(data,date,drafts.entries())&&!window.confirm('Hay una sesión o un registro a medio completar. Tu borrador está guardado y lo recuperarás al volver. ¿Quieres cambiar de pantalla o sesión?'))return;
@@ -120,11 +122,11 @@ export default function App() {
   }
   useEffect(() => { boot(); }, []);
   useEffect(()=>{let day=localDate();const check=()=>{const next=localDate();setClockDay(next);if(next!==day)change(state=>state).then(saved=>{if(saved)day=next;});};const timer=setInterval(check,60000);document.addEventListener('visibilitychange',check);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',check);};},[]);
-  async function change(updater) {
+  async function change(updater,photos=[]) {
     if (locked.current) return false;
     locked.current = true; setSaving(true); setError('');
     try {
-      const next = await updateState(state => captureMonthlyReviews(captureAnchors(advancePhases(updater(state),localDate())),localDate()));
+      const next = await updateState(state => captureMonthlyReviews(captureAnchors(advancePhases(updater(state),localDate())),localDate()),photos);
       setData(next);
       return true;
     } catch { setError('No se pudo guardar. Tu cambio sigue en pantalla: libera espacio o permite el almacenamiento y vuelve a intentar.'); return false; }
@@ -140,7 +142,7 @@ export default function App() {
   }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
-  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer||gymActive?'timer-visible':''} ${gymActive?'gym-active':''} ${impact?'screen-impact':''}`} data-page={page} data-effects={appearance.effects} data-grunge={visual.mode} data-visible={visual.visible} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09',weights:'10',pain:'11'})[page]}"`}} onChangeCapture={failureImpact}>
+  return <DraftProvider value={drafts}><div className={`app-shell menu-${drawerSide} ${data?.timer||gymActive?'timer-visible':''} ${gymActive?'gym-active':''} ${impact?'screen-impact':''}`} data-page={page} data-effects={appearance.effects} data-grunge={visual.mode} data-visible={visual.visible} style={{'--section-index':`"${({today:'01',history:'02',measurements:'03',diary:'04',food:'05',volume:'06',method:'07',settings:'08',routine:'09',weights:'10',pain:'11','monthly-check':'12'})[page]}"`}} onChangeCapture={failureImpact}>
     <GrungeAtmosphere ready={!!data} day={clockDay} scene={page} mode={visual.mode} visible={visual.visible} gym={gymActive} name={appearance.name}/>
     <ShadowBackground appearance={appearance} ambient/>
     <ParticleBackground appearance={appearance} page={page}/>
@@ -159,7 +161,7 @@ export default function App() {
       <main id="main-content">
         {page==='today'&&date!==clockDay&&<aside className="notice"><p>Estás viendo la sesión del {date}. Hoy en Chile: {clockDay}.</p><button className="secondary" onClick={()=>navigate('today',clockDay)}>Ir a hoy</button></aside>}
         {gymOpen&&!gymActive&&<aside className="notice gym-recovery"><p>Sesión abierta del {gymOpen.date}. Tus series están guardadas.</p><button className="secondary" onClick={()=>navigate('today',gymOpen.date)}>Volver a la sesión abierta</button></aside>}
-        {page !== 'today' && page !== 'measurements' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
+        {page !== 'today' && page !== 'measurements' && page !== 'monthly-check' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
         {page === 'today' && <Today data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} gymActive={gymActive} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} />}
         {page==='weights'&&<WeightSetup data={data} change={change} saving={saving} onDone={()=>{setPage('today');setMenuOpen(false);}}/>}
         {page==='pain'&&<PainPage data={data} date={localDate()} onDiary={value=>navigate('diary',value)}/>}
@@ -171,6 +173,7 @@ export default function App() {
         {page==='settings'&&<><NavigationSettings data={data} change={change} saving={saving}/><PwaSettings pwa={pwa} saving={saving} onUpdate={()=>pwa.update(async()=>{if(locked.current)return false;await drafts.flush();return true;})}/><CardioSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
         {page==='method'&&<Method/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
+        {page==='monthly-check'&&<MonthlyCheck data={data} change={change} saving={saving}/>}
       </main>
       {(data.timer||gymActive) && <Timer timer={data.timer} gym={gymActive} onFinish={()=>{if(gymActive&&data.gymSettings?.sound)audio.play();}} onClose={() => change(state => ({ ...state, timer: null }))} />}
     </>}

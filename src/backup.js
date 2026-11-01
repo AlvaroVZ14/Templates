@@ -6,6 +6,7 @@ import {validateFood,MACROS} from './program/nutrition.js';
 import {validatePainEntries} from './pain.js';
 import {validateCardioSettings,validateCardioSnapshot} from './program/cardio.js';
 import {ROUTINE_VERSION} from './routinePlan.js';
+import {PHOTO_PREFIX,validMonthlyCheck,validMonthlyPhoto} from './monthlyCheck.js';
 export const BACKUP_STORES=['app','sessions','cardio','journal','measurements','phases','sessionRevisions','migrationBackups'];
 const collections=['sessions','cardio','journal','measurements','phases'];
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
@@ -35,6 +36,7 @@ function validateState(state){
   for(const row of state.routineMigrationBackups)require(object(row)&&typeof row.id==='string'&&object(row.state)&&Array.isArray(row.state.routine)&&row.state.routine.length===7&&row.state.routine.every(day=>Array.isArray(day)&&day.every(ex=>object(ex)&&typeof ex.name==='string'))&&Array.isArray(row.state.logs)&&object(row.state.profiles),'Instantánea de rutina anterior no válida.');
  }
  const next=migrateState(structuredClone(state));require(!validateRoutine(next.routine),'La rutina del respaldo no es válida.');
+ if(next.monthlyChecks!==undefined){require(Array.isArray(next.monthlyChecks)&&next.monthlyChecks.every(validMonthlyCheck)&&new Set(next.monthlyChecks.map(row=>row.id)).size===next.monthlyChecks.length,'Checks mensuales no válidos.');}
  for(const key of ['profiles','dailySteps','journal','calendar','programSettings'])require(object(next[key]),`Configuración no válida: ${key}.`);
  for(const key of ['cardio','measurements','phases','phaseHistory','goalRevisions','foods','foodLogs','meals','deloads'])require(Array.isArray(next[key]),`Colección no válida: ${key}.`);
  for(const key of ['exerciseFeedback','progressionDecisions'])if(next[key]!==undefined){
@@ -85,12 +87,15 @@ export function validateBackup(payload){
  const records=structuredClone(payload.records);
  for(const store of BACKUP_STORES){require(Array.isArray(records[store]),`Falta la colección ${store}.`);const keys=new Set();for(const entry of records[store]){require(object(entry)&&(typeof entry.key==='string'||typeof entry.key==='number')&&object(entry.value),'Registro de respaldo no válido.');require(!keys.has(entry.key),`Claves duplicadas en ${store}.`);keys.add(entry.key);if(store!=='app')require(typeof entry.value.id==='string'&&entry.key===entry.value.id,`ID no válido en ${store}.`);}}
  const raw=records.app.find(row=>row.key==='state')?.value;require(raw,'Falta el estado principal.');const state=validateState(raw),rows=Object.fromEntries(collections.map(key=>[key,records[key].map(row=>row.value)]));
+ const photos=new Map(records.app.filter(row=>String(row.key).startsWith(PHOTO_PREFIX)).map(row=>[row.key,row.value]));
+ for(const [key,photo] of photos)require(validMonthlyPhoto(photo)&&key===PHOTO_PREFIX+photo.id,'Foto de check mensual no válida.');
+ for(const check of state.monthlyChecks??[])for(const [pose,id] of Object.entries(check.photos)){const photo=photos.get(PHOTO_PREFIX+id);require(photo&&photo.month===check.month&&photo.year===check.year&&photo.pose===pose,'Falta una foto del check mensual o no corresponde a su mes y pose.');}
  const sessionValid=session=>object(session)&&date(session.date)&&Array.isArray(session.exercises)&&session.exercises.every(ex=>typeof ex.name==='string'&&Array.isArray(ex.sets)&&ex.sets.every(set=>object(set.source)));
  for(const session of rows.sessions)require(sessionValid(session),'Sesión no válida.');
  for(const entry of records.sessionRevisions)require(sessionValid(entry.value.session),'Versión histórica de sesión no válida.');
  require(new Set(rows.sessions.map(row=>row.date)).size===rows.sessions.length,'Hay sesiones duplicadas para una fecha.');
  verifyProjection(raw,rows);const restored=hydrateCollections(state,rows);verifyProjection(restored,projectCollections(restored,rows.sessions));
- return {records,state:restored,counts:{sessions:rows.sessions.length,series:restored.logs.length,cardio:restored.cardio.length,journal:Object.keys(restored.journal).length,measurements:restored.measurements.length,monthlyReviews:restored.monthlyReviews?.length??0},version:payload.formatVersion};
+ return {records,state:restored,counts:{sessions:rows.sessions.length,series:restored.logs.length,cardio:restored.cardio.length,journal:Object.keys(restored.journal).length,measurements:restored.measurements.length,monthlyReviews:restored.monthlyReviews?.length??0,monthlyChecks:restored.monthlyChecks?.length??0,checkPhotos:photos.size},version:payload.formatVersion};
 }
 const identity=row=>object(row)&&typeof row.id==='string'?`id:${row.id}`:`value:${JSON.stringify(row)}`;
 // Current values win collisions; imported fields and distinct IDs are retained.

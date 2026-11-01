@@ -13,6 +13,10 @@ frontend, persistencia local y testing, sus hallazgos y verificaciones.
 **Progresión actual:** [todas las series, sensación y decisiones en Historial](docs/progresion.md).
 Subida de carga solo con todos los rangos completos y técnica limpia a 0–2 RIR
 confirmada. Sin ese dato, mantener e intentar +1 rep; «flojo» mantiene la carga.
+
+**Check mensual:** [peso, medidas y fotos locales con comparación entre meses](docs/check-mensual.md).
+Se abre desde el menú lateral; el punto rojo recuerda el check cada cuatro semanas.
+Las fotos se procesan a blanco y negro en el dispositivo y se incluyen en el respaldo JSON.
 Solo se registran efectivas, con peso y reps de la última sesión, steppers sin
 teclado automático y Drop/RP dentro de la última fila. El calentamiento es una
 indicación sin registro. Las descripciones de pestañas y formularios de preparación
