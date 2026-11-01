@@ -1254,3 +1254,5 @@ En `npm run dev`, el botón explica que Vite actualiza los cambios al guardar.
 [Pantalla de entrenamiento horizontal: diseño móvil y escritorio](docs/design/entrenamiento-horizontal.md).
 
 [Tarjetas de series: controles, estados y seguridad](docs/design/series-tarjetas.md).
+
+[Temporizador de descanso: píldora móvil y panel de escritorio](docs/design/temporizador-descanso.md).

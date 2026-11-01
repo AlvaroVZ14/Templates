@@ -1,10 +1,11 @@
 import {test,expect} from '@playwright/test';
 import {initialState} from '../../src/domain.js';
 import {chooseDate,openExercise} from './navigation-helpers.js';
-async function boot(page,{history=true}={}){
+async function boot(page,{history=true,longName=false}={}){
  page.on('dialog',dialog=>dialog.accept());
  await page.clock.install({time:new Date('2026-11-08T18:00:00Z')});
  const data=initialState();data.appearanceSettings={...data.appearanceSettings,effects:'off'};data.weightSetup={reviewedAt:'2026-11-08'};
+ if(longName)data.routine[6][0].name='Prensa unilateral en máquina con respaldo ajustado y recorrido controlado';
  for(const profile of Object.values(data.profiles))profile.workWeight=80;
  if(history)for(const ex of data.routine[6])for(let i=0;i<ex.sets;i++)data.logs.push({id:`fixture-${ex.id}-${i}`,date:'2026-11-01',exerciseId:ex.id,profileId:ex.profileId,equipment:ex.equipment,exerciseName:ex.name,muscle:ex.muscle,kind:'effective',weight:80,reps:8,setRole:ex.setPlan[i].role,rpe:9,failure:false,createdAt:`2026-11-01T18:0${i}:00Z`});
  await page.route('**/Templates/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html>'}));await page.goto('./');
@@ -69,4 +70,21 @@ test('cinco series caben en una fila de escritorio y en dos columnas en celular'
  const wide=await cards.evaluateAll(cards=>cards.map(card=>card.getBoundingClientRect().y));expect(new Set(wide).size).toBe(1);
  await page.setViewportSize({width:390,height:844});const narrow=await cards.evaluateAll(cards=>cards.map(card=>card.getBoundingClientRect().y));expect(narrow[0]).toBe(narrow[1]);expect(narrow[2]).toBe(narrow[3]);expect(narrow[4]).toBeGreaterThan(narrow[3]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+async function storedRest(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const r=indexedDB.open('heavy-duty-personal');r.onsuccess=()=>resolve(r.result);});try{return await new Promise(resolve=>{const r=db.transaction('app').objectStore('app').get('state');r.onsuccess=()=>resolve({timer:r.result.timer,quickRest:r.result.quickRest,logs:r.result.logs});});}finally{db.close();}});}
+test('descanso: ajustar ±15, cambiar ejercicio, terminar una vez y saltar conserva descanso real',async({page})=>{
+ await page.addInitScript(()=>{window.restVibrations=[];navigator.vibrate=value=>{window.restVibrations.push(value);return true;};});await page.setViewportSize({width:390,height:844});const data=await boot(page),ex=data.routine[6][0];
+ const timer=page.getByLabel('Temporizador de descanso',{exact:true});await expect(timer).not.toBeVisible();await page.getByRole('button',{name:`Confirmar ${ex.name}, serie 1`,exact:true}).click();await expect(timer).toBeVisible();await expect.poll(async()=>Boolean((await storedRest(page)).timer)).toBe(true);const before=await storedRest(page);
+ await timer.getByRole('button',{name:'Sumar 15 segundos',exact:true}).click();await expect.poll(async()=>(await storedRest(page)).timer.end).toBe(before.timer.end+15000);
+ await timer.getByRole('button',{name:'Restar 15 segundos',exact:true}).click();await expect.poll(async()=>(await storedRest(page)).timer.end).toBe(before.timer.end);
+ await page.getByRole('button',{name:'Ejercicio siguiente',exact:true}).click();await expect(timer).toContainText(ex.name);expect((await storedRest(page)).quickRest).toEqual(before.quickRest);
+ await page.clock.fastForward(155000);await expect(timer).toHaveClass(/finished/);expect(await timer.locator('.rest-dial-track').evaluate(el=>getComputedStyle(el).stroke)).toBe('rgb(69, 98, 75)');await expect.poll(()=>page.evaluate(()=>window.restVibrations.filter(value=>value===80).length)).toBe(1);await page.clock.fastForward(2000);expect(await page.evaluate(()=>window.restVibrations.filter(value=>value===80).length)).toBe(1);
+ await timer.getByRole('button',{name:'Saltar descanso',exact:true}).click();await expect(timer).not.toBeVisible();expect((await storedRest(page)).quickRest).toEqual(before.quickRest);
+ await page.getByRole('button',{name:'Ejercicio anterior',exact:true}).click();await page.getByRole('button',{name:`Confirmar ${ex.name}, serie 2`,exact:true}).click();await expect.poll(async()=>(await storedRest(page)).logs.find(row=>row.id===before.timer.sourceLogId)?.restRealSeconds).toBeGreaterThanOrEqual(157);
+});
+test('píldora sin recorte en320/390 y horizontal; panel derecho en1400, nombre largo visible',async({page})=>{
+ await page.setViewportSize({width:390,height:844});const data=await boot(page,{longName:true}),ex=data.routine[6][0];await page.getByRole('button',{name:`Confirmar ${ex.name}, serie 1`,exact:true}).click();const timer=page.getByLabel('Temporizador de descanso',{exact:true});await expect(timer).toContainText('Compuesto 2–3 min');
+ for(const [width,height] of [[320,700],[390,844],[844,390]]){await page.setViewportSize({width,height});const rect=await timer.boundingBox();expect(rect.x).toBeGreaterThanOrEqual(12);expect(rect.y+rect.height).toBeLessThanOrEqual(height-12);expect(Math.abs(rect.x+rect.width/2-width/2)).toBeLessThan(1);expect(await timer.locator('.rest-copy p').evaluate(el=>el.scrollHeight<=el.clientHeight&&el.scrollWidth<=el.clientWidth)).toBe(true);}
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/rest-timer-390.png',fullPage:true,animations:'disabled'});await page.setViewportSize({width:1400,height:900});expect(await timer.evaluate(el=>getComputedStyle(el).position)).toBe('static');await expect(timer).toBeInViewport();await page.screenshot({path:'test-results/rest-timer-1400.png',fullPage:true,animations:'disabled'});
 });
