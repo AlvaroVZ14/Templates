@@ -2,6 +2,8 @@
 
 **Identidad actual:** [logo vectorial, íconos, splash y actualización a Olympia](docs/identidad-olympia.md).
 
+**Revisión completa:** [rutina de 85 series, historial, offline y móvil de 360 px](docs/auditoria-final-2026-11-01.md).
+
 **Interfaz actual:** [inicio de cuatro elementos y entrenamiento con un ejercicio abierto](docs/interfaz-simple.md).
 Todo lo secundario sigue accesible desde el menú lateral.
 
