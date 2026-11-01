@@ -1,6 +1,6 @@
+import {editNumber,confirmSet,expectNumber} from './fast-helpers.js';
 import {test as cleanTest} from '@playwright/test';
 import {seedLegacyOrigin} from './fixtures.js';
-import {quickTab} from './quick-helpers.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
@@ -24,10 +24,10 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
   try{
     await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});
     await seedLegacyOrigin(page,`http://127.0.0.1:${server.address().port}/Templates/`);await page.goto(`http://127.0.0.1:${server.address().port}/Templates/`);
-    await expect(page.getByRole('heading',{name:'Pecho, hombro y bíceps',exact:true})).toBeVisible();
+    await expect(page.locator('.fast-session-heading h1')).toContainText('Pecho');
     await page.evaluate(async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));});
-    const weight=page.getByLabel('Peso de trabajo de Press banca',{exact:true});await weight.fill('100');
-    await page.getByLabel('Repeticiones de Press banca',{exact:true}).fill('9');
+    await editNumber(page,'Press banca',100);
+    await editNumber(page,'Press banca',9,{field:'Reps'});
     await go(page,'Rutina');await page.getByRole('button',{name:'Lun',exact:true}).click();await page.locator('.editor-card').first().getByRole('button').first().click();
     await page.getByLabel('Nombre del ejercicio',{exact:true}).fill('Press de prueba ficticio');
     const peer=await context.newPage();await peer.goto(page.url());await peer.evaluate(()=>{window.auditMarker='formulario abierto';});
@@ -38,8 +38,8 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
     await page.screenshot({path:'test-results/audit-update-mobile.png',fullPage:false});
     await context.setOffline(true);
     await Promise.all([page.waitForEvent('load'),update.click()]);
-    await expect(page.getByLabel('Peso de trabajo de Press banca',{exact:true})).toHaveValue('100');
-    await expect(page.getByLabel('Repeticiones de Press banca',{exact:true})).toHaveValue('9');
+    await expectNumber(page,'Press banca',100);
+    await expectNumber(page,'Press banca',9,{field:'Reps'});
     await go(page,'Rutina');await page.getByRole('button',{name:'Lun',exact:true}).click();await page.locator('.editor-card').first().getByRole('button').first().click();
     await expect(page.getByLabel('Nombre del ejercicio',{exact:true})).toHaveValue('Press de prueba ficticio');
     await expect(page.getByRole('button',{name:'Hay una versión nueva, tocar para actualizar',exact:true})).toHaveCount(0);
@@ -52,11 +52,11 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
 
 test('medianoche chilena actualiza hoy sin mover ni perder la sesión abierta',async({page})=>{
   await page.clock.install({time:new Date('2026-10-16T02:59:30Z')});await page.goto('./');
-  await expect(page.getByRole('heading',{name:'Hombro y brazo',exact:true})).toBeVisible();
-  await page.getByLabel('Peso de trabajo de Press militar mancuernas',{exact:true}).fill('20');
+  await expect(page.getByRole('heading',{name:'Hombro + Brazo',exact:true})).toBeVisible();
+  await editNumber(page,'Press militar mancuernas',20);
   await page.clock.fastForward(65000);
   await expect(page.getByText('Estás viendo la sesión del 2026-10-15. Hoy en Chile: 2026-10-16.',{exact:true})).toBeVisible();
-  await expect(page.getByLabel('Peso de trabajo de Press militar mancuernas',{exact:true})).toHaveValue('20');
+  await expectNumber(page,'Press militar mancuernas',20);
   await page.getByRole('button',{name:'Ir a hoy',exact:true}).click();await expect(page.getByRole('heading',{name:'Pierna',exact:true})).toBeVisible();
 });
 
@@ -65,7 +65,7 @@ test('sin historial, pesos, alimentos ni rutina: todas las secciones abren sin e
   // Start from a real initialized database, then clear only this isolated test profile.
   await chooseDate(page,'2026-10-12');
   await page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction([...db.objectStoreNames],'readwrite'),app=tx.objectStore('app'),req=app.get('state');req.onsuccess=()=>{const state=req.result;state.routine=Array.from({length:7},()=>[]);state.profiles={};state.logs=[];state.foods=[];state.phases=[];state.journal={};state.measurements=[];state.cardio=[];state.trainingDrafts={};app.put(state,'state');for(const name of ['sessions','cardio','journal','measurements','phases'])tx.objectStore(name).clear();};tx.oncomplete=()=>{db.close();resolve();};});});
-  await page.reload();await expect(page.getByRole('heading',{name:'Día de descanso',exact:true})).toBeVisible();
+  await page.reload();await expect(page.getByRole('heading',{name:'Descanso',exact:true})).toBeVisible();
   for(const section of ['Historial','Medidas','Diario','Comida','Progreso','Método','Ajustes','Configurar pesos','Rutina','Hoy'])await go(page,section);
   await go(page,'Comida');await expect(page.getByText('No hay alimentos en la base.',{exact:false})).toBeVisible();
   expect(errors).toEqual([]);await page.screenshot({path:'test-results/audit-empty-mobile.png',fullPage:true});
@@ -88,19 +88,14 @@ cleanTest('todas las pantallas caben a 320 y 390 px; fases nuevas no recuperan f
 
 test('respaldo descargado hace ida y vuelta por la importación real y recupera datos originales',async({page})=>{
   await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});await page.goto('./');
-  await page.getByLabel('Peso de trabajo de Press banca',{exact:true}).fill('100');
-  await quickTab(page,'Otras');await page.getByLabel('Tipo de serie').selectOption('effective');
-  await page.getByLabel('Carga de Press banca',{exact:true}).fill('100');
-  await page.getByLabel('Repeticiones de Press banca',{exact:true}).fill('8');
-  await page.getByRole('button',{name:/^Guardar serie/}).click();
-  await expect(page.locator('.log-row')).toHaveCount(1);
+  await editNumber(page,'Press banca',100);await confirmSet(page,'Press banca');
   await go(page,'Diario');await page.getByLabel('Peso corporal (kg)',{exact:true}).fill('70');await page.getByRole('button',{name:'Guardar diario',exact:true}).click();await expect(page.getByText('Diario guardado.',{exact:true})).toBeVisible();
   await go(page,'Ajustes');const pending=page.waitForEvent('download');await page.locator('.backup-panel').getByRole('button',{name:'Exportar respaldo',exact:true}).click();
   const file=await pending,payload=JSON.parse(await readFile(await file.path(),'utf8'));
   await go(page,'Diario');await page.getByLabel('Peso corporal (kg)',{exact:true}).fill('71');await page.getByRole('button',{name:'Guardar diario',exact:true}).click();await expect(page.getByText('Diario guardado.',{exact:true})).toBeVisible();
   await go(page,'Ajustes');await page.locator('.backup-panel summary').click();await page.getByLabel('Archivo de respaldo',{exact:true}).setInputFiles({name:'ida-vuelta-ficticio.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(payload))});
   await expect(page.locator('.backup-panel')).toContainText('Archivo validado');await page.getByLabel('Modo de importación',{exact:true}).selectOption('replace');
-  await page.getByRole('button',{name:'Reemplazar con este respaldo',exact:true}).click();await expect(page.getByLabel('Peso de trabajo de Press banca',{exact:true})).toHaveValue('100');
+  await page.getByRole('button',{name:'Reemplazar con este respaldo',exact:true}).click();await expectNumber(page,'Press banca',100);
   const actual=await page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction([...db.objectStoreNames]),records={};for(const name of db.objectStoreNames){const keys=tx.objectStore(name).getAllKeys(),values=tx.objectStore(name).getAll();values.onsuccess=()=>{records[name]=values.result.map((value,i)=>({key:keys.result[i],value}));};}tx.oncomplete=()=>{db.close();resolve(records);};});});
   for(const name of ['sessions','cardio','journal','measurements','phases','sessionRevisions'])expect(actual[name],name).toEqual(payload.records[name]);
   const source=payload.records.app.find(row=>row.key==='state').value,restored=actual.app.find(row=>row.key==='state').value;

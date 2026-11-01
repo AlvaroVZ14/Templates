@@ -1,26 +1,6 @@
-import {quickTab} from './quick-helpers.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
 async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
 async function start(page){await page.clock.install({time:new Date('2026-10-16T15:00:00Z')});await page.goto('./');await go(page,'Diario');await page.getByLabel('Peso corporal (kg)',{exact:true}).fill('70');await page.getByRole('button',{name:'Guardar diario',exact:true}).click();await go(page,'Comida');await page.getByLabel('Consumo promedio actual',{exact:true}).fill('2200');await page.getByRole('button',{name:'Calcular propuesta',exact:true}).click();await page.getByRole('button',{name:'Confirmar metas nutricionales',exact:true}).click();await expect(page.getByText(/Metas confirmadas desde 2026-10-16/)).toBeVisible();}
-
-test('previas de toda la semana y excepción solo con pesado realizado; tipo y equipo editables',async({page})=>{
-  await page.goto('./');
-  for(const [date,counts] of [['2026-10-12',[2,2,2,1,0,2,2,0]],['2026-10-13',[2,0,2,2,2,2,2]],['2026-10-14',[]],['2026-10-15',[2,1,2,2,0,0,0]],['2026-10-16',[2,2,2,2,2,1,2]],['2026-10-17',[2,2,2,1,2,2,2]]]){
-    await chooseDate(page,date);await expect(page.locator('.session-list .preparation-line strong')).toHaveText(counts.map(n=>`PREVIAS · ${n}`));
-  }
-  await chooseDate(page,'2026-10-16');const hack=page.locator('.exercise-card').filter({has:page.getByRole('button',{name:'Configurar previas de Hack squat',exact:true})}),press=page.locator('.exercise-card').filter({has:page.getByRole('button',{name:'Configurar previas de Prensa',exact:true})});
-  await expect(hack.locator('.preparation-context')).toContainText('Compuesto pesado: mínimo 2');
-  await hack.locator('.exercise-summary').click();await page.getByLabel('Peso de trabajo de Hack squat',{exact:true}).fill('100');await expect(hack.locator('.preparation-chip')).toHaveCount(0);await expect(hack.locator('.suggested-set[data-kind=approach]')).toHaveCount(2);
-  await quickTab(page,'Efectiva');await page.locator('.set-form').getByRole('button',{name:'Guardar serie'}).click();await expect(hack.locator('.log-row[data-kind=effective]')).toHaveCount(1);
-  await expect(press.locator('.preparation-line')).toContainText('PREVIAS · 1');await expect(press.locator('.preparation-context')).toContainText('mismo patrón ya realizado');
-  await press.locator('.exercise-summary').click();await page.getByLabel('Peso de trabajo de Prensa',{exact:true}).fill('100');await expect(page.getByLabel('Peso de Aproximación 1',{exact:true})).toHaveValue('60');await expect(page.getByLabel('Reps de Aproximación 1',{exact:true})).toHaveValue('6');
-  await page.getByRole('button',{name:'Configurar previas de Hack squat',exact:true}).click();const sheet=page.getByRole('dialog',{name:'Previas · Hack squat',exact:true});await sheet.getByRole('button',{name:'Previas 0 de Hack squat',exact:true}).click();await expect(sheet.getByText('Compuesto pesado sin calentar',{exact:true})).toBeVisible();await sheet.getByRole('button',{name:'Guardar previas',exact:true}).click();await expect(hack.locator('.preparation-line')).toContainText('PREVIAS · 0');await expect(hack.locator('.compact-preparation > .error')).toBeVisible();
-  await page.reload();await expect(hack.locator('.preparation-line')).toContainText('PREVIAS · 0');await expect(press.locator('.preparation-line')).toContainText('PREVIAS · 1');
-  await hack.getByRole('button',{name:'Volver a Auto de Hack squat',exact:true}).click();await expect(hack.locator('.preparation-line')).toContainText('PREVIAS · 2');
-  for(const width of [320,390,768]){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
-  await page.setViewportSize({width:390,height:900});await page.getByRole('button',{name:'Cerrar temporizador',exact:true}).click();await hack.screenshot({path:'test-results/p17-heavy-mobile.png'});
-  await go(page,'Rutina');await page.getByRole('button',{name:'Vie',exact:true}).click();await page.locator('.editor-card').filter({hasText:'Hack squat'}).getByRole('button').first().click();await expect(page.getByRole('combobox',{name:'Tipo de carga',exact:true})).toHaveValue('heavy');await expect(page.getByRole('combobox',{name:'Equipo',exact:true})).toHaveValue('machine');await page.getByRole('combobox',{name:'Equipo',exact:true}).selectOption('barbell');await expect(page.getByRole('combobox',{name:'Tipo de carga',exact:true})).toHaveValue('heavy');
-});
 
 test('manzana configurable, fruta sin duplicados, fibra editable y registros históricos offline',async({page,context})=>{
   await start(page);await go(page,'Hoy');await expect(page.getByLabel('Manzanas al día',{exact:true})).toHaveValue('1');await page.getByRole('button',{name:'Generar 4 comidas',exact:true}).click();await expect(page.locator('.planned-meal').nth(1)).toContainText('Manzana');await expect(page.locator('.snack-options')).not.toContainText('Manzana');
@@ -37,7 +17,7 @@ test('laterales sin ocupar espacio, parallax, pausa y modos visuales',async({pag
   const layout=await page.evaluate(()=>{const left=document.querySelector('.side-left').getBoundingClientRect(),content=document.querySelector('#main-content').getBoundingClientRect();return {left:left.right,content:content.left};});expect(layout.left).toBeLessThan(layout.content);
   // Wait for onboarding/app initialization before the real pointer interaction.
   // A single move during boot can precede the effect listener in fast Linux CI.
-  await expect(page.getByRole('heading',{name:'Hoy',exact:true})).toBeVisible();
+  await expect(page.locator('.fast-session-heading h1')).toBeVisible();
   await expect.poll(async()=>{await page.mouse.move(1780,300);await page.mouse.move(1800,300);return sides.evaluate(el=>Number(el.style.getPropertyValue('--edge-x')));}).toBeGreaterThan(.5);await page.screenshot({path:'test-results/p17-sides-desktop.png'});
   await page.evaluate(()=>{window.testHidden=true;document.dispatchEvent(new Event('visibilitychange'));});await expect(sides).toHaveClass(/is-paused/);expect(await sides.locator('.side-smoke').evaluate(el=>getComputedStyle(el).animationPlayState)).toBe('paused');await page.evaluate(()=>{window.testHidden=false;document.dispatchEvent(new Event('visibilitychange'));});await expect(sides).not.toHaveClass(/is-paused/);
   await go(page,'Ajustes');await page.getByLabel('Efectos visuales',{exact:true}).selectOption('reduced');await page.getByRole('button',{name:'Guardar apariencia'}).click();await expect(sides).toHaveClass(/is-paused/);expect(await sides.locator('.side-smoke').evaluate(el=>getComputedStyle(el).animationName)).toBe('none');
