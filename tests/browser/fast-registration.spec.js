@@ -41,7 +41,7 @@ test('✓ confirma valores anteriores por serie, sin duplicados; recarga offline
  await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).dblclick();await expect(c.locator('.confirmed')).toHaveCount(1);
  await page.clock.fastForward(178000);await c.getByRole('button',{name:`Confirmar ${ex}, serie 2`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(2);
  let state=await stateOf(page),rows=state.logs.filter(log=>log.date===date);expect(rows).toHaveLength(2);expect(rows[0].weight).toBe(40);expect(rows[1].weight).toBe(36);expect(rows[1].reps).toBe(10);expect(rows[0].restRealSeconds).toBeGreaterThanOrEqual(178);expect(rows[0].restRealSeconds).toBeLessThan(185);expect(rows[0].rpe).toBeNull();
- await expect(page.getByLabel('Temporizador de descanso',{exact:true})).toBeVisible();expect(await page.getByLabel('Temporizador de descanso',{exact:true}).evaluate(el=>el.getBoundingClientRect().height)).toBeLessThan(65);
+ await expect(page.getByLabel('Temporizador de descanso',{exact:true})).toBeVisible();const pill=await page.getByLabel('Temporizador de descanso',{exact:true}).boundingBox();expect(pill.x).toBeGreaterThanOrEqual(12);expect(pill.y+pill.height).toBeLessThanOrEqual(832);
  await page.evaluate(async()=>{await navigator.serviceWorker.ready;});await context.setOffline(true);await page.reload();await expect(card(page,ex).locator('.confirmed')).toHaveCount(2);
 });
 test('stepper sin teclado, edición explícita y borrador recuperado',async({page})=>{

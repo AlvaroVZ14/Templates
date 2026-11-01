@@ -15,6 +15,8 @@ import CardioSettings from './CardioSettings.jsx';
 import PainPage from './Pain.jsx';
 import SimpleHome from './SimpleHome.jsx';
 import WorkoutDeck from './WorkoutDeck.jsx';
+import RestTimer from './RestTimer.jsx';
+import {adjustRestTimer} from './restTimer.js';
 import {startGymSession,openGymSession} from './gym.js';
 import {finishQuickSession} from './quickRegistration.js';
 import useWakeLock from './useWakeLock.js';
@@ -24,7 +26,7 @@ import {LOAD_TYPES,PATTERNS,classifyExercise} from './classification.js';
 const Progress=lazy(()=>import('./Progress.jsx'));
 import {captureMonthlyReviews} from './progress.js';
 import { lazy, Suspense, memo, useCallback, useEffect, useRef, useState } from 'react';
-import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, dayIndex, formatSeconds, initialState, migrateState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
+import { EQUIPMENT, INCREMENTS, DAYS, EXTENSIONS, KINDS, MUSCLES, dayIndex, initialState, migrateState, localDate, makeExercise, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume } from './domain.js';
 import useSeriesQueue from './useSeriesQueue.js';
 import {warmTrainingPersistence,persistTrainingMetadata} from './trainingPersistence.js';
 import { updateState, loadState } from './db.js';
@@ -180,7 +182,7 @@ export default function App() {
         {gymOpen&&!gymActive&&page!=='today'&&<aside className="notice gym-recovery"><p>Sesión abierta del {gymOpen.date}. Tus series están guardadas.</p><button className="secondary" onClick={()=>navigate('workout',gymOpen.date)}>Volver a la sesión abierta</button></aside>}
         {page !== 'today' && page !== 'workout' && page !== 'measurements' && page !== 'monthly-check' && measureReminder?.due && <aside className="notice measurement-reminder" aria-label="Recordatorio de medidas"><div><strong>Tu control de medidas está pendiente.</strong><p>Desde {measureReminder.date} · En ayunas y mismas condiciones; bíceps en pose y resto relajado.</p></div><button className="secondary" onClick={() => { navigate('measurements',localDate()); }}>Ir a Medidas</button></aside>}
         {page==='today'&&<SimpleHome data={data} date={clockDay} onStart={beginWorkout} saving={saving}/>}
-        {page === 'workout' && <Workout key={date} data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} gymActive={gymActive} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} onConfirm={seriesQueue.confirm} restTimer={<Timer timer={data.timer} gym={gymActive} onFinish={()=>{if(gymActive&&data.gymSettings?.sound)audio.play();}} onClose={()=>change(state=>({...state,timer:null}))}/>} />}
+        {page === 'workout' && <Workout key={date} data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} gymActive={gymActive} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} onConfirm={seriesQueue.confirm} restTimer={<RestTimer timer={data.timer} data={data} busy={saving} onAdjust={delta=>change(state=>adjustRestTimer(state,delta))} onFinish={()=>{if(gymActive&&data.gymSettings?.sound)audio.play();}} onClose={()=>change(state=>({...state,timer:null}))}/>} />}
         {page==='weights'&&<WeightSetup data={data} change={change} saving={saving} onDone={()=>{setPage('today');setMenuOpen(false);}}/>}
         {page==='pain'&&<PainPage data={data} date={localDate()} onDiary={value=>navigate('diary',value)}/>}
         {page==='routine'&&<Routine data={data} change={change} saving={saving}/>}
@@ -320,12 +322,3 @@ function Volume({ data, date, setDate }) {
   </>;
 }
 
-function Timer({ timer, onClose,gym=false,onFinish }) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(id); }, []);
-  const end=timer?.end,remaining = Math.max(0, Math.ceil(((end??now) - now) / 1000));
-  const notified = useRef(end&&end<=Date.now()?end:null);
-  useEffect(() => { if (end&&remaining === 0 && notified.current !== end) { notified.current = end; try{navigator.vibrate?.([120]);}catch{/* Optional haptic support. */}onFinish?.(); } }, [remaining, end]);
-  const fraction=timer?Math.min(1,Math.max(0,(end-now)/(Math.max(1,timer.duration)*1000))):0;
-  return <aside className={`timer-bar ${remaining === 0&&timer ? 'finished' : ''} ${gym?'gym-timer':''}`} aria-label="Temporizador de descanso"><div className="timer-strip" aria-hidden="true" style={{'--rest-fraction':fraction}}><i/></div><div className="rest-ring" aria-hidden="true"><svg viewBox="0 0 48 48"><circle className="rest-track" cx="24" cy="24" r="20"/><circle className="rest-countdown" cx="24" cy="24" r="20" pathLength="1" strokeDasharray="1" strokeDashoffset={1-fraction}/></svg><Icon name="clock" size={18}/></div><div><strong>{!timer?'Descanso listo':remaining > 0 ? 'Descanso' : 'Descanso terminado'}</strong><span>{timer?.label??'Confirma una serie para iniciar'}</span></div><b role="timer" aria-label={`${remaining} segundos restantes`}>{formatSeconds(remaining)}</b>{timer&&<button className="icon-button" aria-label={gym?'Finalizar descanso':'Cerrar temporizador'} onClick={onClose}><Icon name="close" size={20} /></button>}</aside>;
-}
