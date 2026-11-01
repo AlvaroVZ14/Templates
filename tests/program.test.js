@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {shiftDate} from '../src/wellness.js';
 import {chileDate,migrateProgram} from '../src/program/state.js';
 import {activatePhase,advancePhases,captureAnchors,phaseForDate,phaseReport,trajectory,trend,trendAdvice} from '../src/program/phases.js';

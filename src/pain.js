@@ -48,10 +48,12 @@ export function zoneStatus(state,zone,date,context=painContext(state,date)){
 export function exerciseZones(ex){
   const groups={Pecho:['chest','shoulder','elbow'],Espalda:['upperBack','shoulder','elbow'],Hombro:['shoulder','neck','elbow'],'Bíceps':['biceps','elbow','wrist'],'Tríceps':['triceps','elbow'], 'Cuádriceps':['quads','knee'],Femoral:['hamstrings','knee'],Gemelo:['calf','ankle'],Aductor:['adductor','hip']};
   const zones=new Set(groups[ex.muscle]??[]),{movementPattern}=classifyExercise(ex);
+  const currentGroups={'Deltoides laterales':['shoulder','neck'],'Deltoides posteriores':['shoulder','upperBack'],Femorales:['hamstrings','knee'],Gemelos:['calf','ankle'],Aductores:['adductor','hip'],Abductores:['hip'],Glúteos:['hip','lowerBack']};
+  for(const zone of currentGroups[ex.muscle]??[])zones.add(zone);
   if(movementPattern==='row'&&ex.equipment==='barbell')zones.add('lowerBack');
   if(['knee-press','hip-extension'].includes(movementPattern)){zones.add('hip');zones.add('lowerBack');}
   if(/tras nuca/.test(plain(ex.name)))zones.add('shoulder');
-  if(['barbell','dumbbell','cable'].includes(ex.equipment)&&['Pecho','Espalda','Hombro'].includes(ex.muscle))zones.add('wrist');
+  if(['barbell','dumbbell','cable'].includes(ex.equipment)&&['Pecho','Espalda','Hombro','Deltoides laterales','Deltoides posteriores'].includes(ex.muscle))zones.add('wrist');
   return [...zones];
 }
 export function painStatuses(state,date){const context=painContext(state,date);return Object.keys(PAIN_ZONES).map(zone=>zoneStatus(state,zone,date,context)).filter(Boolean);}

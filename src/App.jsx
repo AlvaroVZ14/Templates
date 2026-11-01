@@ -217,7 +217,7 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
       <Cracks/><div className="hero-copy"><span className="pill">{exercises.length ? appearanceFor(data).name : 'RECUPERACIÓN'}</span><p className="hero-date">{dateLabel}</p>{exercises.length?<PosterTitle exercises={exercises}/>:<h2>Día de descanso</h2>}<p className="hero-caption">{exercises.length ? 'Poco volumen. Máxima intención.' : 'El descanso también construye.'}</p><div className="hero-stats"><span><b>{exercises.length}</b> ejercicios</span><span><b>{planned}</b> series efectivas</span></div></div>
       <div className={`progress-ring ${completeFlash?'completion-pop':''}`} style={{ '--progress': `${planned ? Math.min(done / planned, 1) * 100 : 0}%` }}><div><strong>{done}<small>/{planned}</small></strong><span>COMPLETADAS</span></div></div>
     </ShadowStage>
-    <div className="training-note"><Icon name="leaf" size={18} /><span>{exercises.some(ex=>ex.deload)?'Descarga: ejecución controlada, sin fallo y sin técnicas.':'Natural. Ejecución controlada. Series efectivas al fallo técnico.'}</span></div>
+    <div className="training-note"><Icon name="leaf" size={18} /><span>{exercises.some(ex=>ex.deload)?'Descarga: ejecución controlada, sin fallo y sin técnicas.':exercises.some(ex=>ex.setPlan?.length)?'0–2 RIR · excéntrica 2–3 s · técnica sin sacrificar la forma.':'Natural. Ejecución controlada. Series efectivas al fallo técnico.'}</span></div>
     {exercises.length>0&&date===localDate()&&!gymOpen&&!data.sessionMeta?.[date]?.endedAt&&<button className="primary full start-gym" disabled={saving} onClick={beginGym}>Empezar sesión<span>Modo gimnasio · pantalla encendida si es compatible</span></button>}
     {summaryOpen&&data.sessionMeta?.[date]?.gymSummary&&<GymSummary summary={data.sessionMeta[date].gymSummary} onClose={closeSummary}/>}
     <PreparationSettings data={data} date={date} exercises={exercises} change={change} saving={saving} />
@@ -225,6 +225,8 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
     <TrainingRecovery key={`recovery-${date}`} data={data} date={date} exercises={exercises} change={change} saving={saving} />
     </>}
     <PainOverview data={data} date={date} onOpen={onPain}/>
+    {data.routineActivatedOn>localDate()&&<aside className="notice" role="status"><p>Tu sesión anterior sigue disponible. La nueva rutina se activa el {data.routineActivatedOn.split('-').reverse().join('/')}.</p></aside>}
+    {context.calendarNeedsReview&&!gymActive&&<aside className="notice" role="status"><p>Este día tenía un ajuste del calendario anterior. Se conservó; revisa si quieres aplicarlo al nuevo plan.</p><button type="button" className="secondary" onClick={()=>{const editor=document.getElementById('day-calendar');if(!editor)return;for(let node=editor;node;node=node.parentElement)if(node.tagName==='DETAILS')node.open=true;editor.querySelector('summary')?.focus();editor.scrollIntoView({block:'start'});}}>Revisar calendario</button></aside>}
     <section className="session-list"><div className="section-heading"><h2>{exercises.length ? 'Tu sesión' : 'Recupera para la próxima'}</h2><span>{exercises.length ? `${done} de ${planned} efectivas` : DAYS[day]}</span></div>
       {exercises.length === 0 ? <div className="rest-card" data-testid="rest-card"><Icon name="leaf" size={42} /><h3>{rest.title}</h3><p>{rest.text}</p><p>Puedes consultar otra fecha desde el menú.</p></div> : exercises.map((exercise, index) => <ExerciseCard key={`${date}-${exercise.id}`} exercise={exercise} index={index} date={date} data={data} logs={logs.filter(log => log.exerciseId === exercise.id)} expanded={activeId === exercise.id} toggle={() => selectExercise(exercise.id)} change={change} saving={saving} startTimer={startTimer} gym={gymActive} current={gymActive&&activeId===exercise.id} next={gymActive&&index===currentIndex+1} />)}
     </section>
@@ -238,15 +240,29 @@ function Today({ data, date, setDate, change, saving, startTimer, onFood, onDiar
 
 function Routine({ data, change, saving }) {
   const recovery=useFormDraft('routine:editor',localDate());
-  const [draft, setDraft] = useState(() => parseRoutineDraft(recovery.initial.routine)??structuredClone(data.routine));
+  const restoredDraft=useRef(parseRoutineDraft(recovery.initial.routine));
+  const [legacyDraft]=useState(()=>{const restored=restoredDraft.current;if(!data.routineVersion||!restored)return false;const currentIds=new Set(data.routine.flat().map(ex=>ex.id));return restored.flat().length>0&&!restored.flat().some(ex=>currentIds.has(ex.id));});
+  const [draft, setDraft] = useState(() => !legacyDraft&&restoredDraft.current?restoredDraft.current:structuredClone(data.routine));
   const [day, setDay] = useState(dayIndex(localDate()));
   const [open, setOpen] = useState('');
-  const [dirty, setDirty] = useState(recovery.restored);
+  const [dirty, setDirty] = useState(recovery.restored&&!legacyDraft);
   useEffect(()=>{if(dirty){recovery.touch();recovery.remember({routine:JSON.stringify(draft)});}},[draft,dirty]);
   const [message, setMessage] = useState('');
   const [deleteId, setDeleteId] = useState('');
   useEffect(()=>{if(!dirty)setDraft(structuredClone(data.routine));},[data.routine,dirty]);
-  function update(id, patch) { setDraft(current => current.map((list, i) => i === day ? list.map(ex => ex.id === id ? { ...ex, ...patch } : ex) : list)); setDirty(true); setMessage(''); }
+  function update(id, patch) {
+    setDraft(current=>current.map((list,i)=>i===day?list.map(ex=>{
+      if(ex.id!==id)return ex;
+      const next={...ex,...patch};
+      if(ex.setPlan?.length&&(Object.hasOwn(patch,'sets')||Object.hasOwn(patch,'technique'))){
+        const count=Number.isInteger(next.sets)&&next.sets>=1&&next.sets<=20?next.sets:ex.setPlan.length,hasTop=ex.setPlan.some(set=>set.role==='top');
+        const fallback=ex.setPlan.at(-1);
+        next.setPlan=Array.from({length:count},(_,index)=>({...fallback,...ex.setPlan[index],role:ex.setPlan[index]?.role??(hasTop?'backoff':'standard'),technique:index===count-1?next.technique:''}));
+      }
+      return next;
+    }):list));
+    setDirty(true);setMessage('');
+  }
   async function save(event) {
     event.preventDefault();
     const invalid = validateRoutine(draft);
@@ -262,6 +278,7 @@ function Routine({ data, change, saving }) {
     setDraft(current => current.map((list, i) => i === day ? [...list, ex] : list)); setOpen(ex.id); setDirty(true);
   }
   return <><div className="page-heading"><div><p className="eyebrow">LA ESTRUCTURA DE TU TRABAJO</p><h1>Tu rutina<span className="accent">.</span></h1></div><span className="outlined-tag">7 DÍAS</span></div><p className="page-intro">Ajusta las series, las técnicas y el descanso a tu entrenamiento.</p>
+    {legacyDraft&&<p className="notice" role="status">Hay un borrador de la rutina anterior conservado en tus datos. Se muestra el plan actual para evitar reemplazarlo al guardar.</p>}
     <form onSubmit={save}><div className="editor-toolbar"><span aria-live="polite">{dirty ? 'Cambios sin guardar' : message || 'Rutina personalizada · Heavy Duty'}</span><button className="primary" type="submit" disabled={saving || !dirty}><Icon name="check" size={18} />{saving ? 'Guardando…' : 'Guardar cambios'}</button></div>
       <div className="day-tabs" aria-label="Día a editar">{DAYS.map((name, index) => <button key={name} type="button" className={index === day ? 'selected' : ''} aria-pressed={index === day} onClick={() => { setDay(index); setOpen(''); }}>{name.slice(0, 3)}</button>)}</div>
       <div className="section-heading"><h2>{DAYS[day]}</h2><span>{draft[day].length} ejercicios · {draft[day].reduce((sum, ex) => sum + ex.sets, 0)} efectivas</span></div>
@@ -271,8 +288,9 @@ function Routine({ data, change, saving }) {
         <button className="exercise-summary" type="button" onClick={() => setOpen(open === ex.id ? '' : ex.id)} aria-expanded={open === ex.id}><span className="exercise-number">{String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{ex.muscle}</span><strong>{ex.name || 'Sin nombre'}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''}</small></span><Icon name="edit" size={19} /></button>
         {open === ex.id && <div className="exercise-body editor-fields"><label>Nombre del ejercicio<input required maxLength="90" value={ex.name} onChange={event => update(ex.id, { name: event.target.value })} /></label>
           <div className="input-pair"><label>Músculo principal<select value={ex.muscle} onChange={event => update(ex.id, { muscle: event.target.value, approaches: ex.compound || !draft[day].some(item => item.id !== ex.id && item.muscle === event.target.value) ? 2 : 1 })}>{MUSCLES.map(name => <option key={name}>{name}</option>)}</select></label><label>Series efectivas<input type="number" min="1" max="20" required value={ex.sets || ''} onChange={event => update(ex.id, { sets: Number(event.target.value) })} /></label></div>
-          <div className="input-pair"><label>Equipo<select value={ex.equipment} onChange={event => { const equipment = event.target.value; update(ex.id, { equipment, increment: INCREMENTS[equipment] }); }}>{Object.entries(EQUIPMENT).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label><label>Tipo de carga<select value={classifyExercise(ex).loadType} onChange={event => { const loadType=event.target.value,compound=loadType!=='isolation'; update(ex.id, { loadType,compound, rests: { ...ex.rests, effective: compound ? 210 : 150 } }); }}>{Object.entries(LOAD_TYPES).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label></div>
+          <div className="input-pair"><label>Equipo<select value={ex.equipment} onChange={event => { const equipment = event.target.value; update(ex.id, { equipment, increment: INCREMENTS[equipment] }); }}>{Object.entries(EQUIPMENT).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label><label>Tipo de carga<select value={classifyExercise(ex).loadType} onChange={event => { const loadType=event.target.value,compound=loadType!=='isolation'; update(ex.id, { loadType,compound, rests: { ...ex.rests, effective: ex.setPlan?.length?(compound?150:105):(compound?210:150) } }); }}>{Object.entries(LOAD_TYPES).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label></div>
           <label>Patrón de movimiento<select value={classifyExercise(ex).movementPattern} onChange={event=>update(ex.id,{movementPattern:event.target.value})}>{Object.entries(PATTERNS).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          {ex.setPlan?.length>0&&<><p className="field-note">{ex.setPlan.map((set,index)=>`S${index+1}: ${({top:'Top set',backoff:'Back-off',heavy:'Pesada',light:'Ligera',standard:'Efectiva'})[set.role]??'Efectiva'} ${set.repMin}–${set.repMax}${set.technique?` + ${KINDS[set.technique]} (extensión)`:''}`).join(' · ')}</p>{ex.setPlan.some(set=>set.role==='backoff')&&<label>Reducción Back-off (%)<input aria-label={`Reducción Back-off de ${ex.name}`} type="number" min="0" max="50" step="1" required value={ex.backoffPercent??10} onChange={event=>update(ex.id,{backoffPercent:Number(event.target.value)})}/><small>Sobre el Top registrado hoy, con redondeo por equipo. La carga final siempre es editable.</small></label>}</>}
           <div className="input-pair"><label>Extensión planeada<select value={ex.technique} onChange={event => update(ex.id, { technique: event.target.value })}><option value="">Ninguna</option><option value="drop">Drop set</option><option value="rp">Rest-pause</option></select></label><label>Series de preparación<input type="number" min="0" max="3" required value={contextualPreparation(ex,draft[day],data.preparationSettings.minimum).approaches} onChange={event => update(ex.id, { approaches: Number(event.target.value), preparationOverride: Number(event.target.value) })} /></label></div>
           <div className="input-pair"><label>Redondeo de sugerencias (kg)<input type="number" min="0.5" max="100" step="0.5" required value={ex.increment || ''} onChange={event => update(ex.id, { increment: Number(event.target.value) })} /></label><label>Caídas de drop set<input type="number" min="1" max="3" required value={ex.dropCount} onChange={event => update(ex.id, { dropCount: Number(event.target.value) })} /></label><label>Mini-series rest-pause<input type="number" min="1" max="10" required value={ex.rpCount} onChange={event => update(ex.id, { rpCount: Number(event.target.value) })} /></label></div>
           <p className="field-note">Auto combina orden y tipo de carga: pesado mínimo 2; liviano mínimo 1; aislamiento primero 2, después 1 ligera y siguientes 0. Aquí se estima la secuencia. En Hoy, un pesado del mismo patrón ya registrado permite 1 previa de 60% × 6. Manual 0–3, sin fallo y hasta el 80%.</p>
@@ -305,7 +323,7 @@ function Volume({ data, date, setDate }) {
     <div className="volume-summary"><div><span className="eyebrow">SERIES EFECTIVAS</span><strong>{total}<small> / {planned}</small></strong><p>realizadas / planeadas</p></div><div className="summary-divider" /><div><span className="eyebrow">PREPARACIÓN</span><strong>{preparations}</strong><p>guardadas aparte</p></div><div className="summary-divider" /><div><span className="eyebrow">EXTENSIONES</span><strong>{extensions}</strong><p>drop, RP y opcionales</p></div></div>
     <div className="section-heading"><h2>Series por músculo</h2><span className="legend"><i /> Realizado <i /> Planeado</span></div>
     <div className="volume-table"><div className="volume-table-head"><span>Músculo</span><span>Meta</span><span>Plan</span><span>Hecho</span></div>{rows.map(row => <div className="volume-row" key={row.muscle}><div className="volume-row-top"><strong>{row.muscle}</strong><span>{row.target}</span><span>{row.planned}</span><b>{row.done}</b></div><div className="volume-track" role="img" aria-label={`${row.muscle}: ${row.done} realizadas, ${row.planned} planeadas, meta ${row.target}`}><div className="planned-track" style={{ width: `${row.planned / Math.max(row.target, row.planned, row.done, 1) * 100}%` }} /><div className="done-track" style={{ width: `${row.done / Math.max(row.target, row.planned, row.done, 1) * 100}%` }} /><i style={{ left: `${Math.min(99.5, row.target / Math.max(row.target, row.planned, row.done, 1) * 100)}%` }} /></div></div>)}</div>
-    <div className="volume-explainer"><Icon name="chart" /><div><h3>Cuenta el trabajo efectivo.</h3><p>1 serie efectiva = 1 serie de volumen para su músculo principal. Drop set, rest-pause, forzadas y negativas se vinculan como extensiones y no añaden otra serie. Calentamiento y aproximación quedan fuera.</p><p>La meta es tu referencia original. El plan suma tu rutina actual; por eso puede diferir de la meta. El realizado corresponde a la semana elegida en el calendario.</p></div></div>
+    <div className="volume-explainer"><Icon name="chart" /><div><h3>Cuenta el trabajo efectivo.</h3><p>1 serie efectiva = 1 serie de volumen para su músculo principal. Top, Back-off, pesadas y ligeras cuentan una cada una. Drop set, rest-pause, forzadas y negativas se vinculan como extensiones y no añaden otra serie. Calentamiento y aproximación quedan fuera.</p><p>La meta es tu referencia de volumen. El plan suma tu rutina para las fechas elegidas; por eso puede diferir de la meta. El realizado conserva el músculo original de cada registro.</p></div></div>
   </>;
 }
 

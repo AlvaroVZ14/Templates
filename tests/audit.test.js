@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {initialState,preparationSuggestions,dayIndex,weekDates,weeklyVolume} from '../src/domain.js';
+import {preparationSuggestions, dayIndex, weekDates, weeklyVolume} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {chileDate,migrateProgram} from '../src/program/state.js';
 import {shiftDate,validDate} from '../src/wellness.js';
 import {trend} from '../src/program/phases.js';

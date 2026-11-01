@@ -6,9 +6,11 @@ export function sessionTitle(exercises){
   return parts.length===1?parts[0]:`${parts[0]}${parts.length>2?`, ${parts.slice(1,-1).map(name=>name.toLocaleLowerCase('es')).join(', ')}`:''} y ${parts.at(-1).toLocaleLowerCase('es')}`;
 }
 export function sessionName(exercises){
+  const configured=[...new Set(exercises.map(ex=>ex.routineSession).filter(name=>typeof name==='string'&&name.trim()))];
+  if(exercises.length&&configured.length===1&&exercises.every(ex=>ex.routineSession===configured[0]))return configured[0];
   const muscles=[...new Set(exercises.map(ex=>ex.muscle).filter(Boolean))];
   if(!muscles.length)return 'Sesión de entrenamiento';
-  if(muscles.length>1&&muscles.every(name=>['Cuádriceps','Femoral','Gemelo','Aductor'].includes(name)))return 'Pierna';
+  if(muscles.length>1&&muscles.every(name=>['Cuádriceps','Femoral','Gemelo','Aductor','Femorales','Gemelos','Aductores','Abductores','Glúteos','Abdomen'].includes(name)))return 'Pierna';
   if(muscles.includes('Hombro')&&muscles.length>1&&muscles.every(name=>['Hombro','Bíceps','Tríceps'].includes(name)))return 'Hombro + Brazo';
   if(muscles.includes('Pecho')&&muscles.includes('Espalda')&&muscles.every(name=>['Pecho','Espalda','Hombro','Bíceps','Tríceps'].includes(name)))return 'Torso';
   return muscles.join(' + ');

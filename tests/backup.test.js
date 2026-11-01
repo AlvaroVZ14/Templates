@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {projectCollections} from '../src/history.js';
 import {BACKUP_STORES,validateBackup,combineStates} from '../src/backup.js';
 import {startGymSession,finishGymSession,applyWorkWeights} from '../src/gym.js';

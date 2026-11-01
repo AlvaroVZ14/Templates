@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState,migrateState,preparationSuggestions} from '../src/domain.js';
+import {migrateState, preparationSuggestions} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {contextualPreparation,setPreparationCount} from '../src/preparation.js';
 import {sessionExercise} from '../src/training.js';
 import {classifyExercise} from '../src/classification.js';

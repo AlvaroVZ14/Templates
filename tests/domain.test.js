@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DAYS, TARGETS, INCREMENTS, dayIndex, initialState, localDate, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume, preparationSuggestions, extensionSuggestions, migrateState, recordSet, exerciseHistory } from '../src/domain.js';
+import {DAYS, INCREMENTS, dayIndex, localDate, removeLog, restFor, validateLog, validateRoutine, weekDates, weeklyVolume, preparationSuggestions, extensionSuggestions, migrateState, recordSet, exerciseHistory} from '../src/domain.js';
+import {initialState,LEGACY_TARGETS} from './fixtures/legacy-state.js';
 import {contextualPreparation} from '../src/preparation.js';
 
-test('la rutina conserva orden, series y extensiones del encargo', () => {
+test('la rutina histórica conserva su orden, series y extensiones', () => {
   const state = initialState();
   assert.deepEqual(state.routine.map(day => day.map(ex => [ex.sets, ex.technique])), [
     [[2,''],[1,'drop'],[1,''],[1,''],[1,''],[2,'drop'],[1,'drop'],[2,'rp']],
@@ -12,7 +13,7 @@ test('la rutina conserva orden, series y extensiones del encargo', () => {
     [[2,'drop'],[2,''],[2,'drop'],[1,'rp'],[2,'rp'],[1,''],[1,'drop']],
     [[2,''],[1,'drop'],[1,''],[1,''],[1,'drop'],[2,'rp'],[2,'drop']], [],
   ]);
-  assert.deepEqual(state.targets, TARGETS);
+  assert.deepEqual(state.targets, LEGACY_TARGETS);
   assert.equal(DAYS.length, 7);
   assert.ok(state.routine.flat().every(ex => !ex.forced && !ex.negative));
   assert.equal(new Set(state.routine.flat().map(ex => ex.id)).size, 36);
@@ -87,7 +88,8 @@ test('volumen cuenta solo efectivas de la semana; conserva metas independientes'
   state.logs.push({ kind: 'effective', date: '2026-10-19', muscle: 'Pecho' });
   const rows = weeklyVolume(state, '2026-10-15');
   assert.equal(rows[0].done, 1); assert.equal(rows[0].planned, 9); assert.equal(rows[0].target, 8);
-  assert.deepEqual(rows.map(row => row.planned), [9, 9, 8, 8, 7, 6, 3, 1, 2]);
+  assert.deepEqual(Object.keys(LEGACY_TARGETS).map(muscle=>rows.find(row=>row.muscle===muscle).planned), [9, 9, 8, 8, 7, 6, 3, 1, 2]);
+  assert.ok(rows.filter(row=>!Object.hasOwn(LEGACY_TARGETS,row.muscle)).every(row=>row.planned===0&&row.done===0));
 });
 test('técnicas opcionales y extensiones requieren habilitación y padre del mismo día', () => {
   const ex = initialState().routine[0][0];

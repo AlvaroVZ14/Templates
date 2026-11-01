@@ -1,3 +1,4 @@
+import {seedLegacyOrigin} from './fixtures.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
@@ -54,7 +55,7 @@ test('botón descarga una versión real antes de ofrecerla y actualiza offline c
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   try{
     await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});
-    await page.goto(`http://127.0.0.1:${server.address().port}/Templates/`);await chooseDate(page,'2026-10-12');
+    await seedLegacyOrigin(page,`http://127.0.0.1:${server.address().port}/Templates/`);await page.goto(`http://127.0.0.1:${server.address().port}/Templates/`);await chooseDate(page,'2026-10-12');
     await page.evaluate(async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));});
     await page.getByLabel('Peso de trabajo de Press banca',{exact:true}).fill('100');
     await page.getByRole('button',{name:/^Guardar serie/}).click();

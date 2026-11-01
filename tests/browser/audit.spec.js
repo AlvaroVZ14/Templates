@@ -1,3 +1,5 @@
+import {test as cleanTest} from '@playwright/test';
+import {seedLegacyOrigin} from './fixtures.js';
 import {quickTab} from './quick-helpers.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
 import {createServer} from 'node:http';
@@ -21,7 +23,7 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   try{
     await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});
-    await page.goto(`http://127.0.0.1:${server.address().port}/Templates/`);
+    await seedLegacyOrigin(page,`http://127.0.0.1:${server.address().port}/Templates/`);await page.goto(`http://127.0.0.1:${server.address().port}/Templates/`);
     await expect(page.getByRole('heading',{name:'Pecho, hombro y bíceps',exact:true})).toBeVisible();
     await page.evaluate(async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));});
     const weight=page.getByLabel('Peso de trabajo de Press banca',{exact:true});await weight.fill('100');
@@ -69,7 +71,7 @@ test('sin historial, pesos, alimentos ni rutina: todas las secciones abren sin e
   expect(errors).toEqual([]);await page.screenshot({path:'test-results/audit-empty-mobile.png',fullPage:true});
 });
 
-test('todas las pantallas caben a 320 y 390 px; fases nuevas no recuperan fechas vencidas',async({page})=>{
+cleanTest('todas las pantallas caben a 320 y 390 px; fases nuevas no recuperan fechas vencidas',async({page})=>{
   test.setTimeout(60000);await page.clock.install({time:new Date('2031-06-02T18:00:00Z')});await page.goto('./');
   for(const width of [320,390]){
     await page.setViewportSize({width,height:844});

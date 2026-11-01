@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState,preparationSuggestions,recordSet,weeklyVolume} from '../src/domain.js';
+import {preparationSuggestions, recordSet, weeklyVolume} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {contextualPreparation,isPressDay,migratePreparation,setPreparationCount} from '../src/preparation.js';
 import {sessionExercise,startDeload} from '../src/training.js';
 import {saveCalendar} from '../src/program/nutrition.js';

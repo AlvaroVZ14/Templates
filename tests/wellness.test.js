@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, migrateState, weekDates } from '../src/domain.js';
+import {migrateState, weekDates} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import { migrateDiary, optionalNumber, shiftDate, sleepWarning, validateJournal, validateMeal, weightWeek } from '../src/wellness.js';
 
 test('diario migra sin perder entrenamiento, con meta 8 y favoritos sin macros inventados', () => {

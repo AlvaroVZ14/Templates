@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {painEntriesFor,zoneStatus,exercisePain,needsFailureSafety,validatePainEntries,painHistory} from '../src/pain.js';
 import {cardioRecommendation,cardioWeek,cardioSettings,saveCardioSettings,validateCardioSettings,completePlannedCardio} from '../src/program/cardio.js';
 import {markCardio} from '../src/program/tracking.js';

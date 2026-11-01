@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, preparationSuggestions, extensionSuggestions, recordSet, weeklyVolume } from '../src/domain.js';
+import {preparationSuggestions, extensionSuggestions, recordSet, weeklyVolume} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import { activeDeload, applyProgression, deloadAdvice, finishDeload, introduceTechnique, migrateTraining, muscleRecovery, progression, sessionExercise, sessions, startDeload, trainingLogError } from '../src/training.js';
 import {shiftDate} from '../src/wellness.js';
 

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {base as test,expect} from './fixtures.js';
 import {go,chooseDate} from './navigation-helpers.js';
 
 test.beforeEach(async({page})=>{await page.clock.install({time:new Date('2026-10-12T15:00:00Z')});});

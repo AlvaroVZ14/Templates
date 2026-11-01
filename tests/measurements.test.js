@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, migrateState } from '../src/domain.js';
+import {migrateState} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import { INITIAL_MEASUREMENT, measurementRatios, measurementReminder, measurementStats, migrateMeasurements, previousMonth, validateMeasurement, waistWarning } from '../src/measurements.js';
 
 const record = (date, values) => ({ id: date, date, values });

@@ -1,5 +1,5 @@
 import {onboardingTest as test,expect} from './fixtures.js';
-import {initialState} from '../../src/domain.js';
+import {initialState} from '../fixtures/legacy-state.js';
 import {go} from './navigation-helpers.js';
 test('Progreso sin datos es calmado; conserva tres tarjetas y reglas accesibles',async({page})=>{
  await page.goto('./');await go(page,'Progreso');await expect(page.getByRole('heading',{name:'Progreso.'})).toBeVisible();await expect(page.locator('.progress-card')).toHaveCount(3);await expect(page.locator('.progress-card.insufficient')).toHaveCount(3);await expect(page.locator('.progress-page')).toContainText('vuelve en 4 semanas');await page.locator('.progress-card').first().locator('summary').click();await expect(page.locator('.progress-card').first()).toContainText('dos comparaciones consecutivas');await page.screenshot({path:'test-results/progress-empty.png',fullPage:true});

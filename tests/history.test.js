@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState,validateLog} from '../src/domain.js';
+import {validateLog} from '../src/domain.js';
+import {initialState} from './fixtures/legacy-state.js';
 import {comparison,exerciseEvolution,exerciseKey,historySummary,hydrateCollections,monthsBefore,previousSession,projectCollections,verifyProjection} from '../src/history.js';
 import {requestPersistentStorage} from '../src/storage.js';
 
