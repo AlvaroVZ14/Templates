@@ -9,6 +9,10 @@ La [revisión de arquitectura](docs/architecture/README.md) documenta la divisi�
 frontend, persistencia local y testing, sus hallazgos y verificaciones.
 
 **Registro actual de pesos:** [tarjetas rápidas y confirmación con ✓](docs/registro-rapido.md).
+
+**Progresión actual:** [todas las series, sensación y decisiones en Historial](docs/progresion.md).
+Subida de carga solo con todos los rangos completos y técnica limpia a 0–2 RIR
+confirmada. Sin ese dato, mantener e intentar +1 rep; «flojo» mantiene la carga.
 Solo se registran efectivas, con peso y reps de la última sesión, steppers sin
 teclado automático y Drop/RP dentro de la última fila. El calentamiento es una
 indicación sin registro. Las descripciones de pestañas y formularios de preparación

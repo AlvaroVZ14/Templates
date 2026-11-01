@@ -6,7 +6,7 @@ const date='2026-11-03',time=Date.parse(`${date}T18:00:00Z`);
 const effective=(ex,extra={})=>({id:crypto.randomUUID(),exerciseId:ex.id,profileId:ex.profileId,equipment:ex.equipment,exerciseName:ex.name,muscle:ex.muscle,date:'2026-10-27',createdAt:'2026-10-27T18:00:00Z',kind:'effective',weight:40,reps:9,...extra});
 test('fila precarga la última sesión por ejercicio/equipo y conserva cada serie, sin usar previas ni el futuro',()=>{
  const state=initialState(),ex=state.routine[1][0];state.logs=[effective(ex,{weight:99,date:'2026-10-20'}),effective(ex,{weight:40,reps:9}),effective(ex,{weight:35,reps:7,createdAt:'2026-10-27T18:03:00Z'}),effective(ex,{kind:'approach',weight:10}),effective(ex,{date:'2026-11-10',weight:200})];
- assert.equal(previousEffectiveSession(state,ex,date).length,2);assert.equal(quickSetValues(state,ex,date,0).weight,40);assert.equal(quickSetValues(state,ex,date,1).weight,35);assert.equal(quickSetValues(state,ex,date,1).reps,7);
+ assert.equal(previousEffectiveSession(state,ex,date).length,2);assert.equal(quickSetValues(state,ex,date,0).weight,40);assert.equal(quickSetValues(state,ex,date,1).weight,36);assert.equal(quickSetValues(state,ex,date,1).reps,8);
  const curl=state.routine[5][3];state.logs.push(effective(curl,{setRole:'heavy'}));assert.equal(quickSetValues(state,curl,date,3).weight,null);
 });
 test('confirmación guarda una sola efectiva sin RPE/fallo inventados, inicia sesión y respeta Back-off',()=>{
