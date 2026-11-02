@@ -1258,3 +1258,5 @@ En `npm run dev`, el botón explica que Vite actualiza los cambios al guardar.
 [Temporizador de descanso: píldora móvil y panel de escritorio](docs/design/temporizador-descanso.md).
 
 [Acabado visual del entrenamiento, resumen y respuesta medida](docs/design/entrenamiento-premium.md).
+
+[Primer inicio y Perfil: pantallas, cálculo de ejemplo, integraciones y privacidad](docs/perfil-onboarding.md).

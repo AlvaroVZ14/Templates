@@ -34,7 +34,7 @@ test('auditoría360px: secciones, registro, manifest instalable y recarga offlin
 });
 test('criterios PWA en perfil normal, sin la restricción de instalación del modo incógnito',async({baseURL},testInfo)=>{
  const context=await chromium.launchPersistentContext(resolve(testInfo.project.outputDir,'pwa-profile'),{channel:'chromium',headless:true,viewport:{width:360,height:800}});
- try{const page=context.pages()[0];await page.goto(baseURL);await expect(page.locator('.simple-home')).toBeVisible();await page.evaluate(()=>navigator.serviceWorker.ready);const cdp=await context.newCDPSession(page),manifest=await cdp.send('Page.getAppManifest'),install=await cdp.send('Page.getInstallabilityErrors');expect(manifest.errors).toEqual([]);expect(install.installabilityErrors).toEqual([]);}finally{await context.close();}
+ try{const page=context.pages()[0];await page.goto(baseURL);await expect(page.locator('.profile-wizard')).toBeVisible();await page.evaluate(()=>navigator.serviceWorker.ready);const cdp=await context.newCDPSession(page),manifest=await cdp.send('Page.getAppManifest'),install=await cdp.send('Page.getInstallabilityErrors');expect(manifest.errors).toEqual([]);expect(install.installabilityErrors).toEqual([]);}finally{await context.close();}
 });
 test('encabezados legibles sin fuente condensada: no desbordan320/360px',async({page})=>{
  test.setTimeout(60000);await boot(page);await page.addStyleTag({content:'h1,h2,.progress-value{font-family:Arial,sans-serif!important}'});

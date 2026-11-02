@@ -4,12 +4,14 @@ import {MEASURES} from './measurements.js';
 import {CHECK_POSES,addMonthlyCheck,checkOrder,checkReminder,comparisonRows,processCheckPhoto} from './monthlyCheck.js';
 import {loadCheckPhotos} from './db.js';
 import './monthly-check.css';
+import {profileWeight} from './profile.js';
+import {ProfileGoalChart} from './Profile.jsx';
 
 const fmt=value=>value==null?'—':Number(value).toLocaleString('es-CL',{maximumFractionDigits:2});
 export default function MonthlyCheck({data,change,saving}){
   const today=localDate(),checks=checkOrder(data.monthlyChecks??[]),reminder=checkReminder(checks,today);
   const [editing,setEditing]=useState(checks.length===0);
-  const [date,setDate]=useState(today),[fields,setFields]=useState({}),[photos,setPhotos]=useState({}),[processing,setProcessing]=useState({}),[dirty,setDirty]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+  const [date,setDate]=useState(today),[fields,setFields]=useState(()=>data.personalProfile?{...data.measurements.filter(row=>row.date<=today).at(-1)?.values,...checks.at(-1)?.values,weight:checks.at(-1)?.weight??profileWeight(data,today)}:{}),[photos,setPhotos]=useState({}),[processing,setProcessing]=useState({}),[dirty,setDirty]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
   const generations=useRef({}),mounted=useRef(true),flight=useRef(false);
   useEffect(()=>()=>{mounted.current=false;},[]);
   useEffect(()=>{if(!dirty)return;const guard=event=>{if(!window.confirm('Este check aún no está guardado. ¿Salir y descartar los cambios?'))event.preventDefault();};const unload=event=>{event.preventDefault();event.returnValue='';};window.addEventListener('heavy-duty-before-navigate',guard);window.addEventListener('beforeunload',unload);return()=>{window.removeEventListener('heavy-duty-before-navigate',guard);window.removeEventListener('beforeunload',unload);};},[dirty]);
@@ -28,7 +30,7 @@ export default function MonthlyCheck({data,change,saving}){
       const value=key=>fields[key]==null||fields[key]===''?null:Number(fields[key]);
       const row={id:crypto.randomUUID(),version:1,date,month:date.slice(0,7),year:date.slice(0,4),createdAt:new Date().toISOString(),weight:value('weight'),values:Object.fromEntries(MEASURES.map(({key})=>[key,value(key)])),photos:Object.fromEntries(converted.map(photo=>[photo.pose,photo.id]))};
       addMonthlyCheck(data,row,today);
-      if(await change(state=>addMonthlyCheck(state,row,localDate()),converted)){setDirty(false);setPhotos({});setFields({});setEditing(false);setMessage('Check guardado en este dispositivo.');}
+      if(await change(state=>addMonthlyCheck(state,row,localDate()),converted)){setDirty(false);setPhotos({});setFields(data.personalProfile?{...row.values,weight:row.weight}:{});setEditing(false);setMessage('Check guardado en este dispositivo.');}
       else setError('No se guardó el check. Tus datos y fotos siguen aquí: vuelve a intentarlo.');
     }catch(reason){setError(reason.message);}
     finally{flight.current=false;setBusy(false);}
@@ -42,7 +44,7 @@ export default function MonthlyCheck({data,change,saving}){
       <p className="field-note">Fotos opcionales. Se guardan en blanco y negro, con contraste alto y hasta 1200 px; el original no se conserva. Nada se sube. Guarda el check para conservar los cambios.</p>
       <button className="primary" disabled={disabled||working}>{working?'Procesando fotos…':busy?'Guardando…':'Guardar check'}</button>{error&&<p className="error" role="alert">{error}</p>}
     </form></details>{message&&<p className="success" role="status">{message}</p>}
-    <CheckComparison checks={checks}/>
+    <ProfileGoalChart data={data} date={today}/><CheckComparison checks={checks}/>
     <section className="wellness-card check-timeline"><h2>Línea de tiempo</h2>{!checks.length?<p className="field-note">Tu primer check empieza aquí. No hay fotos ni medidas inventadas.</p>:<ol>{[...checks].reverse().map(row=><li key={row.id}><time dateTime={row.date}>{row.date}</time><span>{row.weight==null?'Sin peso':`${fmt(row.weight)} kg`} · {Object.keys(row.photos).length}/3 fotos · {MEASURES.filter(({key})=>row.values[key]!=null).length}/6 medidas</span></li>)}</ol>}</section>
   </div>;
 }

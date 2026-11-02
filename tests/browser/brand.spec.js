@@ -30,5 +30,5 @@ test('splash usa logo vectorial y brillo breve sin obligar a esperar, y respeta 
  await page.goto('./',{waitUntil:'commit'});await expect(page.locator('.boot-splash')).toBeVisible();await expect(page.locator('.boot-splash img')).toHaveAttribute('alt','Olympia');
  await page.locator('.boot-splash img').evaluate(image=>image.decode());await page.screenshot({path:'test-results/olympia-splash-mobile.png'});
  await page.emulateMedia({reducedMotion:'reduce'});expect(await page.locator('.splash-brand').evaluate(el=>getComputedStyle(el,'::after').animationName)).toBe('none');
- release();await expect(page.locator('.simple-home')).toBeVisible();await expect(page.locator('.boot-splash')).toHaveCount(0);
+ release();await expect(page.locator('.profile-wizard')).toBeVisible();await expect(page.locator('.profile-question')).toHaveAttribute('data-step','0');await expect(page.locator('.boot-splash')).toHaveCount(0);
 });

@@ -1,5 +1,6 @@
 import {saveSeriesOperation,saveTrainingMetadata} from './db.js';
 let worker,ready,pending=new Map(),sequence=0;
+export function stopTrainingPersistence(){worker?.terminate();worker=null;ready=undefined;for(const job of pending.values())job.reject(new Error('Guardado detenido para borrar datos.'));pending.clear();}
 export function warmTrainingPersistence(){
   if(ready)return ready;
   if(typeof Worker==='undefined')return Promise.resolve(false);
