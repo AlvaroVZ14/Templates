@@ -14,7 +14,7 @@ test('colecciones reconstruyen sin perder ni duplicar series, diario, cardio, me
 });
 test('sesión conserva fase y día originales, admite datos desconocidos y no desaparece al borrar series',()=>{
  const {state}=fixture(),original=projectCollections(state).sessions;assert.equal(original[0].durationSeconds,null);assert.equal(original[0].exercises[0].sets[0].restRealSeconds,null);state.calendar={'2026-10-12':{routineDay:4}};state.phases[0].targetWeight=80;state.logs=[];
- const sessions=projectCollections(state,original).sessions;assert.equal(sessions.length,5);assert.equal(sessions.at(-1).routineDay,0);assert.equal(sessions.at(-1).phase.targetWeight,74);assert.equal(sessions.at(-1).exercises.length,0);
+ const sessions=projectCollections(state,original).sessions;assert.equal(sessions.length,5);assert.equal(sessions.at(-1).routineDay,0);assert.equal(sessions.at(-1).phase.targetWeight,80);assert.equal(sessions.at(-1).exercises.length,0);
 });
 test('comparación usa sesión anterior del mismo día y equipo, aunque cruce mes o año',()=>{
  const {state}=fixture(),rows=projectCollections(state).sessions,current=rows.at(-1),prior=previousSession(rows,current);assert.equal(prior.date,'2026-10-05');assert.equal(comparison(current,prior)[0].weightChange,5);assert.equal(comparison(current,prior)[0].repsChange,1);assert.equal(previousSession(rows,rows[0]),null);

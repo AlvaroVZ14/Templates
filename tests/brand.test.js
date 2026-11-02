@@ -9,7 +9,7 @@ test('Olympia reemplaza solo el nombre predeterminado y conserva identidades per
 });
 test('manifest conserva identidad y ruta, separa maskable y declara las dimensiones reales',()=>{
  const manifest=JSON.parse(readFileSync(publicFile('manifest.webmanifest'),'utf8'));
- assert.equal(manifest.id,'./');assert.equal(manifest.scope,'./');assert.equal(manifest.start_url,'./');assert.equal(manifest.name,'Olympia');assert.equal(manifest.short_name,'Olympia');
+ assert.equal(manifest.id,'./');assert.equal(manifest.scope,'./');assert.equal(manifest.start_url,'./');assert.equal(manifest.name,'Olympia Amigos');assert.equal(manifest.short_name,'Olympia Amigos');
  assert.equal(manifest.background_color,'#0B0B0D');
  for(const icon of manifest.icons){const bytes=readFileSync(publicFile(icon.src)),size=Number(icon.sizes.split('x')[0]);assert.equal(bytes.readUInt32BE(16),size);assert.equal(bytes.readUInt32BE(20),size);assert.ok(['any','maskable'].includes(icon.purpose));}
  assert.equal(readFileSync(publicFile('apple-touch-icon.png')).readUInt32BE(16),180);

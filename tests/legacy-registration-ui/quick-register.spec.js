@@ -16,7 +16,7 @@ async function reference(page,name,kg){
 const tab=(page,name)=>card(page).getByRole('tab',{name:new RegExp(`^${name}`)});
 async function records(page){const details=card(page).locator('.quick-records');if(!await details.evaluate(el=>el.open))await details.locator('summary').click();return details;}
 async function state(page){return page.evaluate(async()=>{
-  const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
+  const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('olympia-friends');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
   try{return await new Promise(resolve=>{const req=db.transaction('app').objectStore('app').get('state');req.onsuccess=()=>resolve(req.result);});}finally{db.close();}
 });}
 

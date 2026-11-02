@@ -147,7 +147,7 @@ test('migración con gimnasio abierto hoy difiere nueva rutina hasta mañana sin
  const closed=structuredClone(old);closed.sessionMeta[today].endedAt=`${today}T19:00:00Z`;assert.equal(migrateRoutinePlan(closed,today).routineActivatedOn,today);
 });
 
-function backup(state){const collections=projectCollections(state),records=Object.fromEntries(BACKUP_STORES.map(key=>[key,[]]));const {sessions:ignored,...cache}=state;records.app=[{key:'state',value:{...cache,storageFormat:2}}];for(const [key,rows] of Object.entries(collections))records[key]=rows.map(value=>({key:value.id,value}));return JSON.parse(JSON.stringify({format:'heavy-duty-backup',formatVersion:1,databaseName:'heavy-duty-personal',databaseVersion:2,records}));}
+function backup(state){const collections=projectCollections(state),records=Object.fromEntries(BACKUP_STORES.map(key=>[key,[]]));const {sessions:ignored,...cache}=state;records.app=[{key:'state',value:{...cache,storageFormat:2}}];for(const [key,rows] of Object.entries(collections))records[key]=rows.map(value=>({key:value.id,value}));return JSON.parse(JSON.stringify({format:'olympia-friends-backup',formatVersion:1,databaseName:'olympia-friends',databaseVersion:2,records}));}
 test('respaldo nuevo y snapshot conservan datos; rutina legacy inválida se rechaza antes de que la migración la reemplace',()=>{
  const old=legacyState();delete old.routineVersion;const file=backup(old);
  for(const patch of [{sets:0},{name:''}]){const copy=structuredClone(file);Object.assign(copy.records.app[0].value.routine[0][0],patch);assert.throws(()=>validateBackup(copy));}

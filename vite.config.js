@@ -42,7 +42,7 @@ export function offlineWorker(directory = fileURLToPath(new URL('./public/', imp
     apply: 'build',
     generateBundle(_, bundle) {
       const publicRoot = realpathSync(directory);
-      const publicAssets = ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'appearance.json', ...BRAND_ASSETS, ...appearanceAssets(publicRoot)];
+      const publicAssets = ['manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'appearance.json', 'hero-generic.svg', ...BRAND_ASSETS, ...appearanceAssets(publicRoot)];
       if (publicAssets.includes('hero.jpg') && statSync(resolve(publicRoot, 'hero.jpg')).size > 2 * 1024 * 1024) this.warn?.('hero.jpg supera los 2 MiB recomendados. Comprime la portada para acelerar el primer inicio y su copia offline.');
       const files = ['index.html', ...publicAssets, ...Object.keys(bundle)];
       const hash = createHash('sha256').update(Object.values(bundle).map(x => x.code ?? String(x.source)).join(''));
@@ -115,4 +115,4 @@ self.addEventListener('fetch', event => {
   };
 }
 
-export default defineConfig({ base: '/Templates/', define:{__APP_BUILD__:JSON.stringify(process.env.GITHUB_SHA?.slice(0,7)??`local-${new Date().toISOString()}`)}, plugins: [react(), offlineWorker()] });
+export default defineConfig({ base: '/Olympia-amigos/', define:{__APP_BUILD__:JSON.stringify(process.env.GITHUB_SHA?.slice(0,7)??`local-${new Date().toISOString()}`)}, plugins: [react(), offlineWorker()] });

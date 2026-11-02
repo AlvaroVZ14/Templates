@@ -11,7 +11,7 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
   const root=resolve('dist');
   const server=createServer(async(req,res)=>{
     try{
-      const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname).replace(/^\/Templates\//,'');
+      const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname).replace(/^\/Olympia-amigos\//,'');
       const file=resolve(root,path||'index.html');
       if(!file.startsWith(root)){res.writeHead(404);res.end();return;}
       let body=await readFile(file);
@@ -23,12 +23,12 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   try{
     await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});
-    await seedLegacyOrigin(page,`http://127.0.0.1:${server.address().port}/Templates/`);await page.goto(`http://127.0.0.1:${server.address().port}/Templates/`);
+    await seedLegacyOrigin(page,`http://127.0.0.1:${server.address().port}/Olympia-amigos/`);await page.goto(`http://127.0.0.1:${server.address().port}/Olympia-amigos/`);
     await expect(page.locator('.simple-home h1')).toContainText('Pecho');
     await page.evaluate(async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));});
     await editNumber(page,'Press banca',100);
     await editNumber(page,'Press banca',9,{field:'Reps'});
-    await go(page,'Rutina');await page.getByRole('button',{name:'Lun',exact:true}).click();await page.locator('.editor-card').first().getByRole('button').first().click();
+    await go(page,'Rutina');await page.getByRole('button',{name:'Lun',exact:true}).click();await page.locator('.friends-exercise-toggle').first().click();
     await page.getByLabel('Nombre del ejercicio',{exact:true}).fill('Press de prueba ficticio');
     const peer=await context.newPage();peer.on('dialog',dialog=>dialog.accept());await peer.goto(page.url());await go(peer,'Ajustes');await peer.evaluate(()=>{window.auditMarker='formulario abierto';});
     version=2;await page.evaluate(async()=>{const reg=await navigator.serviceWorker.ready;await reg.update();});
@@ -40,7 +40,7 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
     await Promise.all([page.waitForEvent('load'),update.click()]);
     await expectNumber(page,'Press banca',100);
     await expectNumber(page,'Press banca',9,{field:'Reps'});
-    await go(page,'Rutina');await page.getByRole('button',{name:'Lun',exact:true}).click();await page.locator('.editor-card').first().getByRole('button').first().click();
+    await go(page,'Rutina');await page.getByRole('button',{name:'Lun',exact:true}).click();await page.locator('.friends-exercise-toggle').first().click();
     await expect(page.getByLabel('Nombre del ejercicio',{exact:true})).toHaveValue('Press de prueba ficticio');
     await expect(page.getByRole('button',{name:'Hay una versión nueva, tocar para actualizar',exact:true})).toHaveCount(0);
     expect(await peer.evaluate(()=>window.auditMarker)).toBe('formulario abierto');
@@ -64,7 +64,7 @@ test('sin historial, pesos, alimentos ni rutina: todas las secciones abren sin e
   const errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto('./');await expect(page.getByRole('button',{name:'Abrir menú',exact:true})).toBeVisible();
   // Start from a real initialized database, then clear only this isolated test profile.
   await chooseDate(page,'2026-10-12');
-  await page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction([...db.objectStoreNames],'readwrite'),app=tx.objectStore('app'),req=app.get('state');req.onsuccess=()=>{const state=req.result;state.routine=Array.from({length:7},()=>[]);state.profiles={};state.logs=[];state.foods=[];state.phases=[];state.journal={};state.measurements=[];state.cardio=[];state.trainingDrafts={};app.put(state,'state');for(const name of ['sessions','cardio','journal','measurements','phases'])tx.objectStore(name).clear();};tx.oncomplete=()=>{db.close();resolve();};});});
+  await page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('olympia-friends');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction([...db.objectStoreNames],'readwrite'),app=tx.objectStore('app'),req=app.get('state');req.onsuccess=()=>{const state=req.result;state.routine=Array.from({length:7},()=>[]);state.profiles={};state.logs=[];state.foods=[];state.phases=[];state.journal={};state.measurements=[];state.cardio=[];state.trainingDrafts={};app.put(state,'state');for(const name of ['sessions','cardio','journal','measurements','phases'])tx.objectStore(name).clear();};tx.oncomplete=()=>{db.close();resolve();};});});
   await page.reload();await expect(page.locator('.simple-home h1')).toContainText('Descanso');
   for(const section of ['Historial','Medidas','Diario','Comida','Progreso','Método','Ajustes','Configurar pesos','Rutina','Hoy'])await go(page,section);
   await go(page,'Comida');await expect(page.getByText('No hay alimentos en la base.',{exact:false})).toBeVisible();
@@ -90,13 +90,13 @@ test('respaldo descargado hace ida y vuelta por la importación real y recupera 
   await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});await page.goto('./');
   await editNumber(page,'Press banca',100);await confirmSet(page,'Press banca');
   await go(page,'Diario');await page.getByLabel('Peso corporal (kg)',{exact:true}).fill('70');await page.getByRole('button',{name:'Guardar diario',exact:true}).click();await expect(page.getByText('Diario guardado.',{exact:true})).toBeVisible();
-  await go(page,'Ajustes');const pending=page.waitForEvent('download');await page.locator('.backup-panel').getByRole('button',{name:'Exportar respaldo',exact:true}).click();
+  await go(page,'Ajustes');const pending=page.waitForEvent('download');await page.locator('.backup-panel').getByRole('button',{name:'Exportar mis datos',exact:true}).click();
   const file=await pending,payload=JSON.parse(await readFile(await file.path(),'utf8'));
   await go(page,'Diario');await page.getByLabel('Peso corporal (kg)',{exact:true}).fill('71');await page.getByRole('button',{name:'Guardar diario',exact:true}).click();await expect(page.getByText('Diario guardado.',{exact:true})).toBeVisible();
   await go(page,'Ajustes');await page.locator('.backup-panel summary').click();await page.getByLabel('Archivo de respaldo',{exact:true}).setInputFiles({name:'ida-vuelta-ficticio.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(payload))});
   await expect(page.locator('.backup-panel')).toContainText('Archivo validado');await page.getByLabel('Modo de importación',{exact:true}).selectOption('replace');
   await page.getByRole('button',{name:'Reemplazar con este respaldo',exact:true}).click();await expectNumber(page,'Press banca',100);
-  const actual=await page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction([...db.objectStoreNames]),records={};for(const name of db.objectStoreNames){const keys=tx.objectStore(name).getAllKeys(),values=tx.objectStore(name).getAll();values.onsuccess=()=>{records[name]=values.result.map((value,i)=>({key:keys.result[i],value}));};}tx.oncomplete=()=>{db.close();resolve(records);};});});
+  const actual=await page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('olympia-friends');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction([...db.objectStoreNames]),records={};for(const name of db.objectStoreNames){const keys=tx.objectStore(name).getAllKeys(),values=tx.objectStore(name).getAll();values.onsuccess=()=>{records[name]=values.result.map((value,i)=>({key:keys.result[i],value}));};}tx.oncomplete=()=>{db.close();resolve(records);};});});
   for(const name of ['sessions','cardio','journal','measurements','phases','sessionRevisions'])expect(actual[name],name).toEqual(payload.records[name]);
   const source=payload.records.app.find(row=>row.key==='state').value,restored=actual.app.find(row=>row.key==='state').value;
   delete source.backupSettings;delete restored.backupSettings;expect(restored).toEqual(source);

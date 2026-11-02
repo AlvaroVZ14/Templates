@@ -83,6 +83,6 @@ test('planes por fase: cantidades finitas, alimentos permitidos, snacks dentro d
 });
 test('instalación posterior al plan inicial no crea fases ya vencidas ni altera fases existentes',()=>{
   const state=initialState(),legacy={...state,schemaVersion:4};
-  const migrated=migrateProgram(legacy,'2031-06-01');assert.equal(migrated.phases[0].startDate,'2031-06-01');assert.ok(migrated.phases[0].deadline>'2031-06-01');assert.ok(migrated.phases[1].startDate>migrated.phases[0].deadline);
+  const migrated=migrateProgram(legacy,'2031-06-01');assert.deepEqual(migrated.phases,legacy.phases);
   assert.equal(migrateProgram(state,'2031-06-01'),state);
 });

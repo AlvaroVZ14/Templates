@@ -6,7 +6,7 @@ export async function seedLegacyOrigin(page,url){
   const state=initialState();state.phases[0].startDate='2026-10-01';state.phases[0].anchorDate='2026-10-01';state.trainingStarted='2026-10-01';
   await page.route(url,route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Historical test fixture</title>'}));
   await page.goto(url);
-  await page.evaluate(async state=>{const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('heavy-duty-personal',1);req.onupgradeneeded=()=>req.result.createObjectStore('app');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});await new Promise((resolve,reject)=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});db.close();},state);
+  await page.evaluate(async state=>{const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('olympia-friends',1);req.onupgradeneeded=()=>req.result.createObjectStore('app');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});await new Promise((resolve,reject)=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});db.close();},state);
   await page.unroute(url);
 }
 export const base=cleanBase.extend({page:async({page,baseURL},use)=>{

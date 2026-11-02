@@ -4,7 +4,7 @@ import {initialState} from './fixtures/legacy-state.js';
 import {projectCollections} from '../src/history.js';
 import {BACKUP_STORES,validateBackup,combineStates} from '../src/backup.js';
 import {startGymSession,finishGymSession,applyWorkWeights} from '../src/gym.js';
-export function backupFixture(state=initialState()){const rows=projectCollections(state,state.sessions??[]),{sessions:ignored,...cache}=state,records=Object.fromEntries(BACKUP_STORES.map(key=>[key,[]]));records.app=[{key:'state',value:{...cache,storageFormat:2}}];for(const key of Object.keys(rows))records[key]=rows[key].map(value=>({key:value.id,value}));return JSON.parse(JSON.stringify({format:'heavy-duty-backup',formatVersion:1,databaseName:'heavy-duty-personal',databaseVersion:2,records}));}
+export function backupFixture(state=initialState()){const rows=projectCollections(state,state.sessions??[]),{sessions:ignored,...cache}=state,records=Object.fromEntries(BACKUP_STORES.map(key=>[key,[]]));records.app=[{key:'state',value:{...cache,storageFormat:2}}];for(const key of Object.keys(rows))records[key]=rows[key].map(value=>({key:value.id,value}));return JSON.parse(JSON.stringify({format:'olympia-friends-backup',formatVersion:1,databaseName:'olympia-friends',databaseVersion:2,records}));}
 
 test('respaldo valida y combina borradores de rutina; rechaza JSON roto antes de reemplazar',()=>{
  const source=initialState(),current=initialState(),draft=structuredClone(source.routine);draft[0][0].name='';draft[0][0].sets=0;

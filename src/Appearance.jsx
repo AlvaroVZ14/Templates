@@ -55,7 +55,7 @@ export function ShadowBackground({appearance,ambient=false}) {
     return()=>controller.abort();
   },[ambient]);
   const configured=!ambient && appearance.customMedia && !failed && config?.media;
-  const custom=configured || (appearance.customMedia && !heroMissing ? {type:'image',src:'hero.jpg'} : null);
+  const custom=configured || (appearance.customMedia && !heroMissing ? {type:'image',src:'hero-generic.svg'} : null);
   const mediaError=()=>configured?setFailed(true):setHeroMissing(true);
   useEffect(()=>{
     if(!video.current)return;

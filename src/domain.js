@@ -85,7 +85,7 @@ export function initialState() {
     schemaVersion: 1,
     routineVersion:ROUTINE_VERSION,
     targets: { ...TARGETS },
-    logs: [], timer: null,
+    logs: [], monthlyChecks:[], timer: null,
     routine:createRoutinePlan(),
   });
 }

@@ -62,7 +62,7 @@ test('an already open legacy session without progression fields adopts a decisio
  state=confirmQuickSet(state,ex,nextDate,1,{weight:72.5,reps:8},Date.parse(`${nextDate}T18:03:00Z`));
  assert.equal(state.progressionDecisions.length,1);assert.equal(state.logs.at(-1).progressionDecisionId,state.progressionDecisions[0].id);assert.equal(state.logs.find(row=>row.id==='already-logged').weight,80);
 });
-function backup(state){const rows=projectCollections(state,state.sessions??[]),{sessions:_,...cache}=state,records=Object.fromEntries(BACKUP_STORES.map(key=>[key,[]]));records.app=[{key:'state',value:{...cache,storageFormat:2}}];for(const [key,values] of Object.entries(rows))records[key]=values.map(value=>({key:value.id,value}));return JSON.parse(JSON.stringify({format:'heavy-duty-backup',formatVersion:1,databaseName:'heavy-duty-personal',databaseVersion:2,records}));}
+function backup(state){const rows=projectCollections(state,state.sessions??[]),{sessions:_,...cache}=state,records=Object.fromEntries(BACKUP_STORES.map(key=>[key,[]]));records.app=[{key:'state',value:{...cache,storageFormat:2}}];for(const [key,values] of Object.entries(rows))records[key]=values.map(value=>({key:value.id,value}));return JSON.parse(JSON.stringify({format:'olympia-friends-backup',formatVersion:1,databaseName:'olympia-friends',databaseVersion:2,records}));}
 test('decisions and feedback survive export/import and idempotent merge; bad imports rejected',()=>{
  let {state,ex}=fixture();state=saveExerciseFeedback(state,ex,date,'normal',true);
  const file=backup(state),restored=validateBackup(file).state;

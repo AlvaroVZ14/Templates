@@ -12,3 +12,6 @@ dist/
 test-results/
 playwright-report/
 *.local
+
+/design/
+test-results-friends-unit.txt

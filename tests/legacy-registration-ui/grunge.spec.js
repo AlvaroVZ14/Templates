@@ -8,7 +8,7 @@ base('apertura de 1,3 s omitible, una vez al día de Chile y sin irrumpir a medi
   await intro.click();await expect(intro).toHaveCount(0);
   await page.getByRole('button',{name:'Posponer configuración',exact:true}).click();
   await page.clock.fastForward(65000);await expect(intro).toHaveCount(0);
-  expect(await page.evaluate(()=>localStorage.getItem('heavy-duty-grunge-intro-day'))).toBe('2026-10-12');
+  expect(await page.evaluate(()=>localStorage.getItem('olympia-friends-intro-day'))).toBe('2026-10-12');
   await page.reload();await expect(intro).toBeVisible();await page.clock.runFor(1350);await expect(intro).toHaveCount(0);
   await page.reload();await expect(page.getByRole('heading',{name:'Hoy',exact:true})).toBeVisible();await expect(intro).toHaveCount(0);
 });

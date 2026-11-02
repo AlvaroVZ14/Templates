@@ -27,3 +27,5 @@ import './workout-premium.css';
 import './profile.css';
 
 createRoot(document.getElementById('root')).render(<App />);
+
+import './friends.css';

@@ -1,4 +1,0 @@
-# Reproducible exports are delivered locally; runtime icons live in public/.
-*.zip
-*.png
-!presentation.png

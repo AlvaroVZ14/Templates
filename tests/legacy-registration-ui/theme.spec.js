@@ -12,7 +12,7 @@ test('identidad editable, fuentes locales offline y pantallas sin desbordamiento
   await page.evaluate(()=>navigator.serviceWorker.ready);
   const cached=await page.evaluate(async()=>{const names=await caches.keys();return(await Promise.all(names.map(async name=>(await(await caches.open(name)).keys()).map(request=>request.url)))).flat();});
   expect(cached.filter(url=>url.endsWith('.ttf'))).toHaveLength(3);
-  expect(cached.some(url=>url.endsWith('/Templates/appearance.json'))).toBe(true);
+  expect(cached.some(url=>url.endsWith('/Olympia-amigos/appearance.json'))).toBe(true);
   await chooseDate(page,'2026-10-12');
   await page.evaluate(()=>window.scrollTo(0,0));
   await page.screenshot({path:'test-results/blood-guts-today-mobile.png',fullPage:false});

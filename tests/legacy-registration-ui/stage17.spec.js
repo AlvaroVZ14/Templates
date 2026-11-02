@@ -1,6 +1,6 @@
 import {quickTab} from './quick-helpers.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
-async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
+async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('olympia-friends');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
 async function start(page){await page.clock.install({time:new Date('2026-10-16T15:00:00Z')});await page.goto('./');await go(page,'Diario');await page.getByLabel('Peso corporal (kg)',{exact:true}).fill('70');await page.getByRole('button',{name:'Guardar diario',exact:true}).click();await go(page,'Comida');await page.getByLabel('Consumo promedio actual',{exact:true}).fill('2200');await page.getByRole('button',{name:'Calcular propuesta',exact:true}).click();await page.getByRole('button',{name:'Confirmar metas nutricionales',exact:true}).click();await expect(page.getByText(/Metas confirmadas desde 2026-10-16/)).toBeVisible();}
 
 test('previas de toda la semana y excepción solo con pesado realizado; tipo y equipo editables',async({page})=>{

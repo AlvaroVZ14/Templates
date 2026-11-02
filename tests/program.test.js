@@ -14,12 +14,12 @@ test('trayectoria llega al objetivo sin inventar pesos previos a la fase',()=>{
   const phase=fixture().phases[0];
   assert.equal(trajectory(phase,'2026-09-30'),null);
   assert.equal(trajectory(phase,'2026-10-01'),70);
-  assert.equal(trajectory(phase,'2026-12-31'),74);
-  assert.ok(trajectory(phase,'2026-11-15')>70&&trajectory(phase,'2026-11-15')<74);
+  assert.equal(trajectory(phase,'2026-12-31'),80);
+  assert.ok(trajectory(phase,'2026-11-15')>70&&trajectory(phase,'2026-11-15')<80);
 });
 test('migra sin datos falsos, limita alimentos y usa fecha de Chile',()=>{
   const state=fixture(),old={...state,schemaVersion:4};delete old.foods;
-  const migrated=migrateProgram(old,'2026-10-15');assert.equal(migrated.schemaVersion,5);assert.equal(migrated.foods.length,7);assert.deepEqual(migrated.logs,state.logs);assert.deepEqual(migrated.measurements,state.measurements);assert.equal(migrated.baseIntake,null);assert.equal(migrated.foodLogs.length,0);assert.equal(migrated.phases[1].targetWeight,71);assert.equal(migrated.phases[1].windowStart,'2027-03-15');
+  const migrated=migrateProgram(old,'2026-10-15');assert.equal(migrated.schemaVersion,5);assert.equal(migrated.foods.length,7);assert.deepEqual(migrated.logs,state.logs);assert.deepEqual(migrated.measurements,state.measurements);assert.equal(migrated.baseIntake,null);assert.equal(migrated.foodLogs.length,0);assert.equal(migrated.phases[1].targetWeight,76);assert.equal(migrated.phases[1].windowStart,'2027-03-15');
   assert.equal(chileDate(new Date('2026-10-16T02:00:00Z')),'2026-10-15');
 });
 test('metas solo cambian al confirmar y grasa redondeada respeta el mÃ­nimo',()=>{
@@ -59,7 +59,7 @@ test('proteÃ­na alerta solo con tres fechas consecutivas completas y metas histÃ
   const old=state.nutritionDays['2026-10-13'].target;state=goals(state,'2026-10-16',{kcal:2600});assert.deepEqual(goalForDate(state,'2026-10-13'),old);
 });
 test('fase conserva historial, cintura, metas confirmadas y fecha de minicut',()=>{
-  let state=goals(fixture());const old=state.phases[0];state=activatePhase(state,{kind:'cut',targetWeight:71,deadline:'2027-03-31',windowStart:'2027-03-15'},'2027-01-01','2027-01-01');
+  let state=goals(fixture());const old=state.phases[0];state=activatePhase(state,{kind:'cut',targetWeight:76,deadline:'2027-03-31',windowStart:'2027-03-15'},'2027-01-01','2027-01-01');
   assert.equal(state.phaseHistory[0].id,old.id);assert.equal(state.phaseHistory[0].calorieChanges.length,1);assert.equal(state.phaseHistory[0].finalWeight,70);assert.equal(phaseForDate(state,'2027-01-02').kind,'cut');assert.equal(goalForDate(state,'2027-01-02'),null);assert.equal(state.phases.length,3);
   const proposal=suggestedTargets(state,'2027-01-02',2200);assert.equal(proposal.kcal,1800);
 });
@@ -78,6 +78,6 @@ test('cardio por fase y pierna, fatiga, omisiÃ³n idempotente y frecuencia por dÃ
   state.journal['2026-10-15'].fatigue=9;assert.equal(cardioRecommendation(state,'2026-10-15').reduce,false);state.journal['2026-10-14']={...state.journal['2026-10-14'],fatigue:9};assert.equal(cardioRecommendation(state,'2026-10-15').reduce,true);
   const rec=cardioRecommendation(state,'2026-10-15');state=markCardio(state,'2026-10-15','omitted',rec);state=markCardio(state,'2026-10-15','omitted',rec);assert.equal(state.cardioEvents.length,1);
   state.cardio.push({date:'2026-10-12',minutes:10},{date:'2026-10-12',minutes:5});assert.equal(cardioWeek(state,'2026-10-15').performed,1);assert.equal(cardioWeek(state,'2026-10-15').minutes,15);
-  state=activatePhase(state,{kind:'cut',targetWeight:71,deadline:'2027-03-31'},'2027-01-01');assert.equal(cardioRecommendation(state,'2027-01-04').min,20);
+  state=activatePhase(state,{kind:'cut',targetWeight:76,deadline:'2027-03-31'},'2027-01-01');assert.equal(cardioRecommendation(state,'2027-01-04').min,20);
   assert.ok(recoveryItems(state,'2026-10-18',true).some(([key])=>key==='review'));
 });

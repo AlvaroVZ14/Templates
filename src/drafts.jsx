@@ -1,7 +1,7 @@
 import {createContext,useContext,useEffect,useRef,useState} from 'react';
 import {persistTrainingMetadata} from './trainingPersistence.js';
 
-const Context=createContext(null), RECOVERY='heavy-duty-training-drafts-v1';
+const Context=createContext(null), RECOVERY='olympia-friends-training-drafts-v1';
 const apply=(base,patch)=>{const next={...base};for(const [key,value] of Object.entries(patch)){if(value===null)delete next[key];else next[key]=value;}return next;};
 export const DraftProvider=Context.Provider;
 

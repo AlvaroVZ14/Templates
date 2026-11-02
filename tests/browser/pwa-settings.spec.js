@@ -44,7 +44,7 @@ test('botón descarga una versión real antes de ofrecerla y actualiza offline c
   const root=resolve('dist');
   const server=createServer(async(req,res)=>{
     try{
-      const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname).replace(/^\/Templates\//,''),file=resolve(root,path||'index.html');
+      const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname).replace(/^\/Olympia-amigos\//,''),file=resolve(root,path||'index.html');
       if(relative(root,file).startsWith('..')){res.writeHead(404);res.end();return;}
       let body=await readFile(file);
       if(path==='sw.js')body=Buffer.from(body.toString().replace(/const CACHE = PREFIX \+ '[^']+';/,`const CACHE = PREFIX + 'manual-${version}';`));
@@ -56,7 +56,7 @@ test('botón descarga una versión real antes de ofrecerla y actualiza offline c
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   try{
     await page.clock.install({time:new Date('2026-10-12T18:00:00Z')});
-    await seedLegacyOrigin(page,`http://127.0.0.1:${server.address().port}/Templates/`);await page.goto(`http://127.0.0.1:${server.address().port}/Templates/`);await chooseDate(page,'2026-10-12');
+    await seedLegacyOrigin(page,`http://127.0.0.1:${server.address().port}/Olympia-amigos/`);await page.goto(`http://127.0.0.1:${server.address().port}/Olympia-amigos/`);await chooseDate(page,'2026-10-12');
     await page.evaluate(async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));});
     await editNumber(page,'Press banca',100);
     await confirmSet(page,'Press banca');

@@ -5,9 +5,9 @@ import {go,menu} from './navigation-helpers.js';
 async function seed(page){
  await page.clock.install({time:new Date('2026-11-03T18:00:00Z')});
  const state=initialState();state.appearanceSettings={name:'BLOOD & GUTS',effects:'off'};state.journal={'2026-11-02':{weight:71,sleepHours:8}};
- await page.route('**/Templates/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html>'}));await page.goto('./');
- await page.evaluate(async state=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal',1);req.onupgradeneeded=()=>req.result.createObjectStore('app');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);
- await page.unroute('**/Templates/');await page.reload();await expect(page.locator('.simple-home')).toBeVisible();
+ await page.route('**/Olympia-amigos/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html>'}));await page.goto('./');
+ await page.evaluate(async state=>{const db=await new Promise(resolve=>{const req=indexedDB.open('olympia-friends',1);req.onupgradeneeded=()=>req.result.createObjectStore('app');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);
+ await page.unroute('**/Olympia-amigos/');await page.reload();await expect(page.locator('.simple-home')).toBeVisible();
 }
 test('Olympia reemplaza nombre anterior sin tocar diario; logo en inicio/cajón, móvil y offline',async({page,context})=>{
  const errors=[];page.on('pageerror',error=>errors.push(error.message));await seed(page);await expect(page).toHaveTitle('Olympia');

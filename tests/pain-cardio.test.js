@@ -7,9 +7,9 @@ import {markCardio} from '../src/program/tracking.js';
 import {generateSummary} from '../src/summaries.js';
 import {BACKUP_STORES,validateBackup,combineStates} from '../src/backup.js';
 import {projectCollections} from '../src/history.js';
-function backupFixture(state){const rows=projectCollections(state),cache={...state,storageFormat:2};delete cache.sessions;const records=Object.fromEntries(BACKUP_STORES.map(key=>[key,[]]));records.app=[{key:'state',value:cache}];for(const [key,values] of Object.entries(rows))records[key]=values.map(value=>({key:value.id,value}));return JSON.parse(JSON.stringify({format:'heavy-duty-backup',formatVersion:1,databaseVersion:2,databaseName:'heavy-duty-personal',records}));}
+function backupFixture(state){const rows=projectCollections(state),cache={...state,storageFormat:2};delete cache.sessions;const records=Object.fromEntries(BACKUP_STORES.map(key=>[key,[]]));records.app=[{key:'state',value:cache}];for(const [key,values] of Object.entries(rows))records[key]=values.map(value=>({key:value.id,value}));return JSON.parse(JSON.stringify({format:'olympia-friends-backup',formatVersion:1,databaseVersion:2,databaseName:'olympia-friends',records}));}
 const pain=(zone='shoulder',severity=6,patch={})=>({id:crypto.randomUUID(),zone,severity,sharp:false,joint:false,notes:'Dato ficticio',since:'',...patch});
-function fixture(kind='bulk'){const state=initialState();state.phases=[{id:'phase-test',kind,startDate:'2026-10-01',deadline:'2027-03-31',targetWeight:74}];state.journal={};return state;}
+function fixture(kind='bulk'){const state=initialState();state.phases=[{id:'phase-test',kind,startDate:'2026-10-01',deadline:'2027-03-31',targetWeight:80}];state.journal={};return state;}
 test('dolor antiguo conserva texto; reconoce solo intensidad explícita y no mezcla zonas ni niega recuperación',()=>{
  const entry={pain:'Hombro derecho 7/10 articular; rodilla 2/10. Sin dolor lumbar'},copy=structuredClone(entry),rows=painEntriesFor(entry);assert.equal(rows.find(row=>row.zone==='shoulder').severity,7);assert.equal(rows.find(row=>row.zone==='knee').severity,2);assert.ok(!rows.some(row=>row.zone==='lowerBack'));assert.deepEqual(entry,copy);
  assert.equal(painEntriesFor({pain:'Hombro cargado'})[0].severity,null);assert.deepEqual(painEntriesFor({pain:'hombro 7/10 y rodilla 2/10'}),[]);

@@ -8,13 +8,9 @@ export const MEASURES = [
   { key: 'thigh', label: 'Muslo' },
   { key: 'calf', label: 'Pantorrilla' },
 ];
-export const INITIAL_MEASUREMENT = {
-  id: 'initial-2026-10-15', date: '2026-10-15', initial: true, conditions: null,
-  values: { biceps: 35, forearm: 31.5, waist: 70, chest: 100, thigh: 59, calf: 35.2 },
-};
 export function migrateMeasurements(original) {
   if (original.schemaVersion >= 4) return original;
-  return { ...original, schemaVersion: 4, measurements: original.measurements ?? [structuredClone(INITIAL_MEASUREMENT)] };
+  return { ...original, schemaVersion: 4, measurements: original.measurements ?? [] };
 }
 export function validateMeasurement(record) {
   if (!validDate(record.date)) return 'Elige una fecha válida.';

@@ -1,3 +1,5 @@
+import FriendsRoutine from './FriendsRoutine.jsx';
+import About,{Feedback} from './About.jsx';
 import GrungeAtmosphere,{Cracks} from './Grunge.jsx';
 import Brand from './Brand.jsx';
 import {useVisualEnvironment} from './VisualEffects.jsx';
@@ -85,7 +87,7 @@ export default function App() {
   const [menuOpen,setMenuOpen]=useState(false);
   const drafts=useDrafts(data,setData,setError);
   const seriesQueue=useSeriesQueue(data,setData,setError);
-  useEffect(()=>{const exported=event=>setData(current=>current?{...current,backupSettings:event.detail}:current);window.addEventListener('heavy-duty-backup-exported',exported);return()=>window.removeEventListener('heavy-duty-backup-exported',exported);},[]);
+  useEffect(()=>{const exported=event=>setData(current=>current?{...current,backupSettings:event.detail}:current);window.addEventListener('olympia-friends-backup-exported',exported);return()=>window.removeEventListener('olympia-friends-backup-exported',exported);},[]);
   const navigating=useRef(false);
   async function navigate(target,nextDate=target==='today'?localDate():date){
     if(navigating.current)return;
@@ -124,7 +126,7 @@ export default function App() {
     setError('');
     try {
       const existing=await loadState();
-      let reset=false;try{reset=localStorage.getItem('olympia-empty-reset')==='1';}catch{}
+      let reset=false;try{reset=localStorage.getItem('olympia-friends-empty-reset')==='1';}catch{}
       const state=captureMonthlyReviews(captureAnchors(advancePhases(existing?migrateState(existing):{...initialState(),phases:[],phaseHistory:[],...(reset?{measurements:[],routineMigrationBackups:[]}:{}),onboarding:{status:'pending'}},localDate())),localDate());
       if(state!==existing)await updateState(()=>state);
       const open=openGymSession(state);
@@ -136,7 +138,7 @@ export default function App() {
     } catch { setError('No se pudo abrir IndexedDB. Permite el almacenamiento del navegador y vuelve a intentar.'); }
   }
   useEffect(() => { boot(); }, []);
-  useEffect(()=>{const listener=event=>{if(event.key!=='olympia-privacy')return;if(event.newValue?.startsWith('prepare')){locked.current=true;stopTrainingPersistence();setData(null);}else if(event.newValue?.startsWith('done'))location.reload();};window.addEventListener('storage',listener);return()=>window.removeEventListener('storage',listener);},[]);
+  useEffect(()=>{const listener=event=>{if(event.key!=='olympia-friends-privacy')return;if(event.newValue?.startsWith('prepare')){locked.current=true;stopTrainingPersistence();setData(null);}else if(event.newValue?.startsWith('done'))location.reload();};window.addEventListener('storage',listener);return()=>window.removeEventListener('storage',listener);},[]);
   useEffect(()=>{let day=localDate();const check=()=>{const next=localDate();setClockDay(next);if(next!==day)change(state=>state).then(saved=>{if(saved)day=next;});};const timer=setInterval(check,60000);document.addEventListener('visibilitychange',check);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',check);};},[]);
   async function change(updater,photos=[]) {
     try{await seriesQueue.flush();}catch{return false;}
@@ -165,8 +167,8 @@ export default function App() {
   }
   async function erasePersonal(){
     let erased=false;
-    try{await seriesQueue.flush();await drafts.flush();locked.current=true;try{localStorage.setItem('olympia-empty-reset','1');localStorage.setItem('olympia-privacy',`prepare-${Date.now()}`);}catch{}stopTrainingPersistence();await eraseDeviceRecords({...initialState(),measurements:[],phases:[],phaseHistory:[],routineMigrationBackups:[],onboarding:{status:'pending'}});erased=true;try{for(const key of Object.keys(localStorage))if(/^(blood-guts-|heavy-duty-|olympia-)/.test(key))localStorage.removeItem(key);localStorage.setItem('olympia-privacy',`done-${Date.now()}`);}catch{}location.reload();}
-    catch{if(erased){location.reload();return;}locked.current=false;try{localStorage.setItem('olympia-privacy',`done-${Date.now()}`);}catch{}setError('No se pudo borrar el almacenamiento local. Los registros se conservan; vuelve a intentar.');}
+    try{await seriesQueue.flush();await drafts.flush();locked.current=true;try{localStorage.setItem('olympia-friends-empty-reset','1');localStorage.setItem('olympia-friends-privacy',`prepare-${Date.now()}`);}catch{}stopTrainingPersistence();await eraseDeviceRecords({...initialState(),measurements:[],phases:[],phaseHistory:[],routineMigrationBackups:[],onboarding:{status:'pending'}});erased=true;try{for(const key of Object.keys(localStorage))if(/^olympia-friends-/.test(key))localStorage.removeItem(key);localStorage.setItem('olympia-friends-privacy',`done-${Date.now()}`);}catch{}location.reload();}
+    catch{if(erased){location.reload();return;}locked.current=false;try{localStorage.setItem('olympia-friends-privacy',`done-${Date.now()}`);}catch{}setError('No se pudo borrar el almacenamiento local. Los registros se conservan; vuelve a intentar.');}
   }
   const [installHelp, setInstallHelp] = useState(false);
   const measureReminder = data ? measurementReminder(data.measurements, localDate()) : null;
@@ -197,14 +199,14 @@ export default function App() {
         {page === 'workout' && <Workout key={date} data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} gymActive={gymActive} finishGym={finishGym} wake={wake} audio={audio} gymSound={gymSound} onPain={()=>navigate('pain')} onConfirm={seriesQueue.confirm} onDone={()=>navigate('today',clockDay)} restTimer={<RestTimer timer={data.timer} data={data} busy={saving} onAdjust={delta=>change(state=>adjustRestTimer(state,delta))} onFinish={()=>{if(gymActive&&data.gymSettings?.sound)audio.play();}} onClose={()=>change(state=>({...state,timer:null}))}/>} />}
         {page==='weights'&&<WeightSetup data={data} change={change} saving={saving} onDone={()=>{setPage('today');setMenuOpen(false);}}/>}
         {page==='pain'&&<PainPage data={data} date={localDate()} onDiary={value=>navigate('diary',value)}/>}
-        {page==='routine'&&<Routine data={data} change={change} saving={saving}/>}
+        {page==='routine'&&<FriendsRoutine data={data} change={change} saving={saving}/>}
         {page === 'overview'&&<><Progress data={data}><Volume data={data} date={date} setDate={setDate}/></Progress><details className="overview-history"><summary>Historial de sesiones</summary><History embedded data={data} change={change} saving={saving} storage={storage}/></details></>}
         {page === 'volume' && <Progress data={data}><Volume data={data} date={date} setDate={setDate}/></Progress>}
         {page === 'diary' && <><ProfileSleep data={data}/><Diary key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} /></>}
         {page === 'measurements' && <Measurements key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} />}
         {page === 'food' && <FoodPage key={date} data={data} date={date} setDate={setDate} change={change} saving={saving} onDiary={()=>navigate('diary')} onProfile={()=>navigate('profile')} />}
-        {page==='settings'&&<><label className="check-label settings-audio"><input type="checkbox" checked={data.gymSettings?.sound===true} onChange={event=>gymSound(event.target.checked)}/>Aviso sonoro de descanso</label><div className="settings-shortcuts">{[['weights','Configurar pesos'],['routine','Rutina'],['day-options','Cardio y recuperación'],['pain','Zonas con molestias']].map(([id,label])=><button className="secondary" key={id} onClick={()=>navigate(id)}>{label}</button>)}</div><NavigationSettings data={data} change={change} saving={saving}/><PwaSettings pwa={pwa} saving={saving} onUpdate={()=>pwa.update(async()=>{if(locked.current)return false;await seriesQueue.flush();await drafts.flush();return true;})}/><CardioSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
-        {page==='method'&&<Method/>}
+        {page==='settings'&&<><label className="check-label settings-audio"><input type="checkbox" checked={data.gymSettings?.sound===true} onChange={event=>gymSound(event.target.checked)}/>Aviso sonoro de descanso</label><div className="settings-shortcuts">{[['weights','Configurar pesos'],['routine','Rutina'],['day-options','Cardio y recuperación'],['pain','Zonas con molestias']].map(([id,label])=><button className="secondary" key={id} onClick={()=>navigate(id)}>{label}</button>)}</div><NavigationSettings data={data} change={change} saving={saving}/><PwaSettings pwa={pwa} saving={saving} onUpdate={()=>pwa.update(async()=>{if(locked.current)return false;await seriesQueue.flush();await drafts.flush();return true;})}/><CardioSettings data={data} change={change} saving={saving}/><AppearanceSettings data={data} change={change} saving={saving}/><MotivationSettings data={data} change={change} saving={saving}/><button className="secondary" onClick={()=>pwa.prompt?pwa.install():setInstallHelp(true)}>Instalar app</button><BackupPanel/><button className="danger" onClick={()=>{if(confirm("Borrar todos los datos de esta edicion, incluidas fotos y respaldos internos? Exporta primero si quieres conservarlos."))erasePersonal();}}>Borrar todo</button><Feedback/><StorageNotice status={storage} retry={()=>requestStorage(true)} busy={storageBusy}/></>}
+        {page==='method'&&<Method/>}{page==='about'&&<About/>}
         {page === 'history' && <History data={data} change={change} saving={saving} storage={storage}/>}
         {page==='day-options'&&<DayOptions data={data} date={date} change={change} saving={saving} onFood={()=>navigate('food')} onDiary={()=>navigate('diary')} onMeasures={()=>navigate('measurements')} onPain={()=>navigate('pain')} gymActive={Boolean(gymOpen)} wake={wake} audio={audio} gymSound={gymSound}/>}
         {page==='monthly-check'&&<MonthlyCheck data={data} change={change} saving={saving}/>}
@@ -249,75 +251,6 @@ const ExercisePanel=memo(function ExercisePanel(props){
  return <details className="workout-exercise" open data-active={open} inert={!open} aria-hidden={!open}><summary onClick={event=>{event.preventDefault();onSelect(ex.id);}}><span>{ex.name}</span><b>{count}/{ex.sets}</b></summary><ExerciseCard {...props}/></details>;
 },(a,b)=>a.open===b.open&&equalExerciseView(a,b));
 
-function Routine({ data, change, saving }) {
-  const recovery=useFormDraft('routine:editor',localDate());
-  const restoredDraft=useRef(parseRoutineDraft(recovery.initial.routine));
-  const [legacyDraft]=useState(()=>{const restored=restoredDraft.current;if(!data.routineVersion||!restored)return false;const currentIds=new Set(data.routine.flat().map(ex=>ex.id));return restored.flat().length>0&&!restored.flat().some(ex=>currentIds.has(ex.id));});
-  const [draft, setDraft] = useState(() => !legacyDraft&&restoredDraft.current?restoredDraft.current:structuredClone(data.routine));
-  const [day, setDay] = useState(dayIndex(localDate()));
-  const [open, setOpen] = useState('');
-  const [dirty, setDirty] = useState(recovery.restored&&!legacyDraft);
-  useEffect(()=>{if(dirty){recovery.touch();recovery.remember({routine:JSON.stringify(draft)});}},[draft,dirty]);
-  const [message, setMessage] = useState('');
-  const [deleteId, setDeleteId] = useState('');
-  useEffect(()=>{if(!dirty)setDraft(structuredClone(data.routine));},[data.routine,dirty]);
-  function update(id, patch) {
-    setDraft(current=>current.map((list,i)=>i===day?list.map(ex=>{
-      if(ex.id!==id)return ex;
-      const next={...ex,...patch};
-      if(ex.setPlan?.length&&(Object.hasOwn(patch,'sets')||Object.hasOwn(patch,'technique'))){
-        const count=Number.isInteger(next.sets)&&next.sets>=1&&next.sets<=20?next.sets:ex.setPlan.length,hasTop=ex.setPlan.some(set=>set.role==='top');
-        const fallback=ex.setPlan.at(-1);
-        next.setPlan=Array.from({length:count},(_,index)=>({...fallback,...ex.setPlan[index],role:ex.setPlan[index]?.role??(hasTop?'backoff':'standard'),technique:index===count-1?next.technique:''}));
-      }
-      return next;
-    }):list));
-    setDirty(true);setMessage('');
-  }
-  async function save(event) {
-    event.preventDefault();
-    const invalid = validateRoutine(draft);
-    if (invalid) { setMessage(invalid); return; }
-    if (await change(state => ({ ...state, routine: draft.map(list => list.map(ex => ({ ...ex, name: ex.name.trim() }))) }))) { recovery.clear();setDirty(false); setMessage('Rutina guardada en este dispositivo.'); }
-  }
-  function move(index, delta) {
-    setDraft(current => current.map((list, i) => { if (i !== day) return list; const moved = [...list]; [moved[index], moved[index + delta]] = [moved[index + delta], moved[index]]; return moved; })); setDirty(true);
-  }
-  function add() {
-    const muscle = 'Pecho';
-    const ex = makeExercise('Nuevo ejercicio', muscle, 1, '', 'barbell', false, draft[day].some(item => item.muscle === muscle) ? 1 : 2);
-    setDraft(current => current.map((list, i) => i === day ? [...list, ex] : list)); setOpen(ex.id); setDirty(true);
-  }
-  return <><div className="page-heading"><div><p className="eyebrow">LA ESTRUCTURA DE TU TRABAJO</p><h1>Tu rutina<span className="accent">.</span></h1></div><span className="outlined-tag">7 DÍAS</span></div><p className="page-intro">Ajusta las series, las técnicas y el descanso a tu entrenamiento.</p>
-    {legacyDraft&&<p className="notice" role="status">Hay un borrador de la rutina anterior conservado en tus datos. Se muestra el plan actual para evitar reemplazarlo al guardar.</p>}
-    <form onSubmit={save}><div className="editor-toolbar"><span aria-live="polite">{dirty ? 'Cambios sin guardar' : message || 'Rutina personalizada · Heavy Duty'}</span><button className="primary" type="submit" disabled={saving || !dirty}><Icon name="check" size={18} />{saving ? 'Guardando…' : 'Guardar cambios'}</button></div>
-      <div className="day-tabs" aria-label="Día a editar">{DAYS.map((name, index) => <button key={name} type="button" className={index === day ? 'selected' : ''} aria-pressed={index === day} onClick={() => { setDay(index); setOpen(''); }}>{name.slice(0, 3)}</button>)}</div>
-      <div className="section-heading"><h2>{DAYS[day]}</h2><span>{draft[day].length} ejercicios · {draft[day].reduce((sum, ex) => sum + ex.sets, 0)} efectivas</span></div>
-      {message && <p role="status" className="success">{message}</p>}
-      {!draft[day].length && <div className="rest-card"><Icon name="leaf" size={36} /><h3>Día de descanso</h3><p>Puedes mantenerlo libre o añadir ejercicios.</p></div>}
-      {draft[day].map((ex, index) => <article className="exercise-card editor-card" key={ex.id}>
-        <button className="exercise-summary" type="button" onClick={() => setOpen(open === ex.id ? '' : ex.id)} aria-expanded={open === ex.id}><span className="exercise-number">{String(index + 1).padStart(2, '0')}</span><span className="exercise-title"><span className="muscle-label">{ex.muscle}</span><strong>{ex.name || 'Sin nombre'}</strong><small>{ex.sets} efectivas{ex.technique ? ` + ${KINDS[ex.technique]}` : ''}</small></span><Icon name="edit" size={19} /></button>
-        {open === ex.id && <div className="exercise-body editor-fields"><label>Nombre del ejercicio<input required maxLength="90" value={ex.name} onChange={event => update(ex.id, { name: event.target.value })} /></label>
-          <div className="input-pair"><label>Músculo principal<select value={ex.muscle} onChange={event => update(ex.id, { muscle: event.target.value, approaches: ex.compound || !draft[day].some(item => item.id !== ex.id && item.muscle === event.target.value) ? 2 : 1 })}>{MUSCLES.map(name => <option key={name}>{name}</option>)}</select></label><label>Series efectivas<input type="number" min="1" max="20" required value={ex.sets || ''} onChange={event => update(ex.id, { sets: Number(event.target.value) })} /></label></div>
-          <div className="input-pair"><label>Equipo<select value={ex.equipment} onChange={event => { const equipment = event.target.value; update(ex.id, { equipment, increment: INCREMENTS[equipment] }); }}>{Object.entries(EQUIPMENT).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label><label>Tipo de carga<select value={classifyExercise(ex).loadType} onChange={event => { const loadType=event.target.value,compound=loadType!=='isolation'; update(ex.id, { loadType,compound, rests: { ...ex.rests, effective: ex.setPlan?.length?(compound?150:105):(compound?210:150) } }); }}>{Object.entries(LOAD_TYPES).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label></div>
-          <label>Patrón de movimiento<select value={classifyExercise(ex).movementPattern} onChange={event=>update(ex.id,{movementPattern:event.target.value})}>{Object.entries(PATTERNS).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
-          {ex.setPlan?.length>0&&<><p className="field-note">{ex.setPlan.map((set,index)=>`S${index+1}: ${({top:'Top set',backoff:'Back-off',heavy:'Pesada',light:'Ligera',standard:'Efectiva'})[set.role]??'Efectiva'} ${set.repMin}–${set.repMax}${set.technique?` + ${KINDS[set.technique]} (extensión)`:''}`).join(' · ')}</p>{ex.setPlan.some(set=>set.role==='backoff')&&<label>Reducción Back-off (%)<input aria-label={`Reducción Back-off de ${ex.name}`} type="number" min="0" max="50" step="1" required value={ex.backoffPercent??10} onChange={event=>update(ex.id,{backoffPercent:Number(event.target.value)})}/><small>Sobre el Top registrado hoy, con redondeo por equipo. La carga final siempre es editable.</small></label>}</>}
-          <div className="input-pair"><label>Extensión planeada<select value={ex.technique} onChange={event => update(ex.id, { technique: event.target.value })}><option value="">Ninguna</option><option value="drop">Drop set</option><option value="rp">Rest-pause</option></select></label><label>Series de preparación<input type="number" min="0" max="3" required value={contextualPreparation(ex,draft[day],data.preparationSettings.minimum).approaches} onChange={event => update(ex.id, { approaches: Number(event.target.value), preparationOverride: Number(event.target.value) })} /></label></div>
-          <div className="input-pair"><label>Redondeo de sugerencias (kg)<input type="number" min="0.5" max="100" step="0.5" required value={ex.increment || ''} onChange={event => update(ex.id, { increment: Number(event.target.value) })} /></label><label>Caídas de drop set<input type="number" min="1" max="3" required value={ex.dropCount} onChange={event => update(ex.id, { dropCount: Number(event.target.value) })} /></label><label>Mini-series rest-pause<input type="number" min="1" max="10" required value={ex.rpCount} onChange={event => update(ex.id, { rpCount: Number(event.target.value) })} /></label></div>
-          <p className="field-note">Auto combina orden y tipo de carga: pesado mínimo 2; liviano mínimo 1; aislamiento primero 2, después 1 ligera y siguientes 0. Aquí se estima la secuencia. En Hoy, un pesado del mismo patrón ya registrado permite 1 previa de 60% × 6. Manual 0–3, sin fallo y hasta el 80%.</p>
-          <h3 className="editor-subtitle">Descansos <span>segundos</span></h3><div className="input-pair">{[['warmup', 'Entre calentamientos / aproximaciones'], ['effective', 'Antes de la efectiva'], ['rp', 'Rest-pause · entre mini-series'], ['drop', 'Drop set · cambio de carga']].map(([key, label]) => <label key={key}>{label}<input type="number" inputMode="numeric" min="1" max="900" required value={ex.rests[key] || ''} onChange={event => update(ex.id, { rests: { ...ex.rests, [key]: Number(event.target.value) } })} /></label>)}</div>
-          <p className="field-note">{contextualPreparation(ex,draft[day],data.preparationSettings.minimum).preparationReason}</p><button className="secondary" type="button" onClick={()=>update(ex.id,{preparationOverride:null})}>Usar previas automáticas</button>
-          {contextualPreparation(ex,draft[day],data.preparationSettings.minimum).preparationWarning&&<p className="error">Compuesto pesado sin calentar</p>}
-          <label>Zona o articulación de preparación (opcional)<input aria-label="Zona de preparación" maxLength="40" placeholder="Según músculo principal" value={ex.preparationJoint??''} onChange={event=>update(ex.id,{preparationJoint:event.target.value})}/></label><p className="field-note">Por defecto cada músculo inicia su propia preparación: hombro tras pecho cuenta como primero. Una zona distinta dentro del mismo músculo también comienza con dos previas.</p>
-          <h3 className="editor-subtitle">Técnicas opcionales</h3><label className="check-label"><input type="checkbox" checked={ex.forced} onChange={event => update(ex.id, { forced: event.target.checked })} /><span>Permitir forzadas<small>Desactivadas por defecto</small></span></label><label className="check-label"><input type="checkbox" checked={ex.negative} onChange={event => update(ex.id, { negative: event.target.checked })} /><span>Permitir negativas<small>Desactivadas por defecto</small></span></label>
-          <div className="editor-bottom"><div><button className="secondary" type="button" disabled={index === 0} onClick={() => move(index, -1)} aria-label={`Subir ${ex.name}`}>↑ Subir</button><button className="secondary" type="button" disabled={index === draft[day].length - 1} onClick={() => move(index, 1)} aria-label={`Bajar ${ex.name}`}>↓ Bajar</button></div><button className="danger" type="button" onClick={() => setDeleteId(ex.id)}>Quitar</button></div>
-          {deleteId === ex.id && <div className="delete-confirm"><p>Se quitará de la rutina. Las series registradas se conservan en el volumen semanal.</p><button type="button" className="danger" onClick={() => { setDraft(current => current.map((list, i) => i === day ? list.filter(item => item.id !== ex.id) : list)); setDirty(true); setDeleteId(''); }}>Confirmar</button><button type="button" className="quiet" onClick={() => setDeleteId('')}>Cancelar</button></div>}
-        </div>}
-      </article>)}
-      <button className="add-exercise" type="button" onClick={add}><Icon name="plus" />Añadir ejercicio</button>
-      <p className="field-note">Los cambios se aplican al plan semanal. Tu historial conserva el músculo y el nombre originales.</p>
-    </form></>;
-}
 
 function Volume({ data, date, setDate }) {
   const dates = weekDates(date);

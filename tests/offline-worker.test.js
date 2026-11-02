@@ -7,7 +7,7 @@ import { runInNewContext } from 'node:vm';
 import config, { appearanceAssets, offlineWorker } from '../vite.config.js';
 import {BRAND_ASSETS} from '../src/brand.js';
 
-const scope = 'https://example.test/Templates/';
+const scope = 'https://example.test/Olympia-amigos/';
 function generatedWorker(publicRoot, warnings = []) {
   let asset;
   const plugin = publicRoot ? offlineWorker(publicRoot) : config.plugins.flat().find(plugin => plugin.name === 'heavy-duty-offline');
@@ -139,6 +139,7 @@ function appearanceFixture(t) {
     rmSync(target, { recursive: true, force: true });
   });
   const write = (name, value) => writeFileSync(join(root, name), value);
+  write('hero-generic.svg','<svg xmlns="http://www.w3.org/2000/svg"/>');
   const validate = configuration => { write('appearance.json', JSON.stringify(configuration)); return appearanceAssets(root); };
   mkdirSync(join(root, 'backgrounds'));
   write('backgrounds/own.webp', new Uint8Array([1, 2, 3]));
@@ -185,7 +186,7 @@ test('hero.jpg es opcional: su ausencia no invalida ni entra en el precaché', t
   assert.match(source, /appearance\.json/);
 });
 
-test('hero.jpg presente se precachea bajo /Templates/ y cambia de versión al editarse', async t => {
+test('hero.jpg presente se precachea bajo /Olympia-amigos/ y cambia de versión al editarse', async t => {
   const { root, write, validate } = appearanceFixture(t);
   const absent = generatedWorker(root);
   write('hero.jpg', new Uint8Array([0xff, 0xd8, 0xff, 1]));

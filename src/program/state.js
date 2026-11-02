@@ -15,11 +15,5 @@ export function chileDate(value=new Date()) {
 }
 export function migrateProgram(original,date=chileDate()) {
   if(original.schemaVersion>=5)return original;
-  const bulkStart=date,bulkEnd=date<='2026-12-31'?'2026-12-31':shiftDate(date,84),cutStart=shiftDate(bulkEnd,1),cutEnd=shiftDate(cutStart,89);
-  const weightDate=Object.keys(original.journal??{}).filter(day=>day<=bulkStart&&original.journal[day].weight>0).sort().at(-1);
-  const waist=(original.measurements??[]).filter(item=>item.date<=date&&item.values.waist>0).sort((a,b)=>a.date.localeCompare(b.date)).at(-1)?.values.waist??null;
-  return {...original,schemaVersion:5,foods:structuredClone(FOODS),phases:[
-    {id:'initial-bulk',kind:'bulk',startDate:bulkStart,deadline:bulkEnd,targetWeight:74,startWeight:weightDate?original.journal[weightDate].weight:null,anchorDate:bulkStart,startWaist:waist},
-    {id:'scheduled-cut',kind:'cut',startDate:cutStart,deadline:cutEnd,windowStart:shiftDate(cutEnd,-16),targetWeight:71,startWeight:null,anchorDate:cutStart,startWaist:null,scheduled:true},
-  ],phaseHistory:[],goalRevisions:[],baseIntake:null,nutritionDays:{},nutritionDayHistory:[],mealPlans:{},planHistory:[],planOptions:{},foodLogs:[],calendar:{},recovery:{},cardioDays:{},cardioEvents:[],cardioPreferences:{},dismissedAlerts:{},programSettings:{proteinRatio:1.8,restReduction:0,maintenanceSnack:.2,trainingTime:'18:00',fatigueThreshold:8}};
+  return {...original,schemaVersion:5,foods:structuredClone(FOODS),phases:original.phases??[],phaseHistory:[],goalRevisions:[],baseIntake:null,nutritionDays:{},nutritionDayHistory:[],mealPlans:{},planHistory:[],planOptions:{},foodLogs:[],calendar:{},recovery:{},cardioDays:{},cardioEvents:[],cardioPreferences:{},dismissedAlerts:{},programSettings:{proteinRatio:1.8,restReduction:0,maintenanceSnack:.2,trainingTime:'18:00',fatigueThreshold:8}};
 }

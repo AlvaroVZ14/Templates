@@ -8,9 +8,9 @@ async function boot(page,{history=true,longName=false}={}){
  if(longName)data.routine[6][0].name='Prensa unilateral en máquina con respaldo ajustado y recorrido controlado';
  for(const profile of Object.values(data.profiles))profile.workWeight=80;
  if(history)for(const ex of data.routine[6])for(let i=0;i<ex.sets;i++)data.logs.push({id:`fixture-${ex.id}-${i}`,date:'2026-11-01',exerciseId:ex.id,profileId:ex.profileId,equipment:ex.equipment,exerciseName:ex.name,muscle:ex.muscle,kind:'effective',weight:80,reps:8,setRole:ex.setPlan[i].role,rpe:9,failure:false,createdAt:`2026-11-01T18:0${i}:00Z`});
- await page.route('**/Templates/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html>'}));await page.goto('./');
- await page.evaluate(async data=>{const db=await new Promise(resolve=>{const r=indexedDB.open('heavy-duty-personal',1);r.onupgradeneeded=()=>r.result.createObjectStore('app');r.onsuccess=()=>resolve(r.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(data,'state');tx.oncomplete=resolve;});db.close();},data);
- await page.unroute('**/Templates/');await page.reload();await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();
+ await page.route('**/Olympia-amigos/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html>'}));await page.goto('./');
+ await page.evaluate(async data=>{const db=await new Promise(resolve=>{const r=indexedDB.open('olympia-friends',1);r.onupgradeneeded=()=>r.result.createObjectStore('app');r.onsuccess=()=>resolve(r.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(data,'state');tx.oncomplete=resolve;});db.close();},data);
+ await page.unroute('**/Olympia-amigos/');await page.reload();await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();
  await expect(page.locator('.workout-focus')).toBeVisible();return data;
 }
 test('carrusel móvil: flechas, pastillas y swipe conservan borrador, progreso y serie guardada',async({page,context})=>{
@@ -72,7 +72,7 @@ test('cinco series caben en una fila de escritorio y en dos columnas en celular'
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 
-async function storedRest(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const r=indexedDB.open('heavy-duty-personal');r.onsuccess=()=>resolve(r.result);});try{return await new Promise(resolve=>{const r=db.transaction('app').objectStore('app').get('state');r.onsuccess=()=>resolve({timer:r.result.timer,quickRest:r.result.quickRest,logs:r.result.logs});});}finally{db.close();}});}
+async function storedRest(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const r=indexedDB.open('olympia-friends');r.onsuccess=()=>resolve(r.result);});try{return await new Promise(resolve=>{const r=db.transaction('app').objectStore('app').get('state');r.onsuccess=()=>resolve({timer:r.result.timer,quickRest:r.result.quickRest,logs:r.result.logs});});}finally{db.close();}});}
 test('descanso: ajustar ±15, cambiar ejercicio, terminar una vez y saltar conserva descanso real',async({page})=>{
  await page.addInitScript(()=>{window.restVibrations=[];navigator.vibrate=value=>{window.restVibrations.push(value);return true;};});await page.setViewportSize({width:390,height:844});const data=await boot(page),ex=data.routine[6][0];
  const timer=page.getByLabel('Temporizador de descanso',{exact:true});await expect(timer).not.toBeVisible();await page.getByRole('button',{name:`Confirmar ${ex.name}, serie 1`,exact:true}).click();await expect(timer).toBeVisible();await expect.poll(async()=>Boolean((await storedRest(page)).timer)).toBe(true);const before=await storedRest(page);

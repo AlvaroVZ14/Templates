@@ -70,7 +70,7 @@ test('editor permite 3 preparaciones, 3 caídas y redondeo personalizado', async
 test('migra datos de la versión anterior sin borrar series ni reiniciar descansos', async ({ page }) => {
   await monday(page);
   await page.evaluate(async () => {
-    const db = await new Promise((resolve, reject) => { const request = indexedDB.open('heavy-duty-personal'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+    const db = await new Promise((resolve, reject) => { const request = indexedDB.open('olympia-friends'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
     await new Promise((resolve, reject) => {
       const transaction = db.transaction('app', 'readwrite'), store = transaction.objectStore('app'), request = store.get('state');
       request.onsuccess = () => {

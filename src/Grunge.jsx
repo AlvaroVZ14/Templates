@@ -16,7 +16,7 @@ export function IronSilhouettes(){
 }
 
 // Pure presentation state: this key never changes or clears training storage.
-const INTRO_KEY='heavy-duty-grunge-intro-day';
+const INTRO_KEY='olympia-friends-intro-day';
 export default function GrungeAtmosphere({ready,day,scene,mode,visible,gym,name}){
   const [intro,setIntro]=useState(false),[cut,setCut]=useState(0);
   const last=useRef(scene),considered=useRef(false),introTimer=useRef(),cutTimer=useRef();

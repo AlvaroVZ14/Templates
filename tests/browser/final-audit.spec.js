@@ -6,9 +6,9 @@ const targets={Pecho:14,Espalda:13,'Bíceps':10,'Tríceps':4,'Deltoides laterale
 async function boot(page){
  await page.setViewportSize({width:360,height:800});await page.clock.install({time:new Date('2026-11-03T18:00:00Z')});page.on('dialog',dialog=>dialog.accept());
  const state=initialState();state.appearanceSettings={...state.appearanceSettings,effects:'off'};for(const profile of Object.values(state.profiles))profile.workWeight=40;
- await page.route('**/Templates/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html>'}));await page.goto('./');
- await page.evaluate(async state=>{const db=await new Promise(resolve=>{const r=indexedDB.open('heavy-duty-personal',1);r.onupgradeneeded=()=>r.result.createObjectStore('app');r.onsuccess=()=>resolve(r.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);
- await page.unroute('**/Templates/');await page.reload();await expect(page.locator('.simple-home')).toBeVisible();
+ await page.route('**/Olympia-amigos/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html>'}));await page.goto('./');
+ await page.evaluate(async state=>{const db=await new Promise(resolve=>{const r=indexedDB.open('olympia-friends',1);r.onupgradeneeded=()=>r.result.createObjectStore('app');r.onsuccess=()=>resolve(r.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);
+ await page.unroute('**/Olympia-amigos/');await page.reload();await expect(page.locator('.simple-home')).toBeVisible();
 }
 test('auditoría: los cinco días muestran7 ejercicios/17 filas, y13 músculos suman85',async({page})=>{
  await boot(page);

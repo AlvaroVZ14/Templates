@@ -1,6 +1,6 @@
 import {confirmQuickSet} from './quickRegistration.js';
 import {startGymSession} from './gym.js';
-export const SERIES_RECOVERY='blood-guts-series-queue-v1';
+export const SERIES_RECOVERY='olympia-friends-series-queue-v1';
 const rowKey=op=>op.kind==='start'?`start:${op.date}`:`${op.date}:${op.exercise.id}:${op.index}`;
 export function validSeriesOperation(op){return op&&op.version===1&&typeof op.id==='string'&&/^[a-zA-Z0-9-]{1,100}$/.test(op.id)&&/^\d{4}-\d{2}-\d{2}$/.test(op.date)&&Number.isFinite(op.now)&&(op.kind==='start'||op.exercise&&typeof op.exercise.id==='string'&&Number.isInteger(op.index)&&op.index>=0&&op.index<20&&op.values&&typeof op.values==='object');}
 export function applySeriesOperation(state,op){if(!validSeriesOperation(op))throw new Error('Operación de serie no válida.');return op.kind==='start'?startGymSession(state,op.date,new Date(op.now).toISOString()):confirmQuickSet(state,op.exercise,op.date,op.index,op.values,op.now,op.id);}

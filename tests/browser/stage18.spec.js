@@ -1,6 +1,6 @@
 import {editNumber,confirmSet,expectNumber} from './fast-helpers.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
-async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
+async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('olympia-friends');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
 async function orientation(page,beta,gamma){await page.evaluate(({beta,gamma})=>{const event=new Event('deviceorientation');Object.assign(event,{beta,gamma});dispatchEvent(event);},{beta,gamma});}
 
 test('fuego solo en márgenes, ráfagas acotadas y menor presupuesto al registrar',async({page})=>{
@@ -16,8 +16,8 @@ test('descanso: hoy, miércoles, domingo, editor y calendario sin días fijos',a
   test.setTimeout(60000);await page.clock.install({time:new Date('2026-10-14T15:00:00Z')});await page.goto('./');await go(page,'Hoy');const card=page.getByTestId('rest-card');await expect(card).toContainText('Hoy toca descansar.');await expect(card).toContainText('mañana (jueves): Hombro + Brazo');
   await chooseDate(page,'2026-10-18');await expect(card).toContainText('Este día es de descanso.');await expect(card).toContainText('mañana (lunes): Pecho + Hombro + Bíceps');
   await chooseDate(page,'2026-10-14');await go(page,'Rutina');await page.getByRole('button',{name:'Jue',exact:true}).click();
-  for(let i=0;i<7;i++){await page.locator('.editor-card .exercise-summary').first().click();await page.getByRole('button',{name:'Quitar',exact:true}).click();await page.getByRole('button',{name:'Confirmar',exact:true}).click();}
-  await page.getByRole('button',{name:'Guardar cambios',exact:true}).click();await expect(page.getByText('Rutina guardada en este dispositivo.',{exact:true}).last()).toBeVisible();await go(page,'Hoy');await expect(card).toContainText('el viernes: Pierna');
+  for(let i=0;i<7;i++){await page.locator('.friends-exercise-toggle').first().click();await page.getByRole('button',{name:'Quitar ejercicio',exact:true}).click();}
+  await page.getByRole('button',{name:'Guardar rutina',exact:true}).click();await expect(page.getByRole('status')).toBeVisible();await go(page,'Hoy');await expect(card).toContainText('el viernes: Pierna');
   await chooseDate(page,'2026-10-16');await page.locator('summary').filter({hasText:'Tipo de día y hora de entrenamiento'}).click();await page.getByLabel('Tipo de día',{exact:true}).selectOption('rest');await page.getByRole('button',{name:'Guardar calendario',exact:true}).click();await chooseDate(page,'2026-10-14');await expect(card).toContainText('el sábado: Torso');
   await page.clock.setSystemTime(new Date('2026-10-15T15:00:00Z'));await chooseDate(page,'2026-10-16');await expect(card).toContainText('Mañana toca descansar.');
   await page.clock.setSystemTime(new Date('2026-10-16T15:00:00Z'));await chooseDate(page,'2026-10-14');await expect(card).toContainText('Este día es de descanso.');

@@ -1,13 +1,13 @@
 const sections = [
   {
     title: 'Filosofía',
-    summary: 'PPL + Torso + Leg. Técnica, progresión y recuperación.',
-    content: <><p>La estética Blood and Guts inspira la intención del entrenamiento, pero el plan actual es PPL + Torso + Leg: cinco sesiones semanales y dos días de descanso, según tu calendario editable.</p><p>Las prioridades Classic Physique son pecho superior, dorsales, bíceps, cuádriceps, glúteos y femorales. Son prioridades del plan, no una promesa de resultados ni un motivo para ignorar la recuperación.</p><p>Trabaja a 0–2 RIR: termina cuando calcules que quedan de cero a dos repeticiones con buena técnica. Controla la excéntrica durante 2–3 segundos. El fallo técnico es el límite; no sacrifiques la forma.</p></>,
+    summary: 'Alta intensidad, técnica y recuperación.',
+    content: <><p>Método de alta intensidad: ejecución limpia, progresión y recuperación. Elige una plantilla en Ajustes → Rutina y adáptala a tu experiencia. No hay afiliación con deportistas, entrenadores ni marcas.</p><p>Prioriza los músculos que tengan sentido para tu objetivo, sin ignorar la recuperación. Las plantillas son puntos de partida, no prescripciones individuales.</p><p>Trabaja a 0–2 RIR: termina cuando calcules que quedan de cero a dos repeticiones con buena técnica. Controla la excéntrica durante 2–3 segundos. El fallo técnico es el límite; no sacrifiques la forma.</p></>,
   },
   {
     title: 'Tipos de serie',
     summary: 'Preparar y estimular cumplen funciones distintas.',
-    content: <><p><strong>Previas:</strong> preparan músculo, articulaciones y mente para la carga. Se hacen lejos del fallo y se guardan aparte; no cuentan como volumen efectivo.</p><p><strong>Efectivas:</strong> Top set, Back-off, pesadas y ligeras cuentan una serie de volumen cada una. No todas tienen que llegar al fallo: el objetivo general es 0–2 RIR. Durante una descarga se mantienen lejos del fallo.</p><p><strong>Top set:</strong> serie pesada principal. <strong>Back-off:</strong> carga sugerida un 10% menor que el Top registrado ese día; puedes editar el porcentaje en Rutina y la carga al registrar.</p><p>Compuestos: 6–10 reps. Aislamientos: 8–15. Laterales y gemelos: 12–20. Abdomen: 10–20. El curl con mancuerna de Torso lleva tres pesadas de 6–10 y dos ligeras de 12–15; ajusta la carga ligera sin perder control.</p></>,
+    content: <><p><strong>Previas:</strong> preparan músculo, articulaciones y mente para la carga. Se hacen lejos del fallo y no se registran como efectivas ni cuentan como volumen.</p><p><strong>Efectivas:</strong> Top set, Back-off, pesadas y ligeras cuentan una serie de volumen cada una. No todas tienen que llegar al fallo: el objetivo general es 0–2 RIR. Durante una descarga se mantienen lejos del fallo.</p><p><strong>Top set:</strong> serie pesada principal. <strong>Back-off:</strong> carga sugerida un 10% menor que el Top registrado ese día; puedes editar el porcentaje en Rutina y la carga al registrar.</p><p>Compuestos: 6–10 reps. Aislamientos: 8–15. Laterales y gemelos: 12–20. Abdomen: 10–20. La plantilla de cinco días incluye un curl de Torso con tres pesadas de 6–10 y dos ligeras de 12–15; ajusta la carga ligera sin perder control.</p></>,
   },
   {
     title: 'Técnicas de intensidad',
@@ -17,7 +17,7 @@ const sections = [
   {
     title: 'Descansos',
     summary: 'Recupera antes de volver a exigir.',
-    content: <><p>El plan PPL usa 2–3 minutos antes de una efectiva compuesta y 1,5–2 minutos en aislamientos. Entre previas, 1–2 minutos. Los descansos guardados de rutinas anteriores se conservan.</p><p>Los descansos cortos se reservan para encadenar técnicas: 15–20 segundos en rest-pause y 10–15 segundos para cambiar el peso en un drop set. Puedes editar los descansos por ejercicio.</p></>,
+    content: <><p>Como referencia, usa 2–3 minutos antes de una efectiva compuesta y 1,5–2 minutos en aislamientos. Entre previas, 1–2 minutos. Los descansos guardados de rutinas anteriores se conservan.</p><p>Los descansos cortos se reservan para encadenar técnicas: 15–20 segundos en rest-pause y 10–15 segundos para cambiar el peso en un drop set. Puedes editar los descansos por ejercicio.</p></>,
   },
   {
     title: 'Recuperación',

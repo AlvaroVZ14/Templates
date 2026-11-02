@@ -3,7 +3,7 @@ import {go,chooseDate} from './navigation-helpers.js';
 
 test.beforeEach(async({page})=>{await page.clock.install({time:new Date('2026-10-12T15:00:00Z')});});
 async function postpone(page){await page.goto('./');await expect(page.getByRole('heading',{name:'Configurar pesos',exact:true})).toBeVisible();await page.getByRole('button',{name:'Posponer configuración',exact:true}).click();await expect(page.getByRole('heading',{name:'Hoy',exact:true})).toBeVisible();}
-async function inspect(page){return page.evaluate(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('heavy-duty-personal');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{return await new Promise(resolve=>{const r=db.transaction('app').objectStore('app').get('state');r.onsuccess=()=>resolve(r.result);});}finally{db.close();}});}
+async function inspect(page){return page.evaluate(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('olympia-friends');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{return await new Promise(resolve=>{const r=db.transaction('app').objectStore('app').get('state');r.onsuccess=()=>resolve(r.result);});}finally{db.close();}});}
 async function mocks(page,{deny=false,unsupported=false,delayed=false}={}){
  await page.addInitScript(options=>{
   window.testHidden=false;Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.testHidden});

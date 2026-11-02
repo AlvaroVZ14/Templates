@@ -103,6 +103,8 @@ export function migrateRoutinePlan(state,date=chileDate()){
     routineMigrationBackups:[...(state.routineMigrationBackups??[]),{id:`before-${ROUTINE_VERSION}`,fromVersion:state.routineVersion??'legacy',toVersion:ROUTINE_VERSION,createdAt:new Date().toISOString(),state:snapshot}]};
 }
 export function routineForDate(state,date){
+  const archived=state.routineRevisions?.findLast(row=>row.from<=date&&date<row.until);
+  if(archived)return archived.routine;
   if(state.routineActivatedOn&&date<state.routineActivatedOn){
     const snapshot=state.routineMigrationBackups?.findLast(item=>item.toVersion===state.routineVersion)?.state;
     if(snapshot?.routine)return routineForDate(snapshot,date);

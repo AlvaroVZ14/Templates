@@ -3,7 +3,7 @@ import {BACKUP_STORES,validateBackup,combineStates} from './backup.js';
 import {PHOTO_PREFIX,validMonthlyPhoto} from './monthlyCheck.js';
 import {applySeriesOperation} from './seriesQueue.js';
 
-export const DB_NAME='heavy-duty-personal';
+export const DB_NAME='olympia-friends';
 export const DB_VERSION=2;
 export const COLLECTIONS=['sessions','cardio','journal','measurements','phases'];
 export async function eraseDeviceRecords(replacement){const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction([...db.objectStoreNames],'readwrite');try{for(const name of db.objectStoreNames)tx.objectStore(name).clear();if(replacement)tx.objectStore('app').put(replacement,'state');}catch(error){tx.abort();reject(error);}tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
@@ -110,7 +110,7 @@ export async function querySessions({month,year,exercise,from,to}={}){
 }
 export async function queryRevisions(id){const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction('sessionRevisions','readonly'),req=tx.objectStore('sessionRevisions').index('bySession').getAll(id);tx.oncomplete=()=>resolve(req.result);tx.onerror=()=>reject(tx.error);});}
 export async function exportBackup(){
-  const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction(STORES,'readonly'),records={};for(const name of STORES){const store=tx.objectStore(name),keys=store.getAllKeys(),values=store.getAll();values.onsuccess=()=>{records[name]=values.result.map((value,index)=>({key:keys.result[index],value}));};}tx.oncomplete=()=>resolve({format:'heavy-duty-backup',formatVersion:1,databaseName:DB_NAME,databaseVersion:db.version,exportedAt:new Date().toISOString(),records});tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
+  const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction(STORES,'readonly'),records={};for(const name of STORES){const store=tx.objectStore(name),keys=store.getAllKeys(),values=store.getAll();values.onsuccess=()=>{records[name]=values.result.map((value,index)=>({key:keys.result[index],value}));};}tx.oncomplete=()=>resolve({format:'olympia-friends-backup',formatVersion:1,databaseName:DB_NAME,databaseVersion:db.version,exportedAt:new Date().toISOString(),records});tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
 }
 function readAllStores(tx,done){
   const records={};let remaining=STORES.length;

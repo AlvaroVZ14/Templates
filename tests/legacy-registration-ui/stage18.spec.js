@@ -1,6 +1,6 @@
 import {editNumber,confirmSet,expectNumber} from './fast-helpers.js';
 import {test,expect,go,chooseDate} from './fixtures.js';
-async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
+async function stored(page){return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('olympia-friends');req.onsuccess=()=>resolve(req.result);});return new Promise(resolve=>{const tx=db.transaction('app','readonly'),req=tx.objectStore('app').get('state');tx.oncomplete=()=>{db.close();resolve(req.result);};});});}
 async function orientation(page,beta,gamma){await page.evaluate(({beta,gamma})=>{const event=new Event('deviceorientation');Object.assign(event,{beta,gamma});dispatchEvent(event);},{beta,gamma});}
 
 test('fuego solo en márgenes, ráfagas acotadas y menor presupuesto al registrar',async({page})=>{

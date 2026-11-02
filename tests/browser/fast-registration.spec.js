@@ -5,16 +5,16 @@ import {go,openExercise} from './navigation-helpers.js';
 
 const date='2026-11-03',now='2026-11-03T18:00:00Z';
 const card=(page,name)=>page.getByRole('article',{name,exact:true});
-async function stateOf(page,committed=true){if(committed)await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal');req.onsuccess=()=>resolve(req.result);});try{return await new Promise(resolve=>{const req=db.transaction('app').objectStore('app').get('state');req.onsuccess=()=>resolve(req.result);});}finally{db.close();}});}
+async function stateOf(page,committed=true){if(committed)await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('olympia-friends-series-queue-v1')??'null')?.pending.length??0)).toBe(0);return page.evaluate(async()=>{const db=await new Promise(resolve=>{const req=indexedDB.open('olympia-friends');req.onsuccess=()=>resolve(req.result);});try{return await new Promise(resolve=>{const req=db.transaction('app').objectStore('app').get('state');req.onsuccess=()=>resolve(req.result);});}finally{db.close();}});}
 async function seed(page,{history=true,qualified=false}={}){
  await page.clock.install({time:new Date(now)});page.on('dialog',dialog=>dialog.accept());
  let state=initialState();state.weightSetup={reviewedAt:now};state.navigationSettings={drawerSide:'right',lastSession:date};state.appearanceSettings={...state.appearanceSettings,effects:'off'};
  for(const ex of state.routine.flat())state.profiles[ex.profileId].workWeight=40;
  if(history)for(const ex of state.routine[1])for(let index=0;index<ex.sets;index++)state.logs.push({id:`last-${ex.id}-${index}`,exerciseId:ex.id,profileId:ex.profileId,equipment:ex.equipment,exerciseName:ex.name,muscle:ex.muscle,date:'2026-10-27',kind:'effective',weight:ex.setPlan[index].role==='backoff'?36:40,reps:8+index,setRole:ex.setPlan[index].role,createdAt:`2026-10-27T18:${String(state.logs.length).padStart(2,'0')}:00Z`,rpe:9,failure:false});
  if(qualified){const ex=state.routine[1][0];state.logs=state.logs.map(row=>row.exerciseId===ex.id?{...row,reps:10,weight:row.setRole==='backoff'?72.5:80}:row);state=saveExerciseFeedback(state,ex,'2026-10-27','strong',true);}
- await page.route('**/Templates/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Fictitious fixture</title>'}));await page.goto('./');
- await page.evaluate(async state=>{const db=await new Promise(resolve=>{const req=indexedDB.open('heavy-duty-personal',1);req.onupgradeneeded=()=>req.result.createObjectStore('app');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);
- await page.unroute('**/Templates/');await page.reload();await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();await expect(page.locator('.fast-exercise')).toHaveCount(7);
+ await page.route('**/Olympia-amigos/',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Fictitious fixture</title>'}));await page.goto('./');
+ await page.evaluate(async state=>{const db=await new Promise(resolve=>{const req=indexedDB.open('olympia-friends',1);req.onupgradeneeded=()=>req.result.createObjectStore('app');req.onsuccess=()=>resolve(req.result);});await new Promise(resolve=>{const tx=db.transaction('app','readwrite');tx.objectStore('app').put(state,'state');tx.oncomplete=resolve;});db.close();},state);
+ await page.unroute('**/Olympia-amigos/');await page.reload();await page.getByRole('button',{name:'EMPEZAR ENTRENAMIENTO',exact:true}).click();await expect(page.locator('.fast-exercise')).toHaveCount(7);
 }
 test('progresión visible, sensación al terminar, decisión persistida y consultable sin popups',async({page})=>{
  await seed(page,{qualified:true});const name='Press inclinado mancuernas',c=card(page,name);
@@ -70,7 +70,7 @@ test('17 toques confirman la sesión; un solo botón termina y conserva históri
  const recap=page.getByRole('region',{name:'Resumen de entrenamiento'});await expect(recap).toBeVisible();await expect(recap.locator('.recap-improvements')).toContainText('↑ +2,5 kg');const volume=state.logs.filter(log=>log.date===date&&log.kind==='effective').reduce((sum,row)=>sum+row.weight*row.reps,0);await expect(recap.locator('.recap-stats')).toContainText(volume.toLocaleString('es-CL',{maximumFractionDigits:1}));await page.screenshot({path:'test-results/workout-recap-390.png',fullPage:true,animations:'disabled'});await recap.getByRole('button',{name:'Terminar',exact:true}).click();await expect(page.locator('.simple-home')).toBeVisible();
 });
 test('fallo transaccional no confirma en falso, conserva valores y permite reintentar',async({page})=>{
- await seed(page);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
+ await seed(page);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('olympia-friends-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
  const worker=page.workers().find(item=>item.url().includes('series-persistence.worker'));
  await worker.evaluate(()=>{const original=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.name==='sessions'){IDBObjectStore.prototype.put=original;throw new DOMException('Fictitious quota','QuotaExceededError');}return original.apply(this,args);};});
  const ex='Press inclinado mancuernas',c=card(page,ex);await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();await expect(c.locator('.fast-error')).toContainText('No se pudo guardar');await expect(c.locator('.confirmed')).toHaveCount(0);expect((await stateOf(page)).logs.filter(log=>log.date===date)).toHaveLength(0);await c.getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();await expect(c.locator('.confirmed')).toHaveCount(1);
@@ -82,7 +82,7 @@ test('Empezar activa gimnasio y Wake Lock, salir lo libera y volver recupera sin
 
 test('confirmación optimista offline, haptics y recarga antes del commit sin duplicados',async({page,context})=>{
  await page.addInitScript(()=>{window.vibrations=[];navigator.vibrate=value=>{window.vibrations.push(value);return true;};});
- await seed(page);await page.evaluate(()=>navigator.serviceWorker.ready);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
+ await seed(page);await page.evaluate(()=>navigator.serviceWorker.ready);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('olympia-friends-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
  const worker=page.workers().find(item=>item.url().includes('series-persistence.worker'));
  await worker.evaluate(()=>{const original=self.onmessage;self.onmessage=event=>setTimeout(()=>original(event),5000);});
  await context.setOffline(true);const ex='Press inclinado mancuernas',c=card(page,ex);
@@ -97,10 +97,10 @@ test('confirmación optimista offline, haptics y recarga antes del commit sin du
 
 test('solo se repintan la fila confirmada y la siguiente habilitada, sin toda la lista',async({page})=>{
  await page.addInitScript(()=>{window.rowRenders=[];window.panelRenders=[];window.__BG_PERF__={rowRender:value=>window.rowRenders.push(value),panelRender:value=>window.panelRenders.push(value)};});
- await seed(page);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
+ await seed(page);await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('olympia-friends-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
  await page.evaluate(()=>{window.rowRenders=[];window.panelRenders=[];});
  const ex='Press inclinado mancuernas';await card(page,ex).getByRole('button',{name:`Confirmar ${ex}, serie 1`,exact:true}).click();
- await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('blood-guts-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('olympia-friends-series-queue-v1')??'null')?.pending.length??0)).toBe(0);
  const rows=await page.evaluate(()=>[...new Set(window.rowRenders)]);expect(rows.sort()).toEqual([`${ex}, serie 1`,`${ex}, serie 2`]);
  expect(await page.evaluate(()=>new Set(window.panelRenders).size)).toBe(1);
 });

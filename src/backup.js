@@ -26,6 +26,7 @@ function validateStoredRoutine(routine,schemaVersion){
  require(!validateRoutine(raw),'La rutina del respaldo no es válida.');
 }
 function validateState(state){
+ if(state.routineRevisions!==undefined){require(Array.isArray(state.routineRevisions),'Historial de rutinas no válido.');for(const row of state.routineRevisions){require(object(row)&&typeof row.id==='string'&&date(row.from)&&date(row.until)&&row.from<row.until,'Fechas de rutina no válidas.');validateStoredRoutine(row.routine,state.schemaVersion);}}
  require(object(state)&&Number.isInteger(state.schemaVersion)&&state.schemaVersion>=1&&state.schemaVersion<=7,'Versión de datos no compatible.');
  require(Array.isArray(state.routine)&&state.routine.length===7&&state.routine.every(Array.isArray)&&Array.isArray(state.logs),'Falta la rutina o el historial.');
  validateStoredRoutine(state.routine,state.schemaVersion);
@@ -87,7 +88,7 @@ function validateState(state){
  return next;
 }
 export function validateBackup(payload){
- safeTree(payload);require(object(payload)&&payload.format==='heavy-duty-backup','No es un respaldo de Heavy Duty.');require(payload.formatVersion===1&&payload.databaseVersion===2&&payload.databaseName==='heavy-duty-personal','Versión de respaldo o de base de datos no compatible.');require(object(payload.records)&&Object.keys(payload.records).length===BACKUP_STORES.length,'Colecciones del respaldo incompletas o desconocidas.');
+ safeTree(payload);require(object(payload)&&payload.format==='olympia-friends-backup','No es un respaldo de Olympia amigos.');require(payload.formatVersion===1&&payload.databaseVersion===2&&payload.databaseName==='olympia-friends','Versión de respaldo o de base de datos no compatible.');require(object(payload.records)&&Object.keys(payload.records).length===BACKUP_STORES.length,'Colecciones del respaldo incompletas o desconocidas.');
  const records=structuredClone(payload.records);
  for(const store of BACKUP_STORES){require(Array.isArray(records[store]),`Falta la colección ${store}.`);const keys=new Set();for(const entry of records[store]){require(object(entry)&&(typeof entry.key==='string'||typeof entry.key==='number')&&object(entry.value),'Registro de respaldo no válido.');require(!keys.has(entry.key),`Claves duplicadas en ${store}.`);keys.add(entry.key);if(store!=='app')require(typeof entry.value.id==='string'&&entry.key===entry.value.id,`ID no válido en ${store}.`);}}
  const raw=records.app.find(row=>row.key==='state')?.value;require(raw,'Falta el estado principal.');const state=validateState(raw),rows=Object.fromEntries(collections.map(key=>[key,records[key].map(row=>row.value)]));
