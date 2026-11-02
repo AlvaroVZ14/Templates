@@ -5,9 +5,14 @@ Cada instalación empieza sin perfil, pesos, medidas, fases, fotos ni entrenamie
 El onboarding guarda sus datos exclusivamente en IndexedDB del dispositivo.
 
 Esta edición vive en la rama **version-amigos**. No debe integrarse en `main`
-del repositorio personal ni desplegarse sobre su sitio. No tiene todavía URL
-pública propia: el código se prepara para **/Olympia-amigos/**. El workflow de
-esta rama solo prueba y compila; no publica ni modifica GitHub Pages.
+del repositorio personal ni desplegarse sobre su sitio. Su alojamiento independiente
+es **https://alvarovz14.github.io/Olympia-amigos/**, en el repositorio limpio
+**AlvaroVZ14/Olympia-amigos**. Cada push de código a `version-amigos` en ese
+repositorio prueba y publica mediante GitHub Actions. En el repositorio original
+el workflow solo verifica; nunca modifica la web personal.
+
+[Configuración, comandos, migraciones y checklist en celular](docs/publicar-amigos.md).
+Dentro de la app: **Ajustes → Ayuda / Instalar** y **Ajustes → Acerca de**.
 
 ## Ejecutar
 

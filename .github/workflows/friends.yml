@@ -2,12 +2,13 @@ name: Olympia Amigos · probar y publicar
 on:
   push:
     branches: [version-amigos]
+    paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: amigos-${{ github.repository }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest

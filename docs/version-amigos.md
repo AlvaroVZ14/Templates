@@ -88,9 +88,10 @@ caso de condición médica; los cálculos siguen exigiendo edad adulta.
 ## Distribución y pendientes
 
 La ruta preparada es `/Olympia-amigos/`, con manifest relativo y caché offline.
-Esta rama tiene CI de verificación y **no tiene despliegue**, para proteger la
-publicación personal. Falta elegir/provisionar un alojamiento independiente con
-HTTPS y su URL final. No se inventa una dirección pública ya publicada.
+El despliegue posterior se configura en el repositorio independiente
+`AlvaroVZ14/Olympia-amigos`, servido por HTTPS en
+`https://alvarovz14.github.io/Olympia-amigos/`. El workflow solo publica en ese
+repositorio, nunca sobre el sitio personal. Consulta [la guía actual](publicar-amigos.md).
 
 El historial Git anterior contiene la documentación/precargas retiradas, además
 de la identidad del autor de los commits. No se reescribe porque afectaría al
