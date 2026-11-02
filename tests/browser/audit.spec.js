@@ -16,7 +16,7 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
       if(!file.startsWith(root)){res.writeHead(404);res.end();return;}
       let body=await readFile(file);
       if(path==='sw.js')body=Buffer.from(body.toString().replace(/const CACHE = PREFIX \+ '[^']+';/,`const CACHE = PREFIX + 'audit-${version}';`));
-      const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webmanifest':'application/manifest+json','.ttf':'font/ttf','.jpg':'image/jpeg','.png':'image/png'};
+      const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webmanifest':'application/manifest+json','.ttf':'font/ttf','.woff2':'font/woff2','.jpg':'image/jpeg','.png':'image/png'};
       res.writeHead(200,{'Content-Type':types[extname(file)]??'application/octet-stream','Cache-Control':'no-store'});res.end(body);
     }catch{res.writeHead(404);res.end();}
   });
@@ -32,7 +32,7 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
     await page.getByLabel('Nombre del ejercicio',{exact:true}).fill('Press de prueba ficticio');
     const peer=await context.newPage();peer.on('dialog',dialog=>dialog.accept());await peer.goto(page.url());await go(peer,'Ajustes');await peer.evaluate(()=>{window.auditMarker='formulario abierto';});
     version=2;await page.evaluate(async()=>{const reg=await navigator.serviceWorker.ready;await reg.update();});
-    const update=page.getByRole('button',{name:'Hay una versión nueva, tocar para actualizar',exact:true});await expect(update).toBeVisible();
+    const update=page.getByRole('button',{name:'Hay una versión nueva · Actualizar',exact:true});await expect(update).toBeVisible();
     expect(await page.evaluate(async()=>Boolean((await navigator.serviceWorker.getRegistration()).waiting))).toBe(true);
     await expect(page.getByLabel('Nombre del ejercicio',{exact:true})).toHaveValue('Press de prueba ficticio');
     await page.screenshot({path:'test-results/audit-update-mobile.png',fullPage:false});
@@ -42,9 +42,9 @@ test('actualización real de PWA espera el toque y recupera pesos y borradores, 
     await expectNumber(page,'Press banca',9,{field:'Reps'});
     await go(page,'Rutina');await page.getByRole('button',{name:'Lun',exact:true}).click();await page.locator('.friends-exercise-toggle').first().click();
     await expect(page.getByLabel('Nombre del ejercicio',{exact:true})).toHaveValue('Press de prueba ficticio');
-    await expect(page.getByRole('button',{name:'Hay una versión nueva, tocar para actualizar',exact:true})).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Hay una versión nueva · Actualizar',exact:true})).toHaveCount(0);
     expect(await peer.evaluate(()=>window.auditMarker)).toBe('formulario abierto');
-    await expect(peer.getByRole('button',{name:'Hay una versión nueva, tocar para actualizar',exact:true})).toBeVisible();
+    await expect(peer.getByRole('button',{name:'Hay una versión nueva · Actualizar',exact:true})).toBeVisible();
     expect(await peer.evaluate(async()=>(await caches.keys()).filter(key=>key.startsWith('heavy-duty-')).length)).toBe(2);
     await peer.close();
   }finally{await context.setOffline(false);server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

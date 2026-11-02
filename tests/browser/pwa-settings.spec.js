@@ -49,7 +49,7 @@ test('botón descarga una versión real antes de ofrecerla y actualiza offline c
       let body=await readFile(file);
       if(path==='sw.js')body=Buffer.from(body.toString().replace(/const CACHE = PREFIX \+ '[^']+';/,`const CACHE = PREFIX + 'manual-${version}';`));
       if(hold&&path==='icon.svg')await new Promise(resolve=>{release=resolve;});
-      const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webmanifest':'application/manifest+json','.ttf':'font/ttf','.jpg':'image/jpeg','.png':'image/png'};
+      const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.webmanifest':'application/manifest+json','.ttf':'font/ttf','.woff2':'font/woff2','.jpg':'image/jpeg','.png':'image/png'};
       res.writeHead(200,{'Content-Type':types[extname(file)]??'application/octet-stream','Cache-Control':'no-store'});res.end(body);
     }catch{res.writeHead(404);res.end();}
   });

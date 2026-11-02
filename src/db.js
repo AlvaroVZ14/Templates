@@ -1,40 +1,20 @@
+import {DATABASE_VERSION,COLLECTIONS,upgradeDatabase} from './dbMigrations.js';
 import {hydrateCollections,projectCollections,preservationCounts,verifyProjection} from './history.js';
 import {BACKUP_STORES,validateBackup,combineStates} from './backup.js';
 import {PHOTO_PREFIX,validMonthlyPhoto} from './monthlyCheck.js';
 import {applySeriesOperation} from './seriesQueue.js';
 
 export const DB_NAME='olympia-friends';
-export const DB_VERSION=2;
-export const COLLECTIONS=['sessions','cardio','journal','measurements','phases'];
+export const DB_VERSION=DATABASE_VERSION;
+export {COLLECTIONS};
 export async function eraseDeviceRecords(replacement){const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction([...db.objectStoreNames],'readwrite');try{for(const name of db.objectStoreNames)tx.objectStore(name).clear();if(replacement)tx.objectStore('app').put(replacement,'state');}catch(error){tx.abort();reject(error);}tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
 const STORES=BACKUP_STORES;
 let connection;
-function createStores(db){
-  if(!db.objectStoreNames.contains('app'))db.createObjectStore('app');
-  for(const name of [...COLLECTIONS,'sessionRevisions']){
-    const store=db.createObjectStore(name,{keyPath:'id'});
-    store.createIndex('byDate','date');store.createIndex('byMonth','month');
-    if(name==='sessions'){store.createIndex('byYear','year');store.createIndex('byExercise','exerciseKeys',{multiEntry:true});store.createIndex('byRoutineDay','routineDay');}
-    if(name==='sessionRevisions')store.createIndex('bySession','sessionId');
-  }
-  db.createObjectStore('migrationBackups',{keyPath:'id'});
-}
 export function openDatabase(){
   if(!connection)connection=new Promise((resolve,reject)=>{
     const request=indexedDB.open(DB_NAME,DB_VERSION);
     request.onupgradeneeded=event=>{
-      const db=request.result,tx=request.transaction;createStores(db);
-      if(event.oldVersion===1){
-        const read=tx.objectStore('app').get('state');
-        read.onsuccess=()=>{try{
-          if(!read.result)return;
-          const original=read.result,rows=projectCollections(original);verifyProjection(original,rows);
-          const report={from:1,to:2,verified:true,at:new Date().toISOString(),before:preservationCounts(original),after:preservationCounts(hydrateCollections(original,rows))};
-          tx.objectStore('migrationBackups').add({id:'v1-original',state:structuredClone(original),report});
-          for(const name of COLLECTIONS)for(const row of rows[name])tx.objectStore(name).put(row);
-          tx.objectStore('app').put({...original,storageFormat:2,storageMigration:report},'state');
-        }catch(error){tx.abort();reject(error);}};
-      }
+      try{upgradeDatabase(request.result,request.transaction,event.oldVersion,reject);}catch(error){request.transaction.abort();reject(error);}
     };
     request.onsuccess=()=>{const db=request.result;db.onversionchange=()=>{db.close();connection=undefined;};resolve(db);};
     request.onerror=()=>{connection=undefined;reject(request.error);};

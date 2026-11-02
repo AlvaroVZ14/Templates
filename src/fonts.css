@@ -1,7 +1,7 @@
 /* Self-hosted Google Fonts; the SIL Open Font Licenses are alongside the files. */
 @font-face {
   font-family: 'Anton';
-  src: url('./assets/fonts/Anton-Regular.ttf') format('truetype');
+  src: url('./assets/fonts/Anton-Regular.woff2') format('woff2');
   font-style: normal;
   font-weight: 400;
   font-display: optional;
@@ -9,7 +9,7 @@
 
 @font-face {
   font-family: 'Barlow';
-  src: url('./assets/fonts/Barlow-Regular.ttf') format('truetype');
+  src: url('./assets/fonts/Barlow-Regular.woff2') format('woff2');
   font-style: normal;
   font-weight: 400;
   font-display: optional;
@@ -17,7 +17,7 @@
 
 @font-face {
   font-family: 'Barlow';
-  src: url('./assets/fonts/Barlow-SemiBold.ttf') format('truetype');
+  src: url('./assets/fonts/Barlow-SemiBold.woff2') format('woff2');
   font-style: normal;
   font-weight: 600 900;
   font-display: optional;

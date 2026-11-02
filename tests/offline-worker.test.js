@@ -138,7 +138,7 @@ function appearanceFixture(t) {
     assert.ok(basename(target).startsWith('blood-guts-appearance-'));
     rmSync(target, { recursive: true, force: true });
   });
-  const write = (name, value) => writeFileSync(join(root, name), value);
+  const write = (name, value) => {mkdirSync(dirname(join(root,name)),{recursive:true});writeFileSync(join(root,name),value);};
   write('hero-generic.svg','<svg xmlns="http://www.w3.org/2000/svg"/>');
   const validate = configuration => { write('appearance.json', JSON.stringify(configuration)); return appearanceAssets(root); };
   mkdirSync(join(root, 'backgrounds'));

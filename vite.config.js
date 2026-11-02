@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+const packageInfo=JSON.parse(readFileSync(new URL('./package.json',import.meta.url),'utf8'));
 import {BRAND_ASSETS} from './src/brand.js';
 
 // Media is opt-in and stays in the same origin/cache as the rest of the PWA.
@@ -115,4 +116,4 @@ self.addEventListener('fetch', event => {
   };
 }
 
-export default defineConfig({ base: '/Olympia-amigos/', define:{__APP_BUILD__:JSON.stringify(process.env.GITHUB_SHA?.slice(0,7)??`local-${new Date().toISOString()}`)}, plugins: [react(), offlineWorker()] });
+export default defineConfig({ base: '/Olympia-amigos/', define:{__APP_VERSION__:JSON.stringify(packageInfo.version),__APP_BUILD__:JSON.stringify(process.env.GITHUB_SHA?.slice(0,7)??`local-${new Date().toISOString()}`)}, plugins: [react(), offlineWorker()] });

@@ -66,7 +66,7 @@ function DrawerSections({data,page,navigate,sessions}){
     <details className="drawer-group"><summary>Comida y sueño</summary><button onClick={()=>navigate('food')}>Comida</button><button onClick={()=>navigate('diary')}>Sueño y diario</button><button onClick={()=>navigate('day-options')}>Cardio y recuperación</button></details>
     <button onClick={()=>navigate('measurements')}>Medidas</button>
     <button onClick={()=>navigate('method')}>Método</button>
-    <details className="drawer-group"><summary>Ajustes</summary><button onClick={()=>navigate('profile')}>Perfil</button><button onClick={()=>navigate('about')}>Acerca de</button><button onClick={()=>navigate('settings')}>Configuración</button><button onClick={()=>navigate('weights')}>Configurar pesos</button><button onClick={()=>navigate('routine')}>Rutina</button><button onClick={()=>navigate('pain')}>Zonas con molestias</button></details>
+    <details className="drawer-group"><summary>Ajustes</summary><button onClick={()=>navigate('profile')}>Perfil</button><button onClick={()=>navigate('about')}>Acerca de</button><button onClick={()=>navigate('help')}>Ayuda / Instalar</button><button onClick={()=>navigate('settings')}>Configuración</button><button onClick={()=>navigate('weights')}>Configurar pesos</button><button onClick={()=>navigate('routine')}>Rutina</button><button onClick={()=>navigate('pain')}>Zonas con molestias</button></details>
   </nav>;
 }
 export function NavigationSettings({data,change,saving}){

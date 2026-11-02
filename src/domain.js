@@ -1,3 +1,4 @@
+import {runSchemaMigrations} from './schema.js';
 import { migrateDiary } from './wellness.js';
 import { migrateMeasurements } from './measurements.js';
 import { chileDate, migrateProgram } from './program/state.js';
@@ -41,8 +42,7 @@ export function extensionSuggestions(ex, weight, kind = ex.technique, logs = [])
 export function exerciseHistory(state, exercise) {
   return state.logs.filter(log => (log.profileId ?? log.exerciseId) === exercise.profileId).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
 }
-export function migrateState(original) {
-  if (original.schemaVersion >= 2) return migrateRoutinePlan(migrateFruit(migrateClassification(migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(original))))))));
+function migrateReferences(original) {
   const state = structuredClone(original);
   state.profiles ??= {}; state.cardio ??= []; state.dailySteps ??= {};
   for (const day of state.routine) {
@@ -64,8 +64,11 @@ export function migrateState(original) {
     if (last && profile.workWeight === null) profile.workWeight = last.weight;
   }
   state.schemaVersion = 2;
-  return migrateRoutinePlan(migrateFruit(migrateClassification(migratePreparation(migrateTraining(migrateProgram(migrateMeasurements(migrateDiary(state))))))));
+  return state;
 }
+
+export const STATE_MIGRATIONS={2:migrateReferences,3:migrateDiary,4:migrateMeasurements,5:migrateProgram,6:migrateTraining,7:migratePreparation};
+export function migrateState(original){return migrateRoutinePlan(migrateFruit(migrateClassification(runSchemaMigrations(original,STATE_MIGRATIONS))));}
 
 export function localDate(date = new Date()) {
   return chileDate(date);

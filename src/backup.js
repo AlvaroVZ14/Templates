@@ -1,3 +1,4 @@
+import {DATA_SCHEMA_VERSION} from './schema.js';
 import {parseRoutineDraft} from './routineDraft.js';
 import {migrateState,validateRoutine,KINDS} from './domain.js';
 import {hydrateCollections,projectCollections,verifyProjection} from './history.js';
@@ -27,7 +28,7 @@ function validateStoredRoutine(routine,schemaVersion){
 }
 function validateState(state){
  if(state.routineRevisions!==undefined){require(Array.isArray(state.routineRevisions),'Historial de rutinas no válido.');for(const row of state.routineRevisions){require(object(row)&&typeof row.id==='string'&&date(row.from)&&date(row.until)&&row.from<row.until,'Fechas de rutina no válidas.');validateStoredRoutine(row.routine,state.schemaVersion);}}
- require(object(state)&&Number.isInteger(state.schemaVersion)&&state.schemaVersion>=1&&state.schemaVersion<=7,'Versión de datos no compatible.');
+ require(object(state)&&Number.isInteger(state.schemaVersion)&&state.schemaVersion>=1&&state.schemaVersion<=DATA_SCHEMA_VERSION,'Versión de datos no compatible.');
  require(Array.isArray(state.routine)&&state.routine.length===7&&state.routine.every(Array.isArray)&&Array.isArray(state.logs),'Falta la rutina o el historial.');
  validateStoredRoutine(state.routine,state.schemaVersion);
  require(state.routineVersion===undefined||state.routineVersion===ROUTINE_VERSION,'Versión de rutina no compatible.');
@@ -129,5 +130,5 @@ export function combineStates(current,incoming){
  for(const [day,entry] of Object.entries(merged.journal))if(current.journal[day]?.painEntries&&source.journal[day]?.painEntries){const zones=new Map(source.journal[day].painEntries.map(row=>[row.zone,row]));for(const row of current.journal[day].painEntries)zones.set(row.zone,row);entry.painEntries=[...zones.values()];}
  // Sessions are joined by calendar date; their sets are rebuilt from merged logs.
  const sessions=new Map(source.sessions.map(row=>[row.date,structuredClone(row)]));for(const row of current.sessions??[]){const previous=sessions.get(row.date);sessions.set(row.date,previous?{...previous,...structuredClone(row),exercises:combineValues(row.exercises,previous.exercises)}:structuredClone(row));}
- merged.sessions=[...sessions.values()];merged.schemaVersion=7;validateState(merged);return merged;
+ merged.sessions=[...sessions.values()];merged.schemaVersion=DATA_SCHEMA_VERSION;validateState(merged);return merged;
 }

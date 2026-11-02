@@ -1,7 +1,7 @@
 ﻿import {expect} from '@playwright/test';
 export async function menu(page){if(!await page.getByRole('dialog').isVisible())await page.getByRole('button',{name:'Abrir menú',exact:true}).click();return page.getByRole('dialog');}
 export async function go(page,name){
- const drawer=await menu(page),group=name==='Hoy'?'Ir a otra sesión':['Diario','Comida','Cardio y recuperación'].includes(name)?'Comida y sueño':['Ajustes','Perfil','Acerca de','Rutina','Configurar pesos','Zonas con molestias'].includes(name)?'Ajustes':null;
+ const drawer=await menu(page),group=name==='Hoy'?'Ir a otra sesión':['Diario','Comida','Cardio y recuperación'].includes(name)?'Comida y sueño':['Ajustes','Perfil','Acerca de','Ayuda / Instalar','Rutina','Configurar pesos','Zonas con molestias'].includes(name)?'Ajustes':null;
  if(group){const summary=drawer.locator('.drawer-group>summary').filter({hasText:new RegExp(`^${group}$`)});if(!await summary.locator('..').evaluate(el=>el.open))await summary.click();}
  const target=['Historial','Progreso','Volumen'].includes(name)?'Historial y progreso':name==='Diario'?'Sueño y diario':name==='Ajustes'?'Configuración':name;
  await drawer.getByRole('button',{name:target,exact:true}).click();await expect(drawer).not.toBeVisible();
