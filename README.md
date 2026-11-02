@@ -84,6 +84,7 @@ propio. Las fuentes locales Anton y Barlow mantienen sus licencias OFL en
 `src/assets/fonts` y `public/licencias`. No se afirma afiliación con marcas o entrenadores.
 
 [Informe de auditoría y entrega](docs/version-amigos.md).
+[Auditoría de la web publicada](docs/publicacion/README.md).
 
 La eliminación de archivos en esta rama no borra el historial Git previo. Para
 compartir únicamente el código saneado, usa un ZIP de esta rama o un repositorio
