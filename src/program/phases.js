@@ -1,9 +1,10 @@
 import { shiftDate, weightWeek } from '../wellness.js';
 import { waistWarning } from '../measurements.js';
 import { chileDate } from './state.js';
+import {profileForDate} from '../profile.js';
 
 export function daysBetween(from,to){return Math.round((Date.parse(`${to}T12:00:00Z`)-Date.parse(`${from}T12:00:00Z`))/86400000);}
-export function lastWeight(state,date){const day=Object.keys(state.journal).filter(key=>key<=date&&state.journal[key].weight>0).sort().at(-1);return day?{date:day,value:state.journal[day].weight}:null;}
+export function lastWeight(state,date){const day=Object.keys(state.journal).filter(key=>key<=date&&state.journal[key].weight>0).sort().at(-1),profile=profileForDate(state,date);return profile?.weightKg&&(!day||day<(profile.weightDate??profile.date))?{date:profile.weightDate??profile.date,value:profile.weightKg}:day?{date:day,value:state.journal[day].weight}:null;}
 export function lastWaist(state,date){return state.measurements.filter(item=>item.date<=date&&item.values.waist>0).sort((a,b)=>a.date.localeCompare(b.date)).at(-1)?.values.waist??null;}
 export function phaseForDate(state,date){return state.phases.filter(item=>!item.cancelled&&item.startDate<=date&&(!item.actualEnd||date<=item.actualEnd)).sort((a,b)=>a.startDate.localeCompare(b.startDate)||state.phases.indexOf(a)-state.phases.indexOf(b)).at(-1)??null;}
 export function captureAnchors(state){
@@ -26,7 +27,8 @@ export function phaseReport(state,date){
   const current=lastWeight(state,date),change=trend(state,date),remainingDays=phase.deadline?daysBetween(date,phase.deadline):null;
   const average=change.mean,remaining=average===null||phase.targetWeight===null?null:phase.targetWeight-average;
   const needed=remaining!==null&&remainingDays>0?remaining/(remainingDays/7):null;
-  const range=phase.kind==='bulk'?[.25,.5]:phase.kind==='cut'?[-.7,-.5]:[-.1,.1];
+  const profile=profileForDate(state,date),basis=current?.value??profile?.weightKg;
+  const range=profile&&basis?(phase.kind==='bulk'?[basis*.0025,basis*.005]:phase.kind==='cut'?[-basis*.01,-basis*.005]:[-.1,.1]):phase.kind==='bulk'?[.25,.5]:phase.kind==='cut'?[-.7,-.5]:[-.1,.1];
   const status=change.weekly===null?'Datos insuficientes':phase.kind==='maintain'?(Math.abs(change.weekly)<=.1?'En ritmo':'Atrasado'):phase.kind==='bulk'?(change.weekly>range[1]?'Adelantado':change.weekly<range[0]?'Atrasado':'En ritmo'):(change.weekly<range[0]?'Adelantado':change.weekly>range[1]?'Atrasado':'En ritmo');
   const incompatible=needed!==null&&phase.kind!=='maintain'&&(needed<range[0]||needed>range[1]);
   return {phase,current,average,averageCount:change.meanCount,weekly:change.weekly,status,remainingDays,remaining,needed,range,incompatible,overdue:remainingDays!==null&&remainingDays<0};

@@ -7,6 +7,7 @@ import {validatePainEntries} from './pain.js';
 import {validateCardioSettings,validateCardioSnapshot} from './program/cardio.js';
 import {ROUTINE_VERSION} from './routinePlan.js';
 import {PHOTO_PREFIX,validMonthlyCheck,validMonthlyPhoto} from './monthlyCheck.js';
+import {PROFILE_DEFAULTS,validateProfile} from './profile.js';
 export const BACKUP_STORES=['app','sessions','cardio','journal','measurements','phases','sessionRevisions','migrationBackups'];
 const collections=['sessions','cardio','journal','measurements','phases'];
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
@@ -36,6 +37,9 @@ function validateState(state){
   for(const row of state.routineMigrationBackups)require(object(row)&&typeof row.id==='string'&&object(row.state)&&Array.isArray(row.state.routine)&&row.state.routine.length===7&&row.state.routine.every(day=>Array.isArray(day)&&day.every(ex=>object(ex)&&typeof ex.name==='string'))&&Array.isArray(row.state.logs)&&object(row.state.profiles),'Instantánea de rutina anterior no válida.');
  }
  const next=migrateState(structuredClone(state));require(!validateRoutine(next.routine),'La rutina del respaldo no es válida.');
+ if(next.personalProfile)require(next.personalProfile.version===1&&!validateProfile(next.personalProfile),'Perfil no válido o versión no compatible.');
+ if(next.profileHistory!==undefined)require(Array.isArray(next.profileHistory)&&next.profileHistory.every(row=>object(row)&&date(row.date)&&object(row.profile)&&row.profile.version===1&&!validateProfile(row.profile)),'Historial de perfil no válido.');
+ if(next.profileDraft)require(object(next.profileDraft)&&Number.isInteger(next.profileDraft.step)&&next.profileDraft.step>=0&&next.profileDraft.step<=12&&object(next.profileDraft.value)&&!validateProfile({...PROFILE_DEFAULTS,...next.profileDraft.value,name:next.profileDraft.value.name||'Pendiente'}),'Borrador de perfil no válido.');
  if(next.monthlyChecks!==undefined){require(Array.isArray(next.monthlyChecks)&&next.monthlyChecks.every(validMonthlyCheck)&&new Set(next.monthlyChecks.map(row=>row.id)).size===next.monthlyChecks.length,'Checks mensuales no válidos.');}
  for(const key of ['profiles','dailySteps','journal','calendar','programSettings'])require(object(next[key]),`Configuración no válida: ${key}.`);
  for(const key of ['cardio','measurements','phases','phaseHistory','goalRevisions','foods','foodLogs','meals','deloads'])require(Array.isArray(next[key]),`Colección no válida: ${key}.`);

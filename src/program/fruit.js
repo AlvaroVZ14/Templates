@@ -3,7 +3,7 @@ export function migrateFruit(state){
   if(state.fruitVersion===1)return state;
   return {...state,fruitVersion:1,foods:state.foods.some(food=>food.id==='apple')?state.foods:[...state.foods,structuredClone(APPLE)],programSettings:{appleCount:1,...state.programSettings}};
 }
-export function appleCount(state){return [0,1,2].includes(state.programSettings.appleCount)?state.programSettings.appleCount:1;}
+export function appleCount(state){const profile=state.personalProfile;if(profile&&(!profile.foodIds.includes('apple')||profile.avoidIds.includes('apple')||/manzana/i.test(profile.avoidText)))return 0;return [0,1,2].includes(state.programSettings.appleCount)?state.programSettings.appleCount:1;}
 export function fruitProgress(state,date){
   const logs=state.foodLogs.filter(log=>log.date===date),count=logs.flatMap(log=>log.items).filter(item=>item.food.id==='apple').reduce((sum,item)=>sum+item.quantity,0);
   return {count,target:appleCount(state),own:logs.find(log=>log.id===`fruit-${date}`)};

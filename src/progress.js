@@ -1,5 +1,5 @@
 import {dayContext} from './program/nutrition.js';
-import {phaseForDate} from './program/phases.js';
+import {phaseForDate,phaseReport} from './program/phases.js';
 import {sessionExercise,activeDeload} from './training.js';
 const shift=(date,n)=>{const d=new Date(`${date}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
 const days=(a,b)=>Math.round((Date.parse(`${b}T12:00Z`)-Date.parse(`${a}T12:00Z`))/86400000);
@@ -26,6 +26,7 @@ export function performance(state,date){
  return {status,value,previousChange,rows,text:status==='green'?'Tu rendimiento va subiendo.':status==='red'?'Hay dos periodos seguidos con una bajada superior al 2%.':'Tu rendimiento pide continuidad, sin prisas.',action:status==='red'?'Revisa descanso y ejecución antes de cambiar el plan.':'Mantén el registro y sigue tu progresión; no ajustes por una mala semana.'};
 }
 function body(state,date,strength){
+ const range=phaseReport(state,date)?.range??[.25,.5];
  const phase=phaseForDate(state,date),entries=Object.entries(state.journal??{}).filter(([day,row])=>day<=date&&day>=(phase?.startDate??'0000')&&numeric(row.weight)&&row.weight>0),weeks=observedWeeks(entries.map(([day])=>day),date);
  if(weeks<4)return insufficient(weeks,'Registra el peso y tus medidas quincenales dentro de la fase actual.');
  const weights=(a,b)=>entries.filter(([day])=>day>=a&&day<=b).map(([,row])=>row.weight),now=weights(shift(date,-6),date),before=weights(shift(date,-13),shift(date,-7));
@@ -33,7 +34,7 @@ function body(state,date,strength){
  const value=mean(now)-mean(before),details={phase:phase?.kind,average:mean(now),count:now.length,previousCount:before.length};
  if(phase?.kind==='cut'){
   if(strength.status==='insufficient')return {...insufficient(4,'Faltan efectivas comparables para comprobar que mantienes la fuerza.'),...details,weekly:value};
-  const good=value>=-.7-1e-8&&value<=-.5+1e-8&&strength.value>=-1;
+  const good=value>=range[0]-1e-8&&value<=range[1]+1e-8&&strength.value>=-1;
   return {status:good?'green':'amber',value,...details,text:good?'El peso baja al ritmo previsto y la fuerza se mantiene.':'La tendencia aún no reúne las dos condiciones del mini cut.',action:'Sigue registrando; revisa la tendencia mensual antes de ajustar.'};
  }
  if(phase?.kind!=='bulk')return {status:'amber',value,...details,text:'Mantención: observa la tendencia sin perseguir un rango de volumen o mini cut.',action:'Mantén tu plan y reúne registros comparables.'};
@@ -41,7 +42,7 @@ function body(state,date,strength){
  const recent=last&&days(last.date,date)<=21&&previous&&days(previous.date,last.date)>=10&&days(previous.date,last.date)<=21;
  const others=['biceps','forearm','chest','thigh','calf'],complete=recent&&others.every(name=>numeric(last.values[name])&&numeric(previous.values[name]));
  if(!complete||!baseline||days(lastWaist.date,date)>21)return {...insufficient(4,'Faltan medidas quincenales completas y una comparación de cintura de 21–40 días.'),...details,weekly:value,text:'Datos insuficientes para comparar las medidas y la cintura.'};
- const waistRate=(lastWaist.values.waist-baseline.values.waist)*30/days(baseline.date,lastWaist.date),stable=others.every(name=>last.values[name]>=previous.values[name]),good=value>=.25-1e-8&&value<=.5+1e-8&&waistRate<=1+1e-8&&stable;
+ const waistRate=(lastWaist.values.waist-baseline.values.waist)*30/days(baseline.date,lastWaist.date),stable=others.every(name=>last.values[name]>=previous.values[name]),good=value>=range[0]-1e-8&&value<=range[1]+1e-8&&waistRate<=1+1e-8&&stable;
  return {status:waistRate>1+1e-8?'red':good?'green':'amber',value,waistRate,...details,text:waistRate>1+1e-8?'La cintura supera el ritmo de 1 cm por mes.':good?'Peso, cintura y medidas avanzan dentro de tus reglas.':'La tendencia de volumen aún no reúne todas las condiciones.',action:waistRate>1+1e-8?'Revisa la tendencia en tu revisión mensual antes de ajustar.':'Mantén condiciones de medición consistentes y observa el siguiente control.'};
 }
 function consistency(state,date){

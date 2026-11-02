@@ -6,6 +6,7 @@ import {applySeriesOperation} from './seriesQueue.js';
 export const DB_NAME='heavy-duty-personal';
 export const DB_VERSION=2;
 export const COLLECTIONS=['sessions','cardio','journal','measurements','phases'];
+export async function eraseDeviceRecords(replacement){const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction([...db.objectStoreNames],'readwrite');try{for(const name of db.objectStoreNames)tx.objectStore(name).clear();if(replacement)tx.objectStore('app').put(replacement,'state');}catch(error){tx.abort();reject(error);}tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
 const STORES=BACKUP_STORES;
 let connection;
 function createStores(db){

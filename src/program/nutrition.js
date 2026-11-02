@@ -2,6 +2,8 @@ import { shiftDate } from '../wellness.js';
 import { daysBetween, lastWeight, phaseForDate, trend } from './phases.js';
 import {appleCount,fruitProgress} from './fruit.js';
 import {routineForDate} from '../routinePlan.js';
+import {profileForDate,profileNutrition,profileWeight} from '../profile.js';
+import {generateProfilePlan} from '../profileMeals.js';
 
 export const MACROS=['kcal','protein','carbs','fat'];
 export const emptyMacros=()=>({kcal:0,protein:0,carbs:0,fat:0});
@@ -19,6 +21,7 @@ export function dayContext(state,date){
   return {type,routineDay,trainingTime:override?.trainingTime??state.programSettings.trainingTime,exercises:type==='rest'?[]:routine[routineDay],calendarNeedsReview:needsReview};
 }
 export function suggestedTargets(state,date,base=state.baseIntake,ratio=state.programSettings.proteinRatio){
+  const profile=profileForDate(state,date);if(profile)return profileNutrition(profile,date,{weight:profileWeight(state,date,profile),phase:phaseForDate(state,date)?.kind??profile.phase});
   const phase=phaseForDate(state,date),weight=lastWeight(state,date)?.value;
   if(!phase||!weight||!base)return null;
   const kcal=phase.kind==='bulk'?base+250:phase.kind==='cut'?base-400:base;
@@ -29,6 +32,7 @@ export function goalForDate(state,date,ignoreSnapshot=false){
   if(!ignoreSnapshot&&state.nutritionDays[date]?.target)return state.nutritionDays[date].target;
   const phase=phaseForDate(state,date);
   const revision=state.goalRevisions.filter(item=>item.effectiveDate<=date&&item.phaseId===phase?.id).sort((a,b)=>a.effectiveDate.localeCompare(b.effectiveDate)).at(-1);
+  const profile=profileForDate(state,date);if(profile&&(!revision||revision.confirmedAt<=profile.savedAt)){const target=profileNutrition(profile,date,{weight:profileWeight(state,date,profile),phase:phase?.kind??profile.phase});return target?{...target,phaseId:phase?.id??null,fromProfile:true,dayType:dayContext(state,date).type}:null;}
   if(!revision)return null;
   const context=dayContext(state,date),reduction=context.type==='rest'?revision.restReduction:0;
   const kcal=revision.kcal*(1-reduction),carbs=(kcal-revision.protein*4-revision.fat*9)/4;
@@ -43,6 +47,8 @@ export function validateTargets(target){
   return null;
 }
 export function confirmTargets(state,target,date){
+  const profile=profileForDate(state,date),calculated=profile&&profileNutrition(profile,date,{weight:profileWeight(state,date,profile),phase:phaseForDate(state,date)?.kind??profile.phase});if(calculated&&target.kcal*(1-(target.restReduction??0))<Math.max(calculated.basal,calculated.maintenance*.75))throw new Error('La meta excede el límite del perfil: no más de −25% ni por debajo del metabolismo basal.');
+  if(calculated&&(target.protein<calculated.weight*1.8||target.protein>calculated.weight*2.2||target.fat<calculated.weight*.8))throw new Error('Con Perfil: proteína 1,8–2,2 g/kg y grasa mínima 0,8 g/kg.');
   const invalid=validateTargets(target);if(invalid)throw new Error(invalid);
   const phase=phaseForDate(state,date);if(!phase)throw new Error('Selecciona una fase para esa fecha.');
   const revision={...target,id:crypto.randomUUID(),phaseId:phase.id,phaseKind:phase.kind,effectiveDate:date,confirmedAt:new Date().toISOString()};
@@ -69,6 +75,7 @@ export function adherence(state,date){
 function score(total,target){return Math.max(0,target.fat-total.fat)*100+Math.abs(total.protein-target.protein)*5+Math.abs(total.kcal-target.kcal)/8+Math.abs(total.carbs-target.carbs)*.6+Math.max(0,total.fat-target.fat)*.7;}
 export function generatePlan(state,date){
   const target=goalForDate(state,date);if(!target)throw new Error('Primero confirma las metas nutricionales.');
+  if(profileForDate(state,date))return generateProfilePlan(state,date,target,dayContext(state,date),{foodItem,sumItems});
   const context=dayContext(state,date),foods=Object.fromEntries(state.foods.map(food=>[food.id,food])),options=state.planOptions[date]??{};
   if(['egg','bread','chicken','rice'].some(id=>!foods[id]||validateFood(foods[id])))throw new Error('Completa la base de pan, huevo, pollo y arroz antes de generar el plan.');
   const cap=target.kcal*(target.phaseKind==='bulk'?.2:target.phaseKind==='cut'?.1:Math.min(.2,target.snackBudget??.2));

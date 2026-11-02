@@ -1,4 +1,6 @@
 import {effectiveSetPlan,effectiveSetSuggestion} from './routinePlan.js';
+import {profileForDate} from './profile.js';
+import {phaseForDate} from './program/phases.js';
 
 const matching=(row,ex)=>row.exerciseId===ex.id&&(!row.equipment||row.equipment===ex.equipment);
 export function progressionSuggestion(state,ex,date){
@@ -17,6 +19,7 @@ export function progressionSuggestion(state,ex,date){
   let reason=ex.deload?'Descarga: mantener, sin buscar progresión.':weak?'Sensación flojo: mantener la carga.':increase?'Todas las efectivas al tope, con técnica limpia y 0–2 RIR: subir carga y volver al inicio del rango.':!sets.length?'Sin sesión anterior comparable: elige una carga controlable.':!effort?'Mantener e intentar +1 rep; falta confirmar técnica limpia y 0–2 RIR en todas las series.':'Mantener e intentar +1 rep hasta completar todos los rangos.';
   if(twice)reason+=' Dos sesiones seguidas flojo: revisa sueño y comida.';
   if(limited)reason+=' Se mantiene el límite de registro de 1500 kg.';
+  const personal=profileForDate(state,date),phase=personal?(phaseForDate(state,date)?.kind??personal.phase):null;if(phase==='cut')reason+=' Definición: mantener la carga con técnica limpia es un buen resultado; no se penaliza.';else if(phase==='bulk')reason+=' Volumen: prioriza subir cuando completes los rangos, sin sacrificar la ejecución.';
   const prescriptions=Array.from({length:ex.sets},(_,index)=>{
     const plan=effectiveSetPlan(ex,index),prior=sets[index];
     const compatible=prior&&(!prior.setRole||prior.setRole===plan.role);
